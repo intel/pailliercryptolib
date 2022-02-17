@@ -27,7 +27,7 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=${IPPCRYPTO_PREFIX}
              -DARCH=${IPPCRYPTO_ARCH}
              -DCMAKE_ASM_NASM_COMPILER=nasm
-             -DCMAKE_BUILD_TYOE=Release
+             -DCMAKE_BUILD_TYPE=Release
   UPDATE_COMMAND ""
 )
 

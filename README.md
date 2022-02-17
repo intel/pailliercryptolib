@@ -75,7 +75,7 @@ cmake --build build --target benchmark
 ```
 OpenMP benchmarks will automatically be applied if `-DIPCL_TEST_OMP=ON` is set.
 
-The unit-test executable itself is located at `build/test/unit-test`, `build/test/unit-test_omp` and `build/benchmark/bench_ipp_paillier`.
+The unit-test executable itself is located at `build/test/unit-test`, `build/test/unit-test_omp` and `build/benchmark/bench_ipcl`.
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:

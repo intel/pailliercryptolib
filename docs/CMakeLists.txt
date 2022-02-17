@@ -15,7 +15,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR}) # Doxygen won't create this for us
 
 add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
-                   DEPENDS ${IPP_PAILLIER_INC_DIR}
+                   DEPENDS ${IPCL_INC_DIR}
                    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
                    MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
                    COMMENT "Generating Doxygen documentation")
