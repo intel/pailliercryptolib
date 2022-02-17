@@ -7,7 +7,6 @@ add_executable(bench_ipcl ${SRC})
 target_include_directories(bench_ipcl PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${IPCL_INC_DIR}
-    ${IPPCRYPTO_INC_DIR}
 )
 
 target_link_libraries(bench_ipcl PRIVATE

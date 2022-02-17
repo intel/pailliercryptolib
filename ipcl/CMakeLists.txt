@@ -22,18 +22,25 @@ target_include_directories(ipcl
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+
+target_include_directories(ipcl
+	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+	PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_PREFIX}/include>
+	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 install(DIRECTORY ${IPCL_INC_DIR}/
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
         FILES_MATCHING
         PATTERN "*.hpp"
         PATTERN "*.h")
 
+target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+
 if(IPCL_SHARED)
-	target_link_libraries(ipcl PRIVATE libippcrypto Threads::Threads)
+	target_link_libraries(ipcl PRIVATE libippcrypto)
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 else()
-	target_link_libraries(ipcl PRIVATE Threads::Threads)
-	target_link_libraries(ipcl PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 	ipcl_create_archive(ipcl libippcrypto::ippcp)
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})

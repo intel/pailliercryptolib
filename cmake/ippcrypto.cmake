@@ -31,32 +31,42 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
 )
 
-file(MAKE_DIRECTORY ${IPPCRYPTO_PREFIX}/include)
+# file(MAKE_DIRECTORY ${IPPCRYPTO_PREFIX}/include)
 set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_PREFIX}/include)
-ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
+# ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
+if(IPCL_SHARED)
+  add_library(libippcrypto INTERFACE)
+  add_dependencies(libippcrypto ext_ipp-crypto)
 
-add_library(libippcrypto::ippcp STATIC IMPORTED GLOBAL)
-add_library(libippcrypto::crypto_mb STATIC IMPORTED GLOBAL)
+  ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-add_dependencies(libippcrypto::ippcp ext_ipp-crypto)
-add_dependencies(libippcrypto::crypto_mb ext_ipp-crypto)
+  target_link_libraries(libippcrypto INTERFACE ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a)
+  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_PREFIX}/include)
 
-find_package(OpenSSL REQUIRED)
+else()
 
-set_target_properties(libippcrypto::ippcp PROPERTIES
-          IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a
-          INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
-)
+  add_library(libippcrypto::ippcp STATIC IMPORTED GLOBAL)
+  add_library(libippcrypto::crypto_mb STATIC IMPORTED GLOBAL)
 
-set_target_properties(libippcrypto::crypto_mb PROPERTIES
-          IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a
-          INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
-)
+  add_dependencies(libippcrypto::ippcp ext_ipp-crypto)
+  add_dependencies(libippcrypto::crypto_mb ext_ipp-crypto)
 
-add_library(libippcrypto INTERFACE IMPORTED)
-set_property(TARGET libippcrypto PROPERTY INTERFACE_LINK_LIBRARIES libippcrypto::ippcp libippcrypto::crypto_mb)
-target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
-target_link_libraries(libippcrypto INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+  find_package(OpenSSL REQUIRED)
 
-add_dependencies(libippcrypto ext_ipp-crypto)
+  set_target_properties(libippcrypto::ippcp PROPERTIES
+            IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a
+            INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
+  )
+
+  set_target_properties(libippcrypto::crypto_mb PROPERTIES
+            IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a
+            INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
+  )
+endif()
+# add_library(libippcrypto INTERFACE IMPORTED)
+# set_property(TARGET libippcrypto PROPERTY INTERFACE_LINK_LIBRARIES libippcrypto::ippcp libippcrypto::crypto_mb)
+# target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
+# target_link_libraries(libippcrypto INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+
+# add_dependencies(libippcrypto ext_ipp-crypto)
