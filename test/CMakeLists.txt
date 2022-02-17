@@ -1,6 +1,5 @@
 # Unit tests
 
-message(STATUS "TEST ==== ippcrypto inc dir: ${IPPCRYPTO_INC_DIR}")
 # main unittest
 add_executable(unit-test test.cpp)
 target_link_libraries(unit-test PRIVATE ipcl libgtest Threads::Threads)
