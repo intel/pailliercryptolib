@@ -17,10 +17,10 @@
 #ifndef _BIGNUM_H_
 #define _BIGNUM_H_
 
+#include <ippcp.h>
+
 #include <ostream>
 #include <vector>
-
-#include "ippcp.h"
 
 using namespace std;
 
