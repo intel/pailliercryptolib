@@ -30,13 +30,13 @@ install(DIRECTORY ${IPCL_INC_DIR}/
 
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto Threads::Threads)
-	target_include_directories(ipcl PUBLIC ${IPPCRYPTO_INC_DIR})
+	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 else()
 	target_link_libraries(ipcl PRIVATE Threads::Threads)
 	target_link_libraries(ipcl PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 	ipcl_create_archive(ipcl libippcrypto::ippcp)
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
-	target_include_directories(ipcl PUBLIC ${IPPCRYPTO_INC_DIR})
+	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 endif()
 
 
