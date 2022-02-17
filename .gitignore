@@ -1,0 +1,22 @@
+.vscode/
+.vs/
+build*/
+
+
+.DS_Store
+
+# Generated files
+docs/doxygen/
+*.log
+Doxyfile
+cmake/ipcl-*.*.*/IPCLConfig.cmake
+
+# Python files
+venv/
+__pycache__/
+.ipynb_checkpoints/
+.mypy_cache/
+.env
+
+# vim
+**.swp
