@@ -31,7 +31,6 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
 )
 
-# needed to setup interface
 file(MAKE_DIRECTORY ${IPPCRYPTO_PREFIX}/include)
 set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_PREFIX}/include)
 ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)

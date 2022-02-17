@@ -6,14 +6,15 @@ set(SRC main.cpp
 add_executable(bench_ipcl ${SRC})
 target_include_directories(bench_ipcl PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${IPP_PAILLIER_INC_DIR}
+    ${IPCL_INC_DIR}
+    ${IPPCRYPTO_INC_DIR}
 )
 
 target_link_libraries(bench_ipcl PRIVATE
   ipcl libgbenchmark Threads::Threads
 )
 
-if(IPP_PAILLIER_TEST_OMP)
+if(IPCL_TEST_OMP)
   find_package(OpenMP REQUIRED)
   add_compile_definitions(BENCHMARK_OMP)
   target_link_libraries(bench_ipcl PRIVATE OpenMP::OpenMP_CXX)
