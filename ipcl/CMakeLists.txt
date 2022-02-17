@@ -1,17 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
 
-# # BigNumber library
-# add_library(bignum SHARED
-#   bignum.cpp)
-# target_include_directories(bignum
-# 					PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-# 					PUBLIC ${IPCL_INC_DIR}
-# )
-# target_link_libraries(bignum PRIVATE libippcrypto Threads::Threads)
-
-
-# Ipp-crypto Paillier Library
-
 set(IPCL_SRCS paillier_pri.cpp
 							paillier_pub.cpp
 							paillier_ops.cpp
@@ -47,7 +35,8 @@ else()
 	target_link_libraries(ipcl PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 	ipcl_create_archive(ipcl libippcrypto::ippcp)
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
-	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
+	target_link_libraries(ipcl PRIVATE libippcrypto Threads::Threads)
+	# target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 endif()
 
 
