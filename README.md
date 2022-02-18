@@ -59,7 +59,6 @@ sudo apt install libssl-dev
 ```
 On RHEL, it needs to be built and installed from source as the static libraries are not installed with package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details.
 
-
 ### Instructions
 The library can be built using the following commands:
 ```bash
