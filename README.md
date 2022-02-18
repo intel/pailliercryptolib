@@ -6,6 +6,7 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
   - [Contents](#contents)
   - [Introduction](#introduction)
   - [Building the Library](#building-the-library)
+    - [Requirements](#requirements)
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
   - [Testing and Benchmarking](#testing-and-benchmarking)
@@ -16,13 +17,24 @@ Paillier cryptosystem is a probabilistic asymmetric algorithm for public key cry
 - addition of two ciphertexts
 - addition and multiplication of a ciphertext by a plaintext number
 
-Conventional implementations of the Paillier cryptosystem utilized the GNU Multiple Precision Arithmetic Library (GMP) for handling key lengths larger than 1024 bits. The essential computation of the scheme relies on the modular exponentiation, and our library takes advantage of the multi-buffer modular exponentiation function (```mbx_exp_mb8```) of IPP-Crypto library.
-As a result, on AVX512IFMA instruction enabled CPUs,
+As a public key encryption scheme, Paillier cryptosystem has three stages:
+
+ - Generate public-private key pair
+ - Encryption with public key
+ - Decryption with private key
+
+For increased security, typically the key length is at least 1024 bits, but recommendation is 2048 bits or larger. To handle such large size integers, conventional implementations of the Paillier cryptosystem utilizes the GNU Multiple Precision Arithmetic Library (GMP). The essential computation of the scheme relies on the modular exponentiation, and our library takes advantage of the multi-buffer modular exponentiation function (```mbx_exp_mb8```) of IPP-Crypto library, which is enabled in AVX512IFMA instruction sets supporting SKUs, such as Intel Icelake Xeon CPUs.
 
 ## Building the Library
-### Dependencies
-The library has been tested on Ubuntu 18.04 and 20.04
+### Requirements
+The hardware requirement to use the library is AVX512IFMA instruction sets enabled CPUs, as listed in Intel codenames:
+ - Intel Cannon Lake
+ - Intel Ice Lake
+We are planning to add support for more SKUs.
 
+Currently the library has been tested and confirmed to work on Ubuntu 18.04, 20.04 and RHEL 8.4.
+
+### Dependencies
 Must have dependencies include:
 ```
 cmake >=3.15.1
@@ -35,14 +47,18 @@ python >= 3.8
 The following libraries are also required,
 ```
 nasm>=2.15
-OpenSSL
+OpenSSL>=1.1.0
 ```
-which can be installed by:
+
+For ```nasm``` installation, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.
+
+On Ubuntu, ```OpenSSL``` can be installed by:
 ```bash
 sudo apt update
 sudo apt install libssl-dev
 ```
-For ```nasm```, please refer to the [Netwide Assembler webpage](https://nasm.us/) for installation details.
+On RHEL, it needs to be built and installed from source as the static libraries are not installed with package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details.
+
 
 ### Instructions
 The library can be built using the following commands:

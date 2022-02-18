@@ -31,7 +31,13 @@ add_library(libgbenchmark INTERFACE)
 add_dependencies(libgbenchmark ext_gbenchmark)
 
 ExternalProject_Get_Property(ext_gbenchmark SOURCE_DIR BINARY_DIR)
-target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
+if(EXISTS ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
+  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
+elseif(EXISTS ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
+  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
+else()
+  message(FATAL "gBenchmark build failed")
+endif()
 
 target_include_directories(libgbenchmark SYSTEM
                                     INTERFACE ${GBENCHMARK_PREFIX}/include)
