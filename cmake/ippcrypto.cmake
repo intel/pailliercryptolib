@@ -31,9 +31,7 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
 )
 
-# file(MAKE_DIRECTORY ${IPPCRYPTO_PREFIX}/include)
 set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_PREFIX}/include)
-# ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
 if(IPCL_SHARED)
   add_library(libippcrypto INTERFACE)
@@ -64,9 +62,3 @@ else()
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )
 endif()
-# add_library(libippcrypto INTERFACE IMPORTED)
-# set_property(TARGET libippcrypto PROPERTY INTERFACE_LINK_LIBRARIES libippcrypto::ippcp libippcrypto::crypto_mb)
-# target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
-# target_link_libraries(libippcrypto INTERFACE OpenSSL::SSL OpenSSL::Crypto)
-
-# add_dependencies(libippcrypto ext_ipp-crypto)

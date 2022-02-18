@@ -1,9 +1,9 @@
 # Intel Paillier Cryptosystem Library
-Intel Paillier Cryptosystem Library is an open-source library which provides accelerated performance of a partial homomorphic encryption (HE), named Paillier cryptosystem, by utilizing Intel® [IPP-Crypto](https://github.com/intel/ipp-crypto) technologies on Intel CPUs supporting the AVX512IFMA instructions. The library is written in modern standard C++ and provides the essential API for the Paillier cryptosystem scheme.
+Intel Paillier Cryptosystem Library is an open-source library which provides accelerated performance of a partial homomorphic encryption (HE), named Paillier cryptosystem, by utilizing Intel® [Integrated Performance Primitives Cryptography](https://github.com/intel/ipp-crypto) technologies on Intel CPUs supporting the AVX512IFMA instructions. The library is written in modern standard C++ and provides the essential API for the Paillier cryptosystem scheme.
 
 ## Contents
-- [Paillier Homomorphic Encryption library with Intel ipp-crypto](#paillier-homomorphic-encryption-library-with-intel-ipp-crypto)
-  - [Contents](#content)
+- [Intel Paillier Cryptosystem Library](#intel-paillier-cryptosystem-library)
+  - [Contents](#contents)
   - [Introduction](#introduction)
   - [Building the Library](#building-the-library)
     - [Dependencies](#dependencies)
@@ -12,7 +12,12 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
 - [Contributors](#contributors)
 
 ## Introduction
-adding intro
+Paillier cryptosystem is a probabilistic asymmetric algorithm for public key cryptography and a partial homomorphic encryption scheme which allows two types of computation:
+- addition of two ciphertexts
+- addition and multiplication of a ciphertext by a plaintext number
+
+Conventional implementations of the Paillier cryptosystem utilized the GNU Multiple Precision Arithmetic Library (GMP) for handling key lengths larger than 1024 bits. The essential computation of the scheme relies on the modular exponentiation, and our library takes advantage of the multi-buffer modular exponentiation function (```mbx_exp_mb8```) of IPP-Crypto library.
+As a result, on AVX512IFMA instruction enabled CPUs,
 
 ## Building the Library
 ### Dependencies
