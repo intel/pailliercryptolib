@@ -31,12 +31,14 @@ add_library(libgbenchmark INTERFACE)
 add_dependencies(libgbenchmark ext_gbenchmark)
 
 ExternalProject_Get_Property(ext_gbenchmark SOURCE_DIR BINARY_DIR)
-if(EXISTS ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
+file(STRINGS /etc/os-release LINUX_ID REGEX "^ID=")
+string(REGEX REPLACE "ID=\(.*)" "\\1" LINUX_ID "${LINUX_ID}")
+message(STATUS "linux_id : ${LINUX_ID}")
+if(${LINUX_ID} STREQUAL "ubuntu")
   target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
-elseif(EXISTS ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
-  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
 else()
-  message(FATAL "gBenchmark build failed")
+  # non debian systems install gbenchmark lib under lib64
+  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
 endif()
 
 target_include_directories(libgbenchmark SYSTEM
