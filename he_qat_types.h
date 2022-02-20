@@ -1,0 +1,9 @@
+
+
+typedef struct QATInstConfigStruct
+{
+    
+} QATInstConfig;
+
+
+
