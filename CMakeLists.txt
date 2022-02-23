@@ -1,4 +1,6 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.15.1)
 
 project(IPCL VERSION 1.0.0 LANGUAGES C CXX)
@@ -24,12 +26,10 @@ else()
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# TODO(skmono): Assess if C++17 is necessary
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Create compilation database compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -52,7 +52,6 @@ option(IPCL_TEST "Enable testing" ON)
 option(IPCL_BENCHMARK "Enable benchmark" ON)
 option(IPCL_TEST_OMP "Enable OpenMP testing" ON)
 option(IPCL_DOCS "Enable document building" OFF)
-# TODO(skmono): Fix static library build
 option(IPCL_SHARED "Build shared library" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -66,14 +65,12 @@ set(IPCL_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/ipcl")
 message(STATUS "CMAKE_BUILD_TYPE:           ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_C_COMPILER:           ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_CXX_COMPILER:         ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "IPCL_TEST:                  ${IPCL_TEST}")
 message(STATUS "IPCL_TEST_OMP:              ${IPCL_TEST_OMP}")
 message(STATUS "IPCL_BENCHMARK:             ${IPCL_BENCHMARK}")
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
-message(STATUS "CMAKE_INSTALL_LIBDIR:       ${CMAKE_INSTALL_LIBDIR}")
-message(STATUS "CMAKE_INSTALL_INCLUDEDIR:   ${CMAKE_INSTALL_INCLUDEDIR}")
-message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
 
 set(IPCL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(IPCL_SRC_DIR ${IPCL_ROOT_DIR}/ipcl)
@@ -95,7 +92,7 @@ set(IPCL_FORWARD_CMAKE_ARGS
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
-message(STATUS "OpenSSL Found: ${OPENSSL_FOUND}")
+
 # External dependencies
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -114,6 +111,7 @@ endif()
 
 add_subdirectory(ipcl)
 
+# unit-test and benchmarks
 if(IPCL_TEST)
   add_subdirectory(test)
   add_custom_target(unittest COMMAND $<TARGET_FILE:unit-test> DEPENDS unit-test)

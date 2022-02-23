@@ -1,0 +1,5 @@
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Default codeowner for all files
+* @dpg-dbio-glade-creek-projectphe-owners

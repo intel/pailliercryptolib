@@ -10,6 +10,7 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
   - [Testing and Benchmarking](#testing-and-benchmarking)
+- [Standardization](#standardization)
 - [Contributors](#contributors)
 
 ## Introduction
@@ -30,9 +31,10 @@ For increased security, typically the key length is at least 1024 bits, but reco
 The hardware requirement to use the library is AVX512IFMA instruction sets enabled CPUs, as listed in Intel codenames:
  - Intel Cannon Lake
  - Intel Ice Lake
-We are planning to add support for more SKUs.
 
-Currently the library has been tested and confirmed to work on Ubuntu 18.04, 20.04 and RHEL 8.4.
+Note: We are planning to add support for more SKUs.
+
+As for the operating systems, ehe library has been tested and confirmed to work on Ubuntu 18.04, 20.04 and RHEL 8.0.
 
 ### Dependencies
 Must have dependencies include:
@@ -41,7 +43,6 @@ cmake >=3.15.1
 git
 pthread
 g++ >= 7.0 or clang >= 10.0
-python >= 3.8
 ```
 
 The following libraries are also required,
@@ -50,14 +51,14 @@ nasm>=2.15
 OpenSSL>=1.1.0
 ```
 
-For ```nasm``` installation, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.
+For ```nasm```, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.
 
 On Ubuntu, ```OpenSSL``` can be installed by:
 ```bash
 sudo apt update
 sudo apt install libssl-dev
 ```
-On RHEL, it needs to be built and installed from source as the static libraries are not installed with package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details.
+On RHEL, it needs to be built and installed from source as the static libraries are not installed with package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details for static libraries.
 
 ### Instructions
 The library can be built using the following commands:
@@ -95,7 +96,10 @@ cmake --build build --target benchmark
 ```
 OpenMP benchmarks will automatically be applied if `-DIPCL_TEST_OMP=ON` is set.
 
-The unit-test executable itself is located at `build/test/unit-test`, `build/test/unit-test_omp` and `build/benchmark/bench_ipcl`.
+The unit-test executable itself is located at `${IPCL_DIR}/build/test/unit-test`, `${IPCL_DIR}/build/test/unit-test_omp` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+
+# Standardization
+This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:
@@ -103,3 +107,4 @@ Main contributors to this project, sorted by alphabetical order of last name are
   - [Hamish Hunt](https://github.com/hamishun)
   - [Sejun Kim](https://github.com/skmono) (lead)
   - [Bin Wang](https://github.com/bwang30)
+  - [Pengfei Zhao](https://github.com/justalittlenoob)

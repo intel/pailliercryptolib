@@ -1,7 +1,9 @@
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
 .vscode/
 .vs/
 build*/
-
 
 .DS_Store
 
@@ -10,13 +12,6 @@ docs/doxygen/
 *.log
 Doxyfile
 cmake/ipcl-*.*.*/IPCLConfig.cmake
-
-# Python files
-venv/
-__pycache__/
-.ipynb_checkpoints/
-.mypy_cache/
-.env
 
 # vim
 **.swp

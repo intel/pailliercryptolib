@@ -1,6 +1,7 @@
-# Unit tests
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 
-# main unittest
+# Unit tests
 add_executable(unit-test test.cpp)
 target_link_libraries(unit-test PRIVATE ipcl libgtest Threads::Threads)
 target_include_directories(unit-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${IPCL_INC_DIR})# ${IPPCRYPTO_INC_DIR})

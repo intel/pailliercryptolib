@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef IPCL_INCLUDE_IPCL_KEY_PAIR_HPP_
 #define IPCL_INCLUDE_IPCL_KEY_PAIR_HPP_
