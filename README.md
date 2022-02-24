@@ -100,10 +100,13 @@ The unit-test executable itself is located at `${IPCL_DIR}/build/test/unit-test`
 
 # Standardization
 This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
+The compliance test is included in the [unit-test](test/test_cryptography.cpp#L117-L258).
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:
   - [Xiaoran Fang](https://github.com/fangxiaoran)
+  - [Hengrui Hu](https://github.com/hhr293)
+  - [Xiaojun Huang](https://github.com/xhuan28)
   - [Hamish Hunt](https://github.com/hamishun)
   - [Sejun Kim](https://github.com/skmono) (lead)
   - [Bin Wang](https://github.com/bwang30)
