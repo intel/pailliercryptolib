@@ -103,6 +103,16 @@ class PaillierPublicKey {
    */
   void apply_obfuscator(BigNumber obfuscator[8]);
 
+  /**
+   * @brief Set the Random object for ISO/IEC 18033-6 compliance check
+   *
+   * @param r
+   */
+  void setRandom(BigNumber r[8]) {
+    for (int i = 0; i < 8; i++) m_r[i] = r[i];
+    m_testv = true;
+  }
+
   const void* addr = static_cast<const void*>(this);
 
  private:
@@ -115,6 +125,8 @@ class PaillierPublicKey {
   int m_dwords;
   unsigned int m_init_seed;
   bool m_enable_DJN;
+  BigNumber m_r[8];
+  bool m_testv;
 
   /**
    * Get random value

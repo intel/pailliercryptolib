@@ -1,45 +1,368 @@
 // Copyright (C) 2021-2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include <gtest/gtest.h>
-#include <omp.h>
-
 #include <climits>
+#include <iostream>
 #include <random>
 #include <vector>
 
+#ifdef IPCL_UNITTEST_OMP
+#include <omp.h>
+#endif
+
+#include "gtest/gtest.h"
 #include "ipcl/key_pair.hpp"
 #include "ipcl/paillier_ops.hpp"
 
-const int numRuns = 10;
-double t1, t2;
-double time_ms;
-
-#define BENCHMARK(target, x)                                \
-  for (int i = 0; i < 2; ++i) x t1 = omp_get_wtime();       \
-  for (int i = 0; i < numRuns; ++i) x t2 = omp_get_wtime(); \
-                                                            \
-  time_ms = static_cast<double>(t2 - t1);                   \
-  std::cout << target << " " << time_ms * 1000.f / numRuns << "ms" << std::endl;
-
-void Encryption(int num_threads, vector<BigNumber*> v_ct,
-                vector<BigNumber*> v_ptbn, keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct[i], v_ptbn[i]);
+void CtPlusCt(BigNumber res[8], BigNumber ct1[8], BigNumber ct2[8],
+              keyPair key) {
+  for (int i = 0; i < 8; i++) {
+    PaillierEncryptedNumber a(key.pub_key, ct1[i]);
+    PaillierEncryptedNumber b(key.pub_key, ct2[i]);
+    PaillierEncryptedNumber sum = a + b;
+    res[i] = sum.getBN();
   }
 }
 
-void Decryption(int num_threads, vector<BigNumber*> v_dt,
-                vector<BigNumber*> v_ct, keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_ct[i]);
+void CtPlusCtArray(BigNumber res[8], BigNumber ct1[8], BigNumber ct2[8],
+                   keyPair key) {
+  PaillierEncryptedNumber a(key.pub_key, ct1);
+  PaillierEncryptedNumber b(key.pub_key, ct2);
+  PaillierEncryptedNumber sum = a + b;
+  sum.getArrayBN(res);
+}
+
+void CtPlusPt(BigNumber res[8], BigNumber ct1[8], uint32_t pt2[8],
+              keyPair key) {
+  for (int i = 0; i < 8; i++) {
+    PaillierEncryptedNumber a(key.pub_key, ct1[i]);
+    BigNumber b = pt2[i];
+    PaillierEncryptedNumber sum = a + b;
+    res[i] = sum.getBN();
   }
 }
 
-void CtPlusCt(int num_threads, vector<BigNumber*> v_sum,
-              vector<BigNumber*> v_ct1, vector<BigNumber*> v_ct2, keyPair key) {
+void CtPlusPtArray(BigNumber res[8], BigNumber ct1[8], BigNumber ptbn2[8],
+                   keyPair key) {
+  BigNumber stmp[8];
+  PaillierEncryptedNumber a(key.pub_key, ct1);
+  PaillierEncryptedNumber sum = a + ptbn2;
+  sum.getArrayBN(res);
+}
+
+void CtMultiplyPt(BigNumber res[8], BigNumber ct1[8], uint32_t pt2[8],
+                  keyPair key) {
+  for (int i = 0; i < 8; i++) {
+    PaillierEncryptedNumber a(key.pub_key, ct1[i]);
+    PaillierEncryptedNumber b(key.pub_key, pt2[i]);
+    PaillierEncryptedNumber sum = a * b;
+    res[i] = sum.getBN();
+  }
+}
+
+void CtMultiplyPtArray(BigNumber res[8], BigNumber ct1[8], uint32_t pt2[8],
+                       keyPair key) {
+  PaillierEncryptedNumber a(key.pub_key, ct1);
+  PaillierEncryptedNumber b(key.pub_key, pt2);
+  PaillierEncryptedNumber sum = a * b;
+  sum.getArrayBN(res);
+}
+
+void AddSub(BigNumber res[8], BigNumber ct1[8], BigNumber ct2[8], keyPair key) {
+  for (int i = 0; i < 8; i++) {
+    PaillierEncryptedNumber a(key.pub_key, ct1[i]);
+    PaillierEncryptedNumber b(key.pub_key, ct2[i]);
+    BigNumber m1(2);
+    a = a + b * m1;
+    PaillierEncryptedNumber sum = a + b;
+    res[i] = sum.getBN();
+  }
+}
+
+TEST(OperationTest, CtPlusCtTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8], ptbn2[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+  key.pub_key->encrypt(ct2, ptbn2);
+
+  CtPlusCt(res, ct1, ct2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtPlusCtArrayTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8], ptbn2[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+  key.pub_key->encrypt(ct2, ptbn2);
+
+  CtPlusCtArray(res, ct1, ct2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtPlusPtTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+
+  CtPlusPt(res, ct1, pt2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtPlusPtArrayTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8], ptbn2[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+
+  CtPlusPtArray(res, ct1, ptbn2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtMultiplyPtTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+
+  CtMultiplyPt(res, ct1, pt2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtMultiplyPtArrayTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8], ptbn2[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+
+  CtMultiplyPtArray(res, ct1, pt2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, AddSubTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8], ptbn2[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = dist(rng);
+    ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+  key.pub_key->encrypt(ct2, ptbn2);
+
+  AddSub(res, ct1, ct2, key);
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i] * 3;
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+#ifdef IPCL_UNITTEST_OMP
+void CtPlusCt_OMP(int num_threads, vector<BigNumber*> v_sum,
+                  vector<BigNumber*> v_ct1, vector<BigNumber*> v_ct2,
+                  keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
@@ -51,8 +374,9 @@ void CtPlusCt(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtPlusPt(int num_threads, vector<BigNumber*> v_sum,
-              vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2, keyPair key) {
+void CtPlusPt_OMP(int num_threads, vector<BigNumber*> v_sum,
+                  vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
+                  keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
@@ -64,9 +388,9 @@ void CtPlusPt(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtPlusPtArray(int num_threads, vector<BigNumber*> v_sum,
-                   vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                   keyPair key) {
+void CtPlusPtArray_OMP(int num_threads, vector<BigNumber*> v_sum,
+                       vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
+                       keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
@@ -79,9 +403,9 @@ void CtPlusPtArray(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtMultiplyPt(int num_threads, vector<BigNumber*> v_product,
-                  vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                  keyPair key) {
+void CtMultiplyPt_OMP(int num_threads, vector<BigNumber*> v_product,
+                      vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
+                      keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
@@ -93,9 +417,9 @@ void CtMultiplyPt(int num_threads, vector<BigNumber*> v_product,
   }
 }
 
-void CtMultiplyPtArray(int num_threads, vector<BigNumber*> v_product,
-                       vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                       keyPair key) {
+void CtMultiplyPtArray_OMP(int num_threads, vector<BigNumber*> v_product,
+                           vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
+                           keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
@@ -105,11 +429,10 @@ void CtMultiplyPtArray(int num_threads, vector<BigNumber*> v_product,
   }
 }
 
-TEST(OperationTest, CtPlusCtTest) {
+TEST(OperationTest, CtPlusCtTest_OMP) {
   keyPair key = generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
-  // std::cout << "available threads: " << num_threads << std::endl;
 
   std::vector<BigNumber*> v_ct1(num_threads);
   std::vector<BigNumber*> v_ct2(num_threads);
@@ -148,8 +471,7 @@ TEST(OperationTest, CtPlusCtTest) {
     key.pub_key->encrypt(v_ct2[i], v_ptbn2[i]);
   }
 
-  BENCHMARK("OMP Paillier CT + CT",
-            CtPlusCt(num_threads, v_sum, v_ct1, v_ct2, key););
+  CtPlusCt_OMP(num_threads, v_sum, v_ct1, v_ct2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -185,7 +507,7 @@ TEST(OperationTest, CtPlusCtTest) {
   delete key.priv_key;
 }
 
-TEST(OperationTest, CtPlusPtTest) {
+TEST(OperationTest, CtPlusPtTest_OMP) {
   keyPair key = generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
@@ -224,8 +546,7 @@ TEST(OperationTest, CtPlusPtTest) {
     key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
   }
 
-  BENCHMARK("OMP Paillier CT + PT",
-            CtPlusPt(num_threads, v_sum, v_ct1, v_pt2, key););
+  CtPlusPt_OMP(num_threads, v_sum, v_ct1, v_pt2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -260,11 +581,10 @@ TEST(OperationTest, CtPlusPtTest) {
   delete key.priv_key;
 }
 
-TEST(OperationTest, CtPlusPtArrayTest) {
+TEST(OperationTest, CtPlusPtArrayTest_OMP) {
   keyPair key = generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
-  std::cout << "available threads: " << num_threads << std::endl;
 
   std::vector<BigNumber*> v_ct1(num_threads);
   std::vector<BigNumber*> v_dt(num_threads);
@@ -300,8 +620,7 @@ TEST(OperationTest, CtPlusPtArrayTest) {
     key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
   }
 
-  BENCHMARK("OMP array Paillier CT + PT",
-            CtPlusPtArray(num_threads, v_sum, v_ct1, v_pt2, key););
+  CtPlusPtArray_OMP(num_threads, v_sum, v_ct1, v_pt2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -336,11 +655,10 @@ TEST(OperationTest, CtPlusPtArrayTest) {
   delete key.priv_key;
 }
 
-TEST(OperationTest, test_CtMultiplyPt) {
+TEST(OperationTest, CtMultiplyPtTest_OMP) {
   keyPair key = generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
-  // std::cout << "available threads: " << num_threads << std::endl;
 
   std::vector<BigNumber*> v_ct1(num_threads);
   std::vector<BigNumber*> v_dt(num_threads);
@@ -377,8 +695,7 @@ TEST(OperationTest, test_CtMultiplyPt) {
     key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
   }
 
-  BENCHMARK("OMP Paillier CT * PT",
-            CtMultiplyPt(num_threads, v_product, v_ct1, v_pt2, key););
+  CtMultiplyPt_OMP(num_threads, v_product, v_ct1, v_pt2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -412,11 +729,10 @@ TEST(OperationTest, test_CtMultiplyPt) {
   delete key.priv_key;
 }
 
-TEST(OperationTest, test_CtMultiplyPtArray) {
+TEST(OperationTest, CtMultiplyPtArrayTest_OMP) {
   keyPair key = generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
-  // std::cout << "available threads: " << num_threads << std::endl;
 
   std::vector<BigNumber*> v_ct1(num_threads);
   std::vector<BigNumber*> v_dt(num_threads);
@@ -453,8 +769,7 @@ TEST(OperationTest, test_CtMultiplyPtArray) {
     key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
   }
 
-  BENCHMARK("OMP Paillier multi-buffered CT * PT",
-            CtMultiplyPtArray(num_threads, v_product, v_ct1, v_pt2, key););
+  CtMultiplyPtArray_OMP(num_threads, v_product, v_ct1, v_pt2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -487,64 +802,4 @@ TEST(OperationTest, test_CtMultiplyPtArray) {
   delete key.pub_key;
   delete key.priv_key;
 }
-
-TEST(CryptoTest, CryptoTest) {
-  // use one keypair to do several encryption/decryption
-  keyPair key = generateKeypair(2048);
-
-  size_t num_threads = omp_get_max_threads();
-  // std::cout << "available threads: " << num_threads << std::endl;
-
-  std::vector<BigNumber*> v_ct(num_threads);
-  std::vector<BigNumber*> v_dt(num_threads);
-  std::vector<uint32_t*> v_pt(num_threads);
-  std::vector<BigNumber*> v_ptbn(num_threads);
-
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-
-  for (int i = 0; i < num_threads; i++) {
-    v_ct[i] = new BigNumber[8];
-    v_dt[i] = new BigNumber[8];
-    v_pt[i] = new uint32_t[8];
-    v_ptbn[i] = new BigNumber[8];
-
-    // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt[i][j] = dist(rng);
-      v_ptbn[i][j] = v_pt[i][j];
-    }
-  }
-
-  BENCHMARK("OMP Paillier Encryption",
-            Encryption(num_threads, v_ct, v_ptbn, key););
-  BENCHMARK("OMP Paillier Decryption",
-            Decryption(num_threads, v_dt, v_ct, key););
-
-  // check output for all threads
-  for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
-      EXPECT_EQ(v[0], v_pt[i][j]);
-    }
-  }
-
-  for (int i = 0; i < num_threads; i++) {
-    delete[] v_ct[i];
-    delete[] v_dt[i];
-    delete[] v_pt[i];
-    delete[] v_ptbn[i];
-  }
-
-  delete key.pub_key;
-  delete key.priv_key;
-}
-
-int main(int argc, char** argv) {
-  // Use system clock for seed
-  srand(time(nullptr));
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif

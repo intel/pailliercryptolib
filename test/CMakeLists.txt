@@ -2,15 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Unit tests
-add_executable(unit-test test.cpp)
-target_link_libraries(unit-test PRIVATE ipcl libgtest Threads::Threads)
-target_include_directories(unit-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${IPCL_INC_DIR})# ${IPPCRYPTO_INC_DIR})
+set(IPCL_UNITTEST_SRC main.cpp
+test_cryptography.cpp
+test_ops.cpp)
 
-# omp unittest
-if(IPCL_TEST_OMP)
+add_executable(unittest_ipcl ${IPCL_UNITTEST_SRC})
+target_include_directories(unittest_ipcl PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${IPCL_INC_DIR}
+)
+target_link_libraries(unittest_ipcl PRIVATE
+  ipcl libgtest Threads::Threads
+)
+
+# enable OpenMP unittests
+if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
-
-  add_executable(unit-test_omp test_omp.cpp)
-  target_link_libraries(unit-test_omp PRIVATE ipcl OpenMP::OpenMP_CXX libgtest Threads::Threads)
-  target_include_directories(unit-test_omp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${IPCL_INC_DIR})# ${IPPCRYPTO_INC_DIR})
+  add_compile_definitions(IPCL_UNITTEST_OMP)
+  target_link_libraries(unittest_ipcl PRIVATE OpenMP::OpenMP_CXX)
 endif()

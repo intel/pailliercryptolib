@@ -4,7 +4,7 @@
 #include <benchmark/benchmark.h>
 
 #include <vector>
-#ifdef BENCHMARK_OMP
+#ifdef IPCL_BENCHMARK_OMP
 #include <omp.h>
 #endif
 
@@ -150,7 +150,7 @@ BENCHMARK(BM_Decrypt_buff8)
     ->Args({16})
     ->Args({64});
 
-#ifdef BENCHMARK_OMP
+#ifdef IPCL_BENCHMARK_OMP
 static void BM_Encrypt_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   keyPair key = generateKeypair(2048, true);

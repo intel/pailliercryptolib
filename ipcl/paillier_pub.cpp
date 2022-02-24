@@ -26,6 +26,7 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
       m_init_seed(randomUniformUnsignedInt()),
       m_enable_DJN(false) {
   if (enableDJN_) this->enableDJN();  // this sets m_enable_DJN
+  m_testv = false;
 }
 
 // array of 32-bit random, using rand() from stdlib
@@ -100,8 +101,12 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
     ippMultiBuffExp(obfuscator, base, r, sq);
   } else {
     for (int i = 0; i < 8; i++) {
-      r[i] = getRandom(m_bits);
-      r[i] = r[i] % (m_n - 1) + 1;
+      if (m_testv) {
+        r[i] = m_r[i];
+      } else {
+        r[i] = getRandom(m_bits);
+        r[i] = r[i] % (m_n - 1) + 1;
+      }
       pown[i] = m_n;
       sq[i] = m_nsquare;
     }

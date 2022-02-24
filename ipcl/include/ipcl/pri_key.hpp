@@ -67,6 +67,13 @@ class PaillierPrivateKey {
    */
   PaillierPublicKey* getPubKey() const { return m_pubkey; }
 
+  /**
+   * @brief Support function for ISO/IEC 18033-6 compliance check
+   *
+   * @return BigNumber
+   */
+  BigNumber getLambda() { return m_lambda; }
+
  private:
   PaillierPublicKey* m_pubkey;
   BigNumber m_n;

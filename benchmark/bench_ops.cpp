@@ -4,7 +4,7 @@
 #include <benchmark/benchmark.h>
 
 #include <vector>
-#ifdef BENCHMARK_OMP
+#ifdef IPCL_BENCHMARK_OMP
 #include <omp.h>
 #endif
 #include <iostream>
@@ -270,7 +270,7 @@ BENCHMARK(BM_Mul_CTPT_buff8)
     ->Args({16})
     ->Args({64});
 
-#ifdef BENCHMARK_OMP
+#ifdef IPCL_BENCHMARK_OMP
 static void BM_Add_CTCT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   keyPair key = generateKeypair(2048, true);
