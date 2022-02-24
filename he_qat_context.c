@@ -1,28 +1,21 @@
 
-#include "heqat_types.h"
+#include "he_qat_types.h"
+#include "he_qat_context.h"
+
+#include <pthread.h>
 #include "icp_sal_poll.h"
 #include "cpa_sample_utils.h"
+
+// Global variable declarations
+HE_QAT_Inst          he_qat_instances   [HE_QAT_MAX_NUM_INST];
+HE_QAT_InstConfig    he_qat_inst_config [HE_QAT_MAX_NUM_INST];
+HE_QAT_RequestBuffer he_qat_buffer;
 
 //CpaStatus get_qat_instances(CpaInstanceHandle *_instances, int *_num_instances=-1)
 //{
 //   
 //}
 
-const int MAX_NUM_INST 8
-
-// Type definitions
-enum HEQAT_EXEC_MODE { HEQAT_BLOCK_SYNC=1  };
-enum HEQAT_STATUS { HEQAT_SUCCESS = 0, HEQAT_FAIL = 1 };
-typedef pthread_t QATInst;
-typedef struct QATInstConfigStruct {
-    CpaInstanceHandle inst_handle;
-    //void *func();
-    volatile int polling; 
-} QATInstConfig;
-
-// Global variable declarations
-QATInst       qat_instances   [MAX_NUM_INST];
-QATInstConfig qat_inst_config [MAX_NUM_INST];
 /*
 #define HEQAT_FREE_QATInstConfig(config)     \
         do {                                 \
@@ -36,21 +29,24 @@ QATInstConfig qat_inst_config [MAX_NUM_INST];
         } while (0)
 */
 
-static void inst_thread()
-{
-    
-}
-
 /// @brief 
 /// @function start_inst_polling
 /// @param[in] QATInstConfig Holds the parameter values to set up the QAT instance thread.
 ///                          
-static void start_inst_polling(QATInstConfig *config)
+static void start_inst_polling(HE_QAT_InstConfig *config)
 {
     if (!config) return ;
-    
+    if (!config->inst_handle) return ;
+
+    CpaStatus status = CPA_STATUS_FAIL;
+    status = cpaCyStartInstance(config->inst_handle);
+    if (CPA_STATUS_SUCCESS == status) {
+        status = cpaCySetAddressTranslation(config->inst_handle,
+                          sampleVirtToPhys);
+    }
+
+    // What is harmful for polling without performing any operation?
     config->polling = 1;
-    
     while (config->polling) {
         icp_sal_CyPollInstance(config->inst_handle, 0);
 	OS_SLEEP(10);
@@ -65,7 +61,7 @@ static void start_inst_polling(QATInstConfig *config)
 ///                          
 static void stop_inst_polling()
 {
-    for (int i = 0; i < MAX_NUM_INSTS; i++) {
+    for (int i = 0; i < HE_QAT_MAX_NUM_INSTS; i++) {
 	// Or check if the cpa_instance is not NULL (try it out)
 	//if (!qat_inst_config[i].inst_handle) continue;
 	if (!qat_inst_config[i].polling) continue;	
@@ -79,36 +75,61 @@ static void stop_inst_polling()
 /// @brief 
 /// @function acquire_qat_devices
 /// Acquire QAT instances and set up QAT execution environment.
-HEQAT_STATUS acquire_qat_devices()
+HE_QAT_STATUS acquire_qat_devices()
 {
-    CpaInstanceHandle _inst_handle = NULL;
+    CpaStatus status = CPA_STATUS_FAIL;
 
+    // Initialize QAT memory pool allocator
+    status = qaeMemInit();
+    if (CPA_STATUS_SUCCESS != status) {
+        return HE_QAT_STATUS_FAIL; // HEQAT_STATUS_ERROR
+    }
+
+    // Not sure if for multiple instances the id will need to be specified, e.g. "SSL1"
+    status = icp_sal_userStartMultiProcess("SSL", CPA_FALSE);
+    if (CPA_STATUS_SUCCESS != status) {
+        printf("Failed to start user process SSL\n");
+        qaeMemDestroy();
+        return HE_QAT_STATUS_FAIL; // HEQAT_STATUS_ERROR
+    }
+
+    CpaInstanceHandle _inst_handle = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
     sampleCyGetInstance(&_inst_handle);
-
     if (_inst_handle == NULL) {
-        return HEQAT_FAIL;
+        return HE_QAT_STATUS_FAIL;
     } 
 
-    // Dispatch worker threads
+    // Creating QAT instances (consumer threads) to process op requests
     pthread_attr_t attr;
     cpu_set_t cpus;
     pthread_attr_init(&attr);
-    for (int i = 0; i < HEQAT_BLOCK_SYNC; i++) {
+    for (int i = 0; i < HE_QAT_SYNC; i++) {
         CPU_ZERO(&cpus);
 	CPU_SET(i, &cpus);
 	pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
 
         // configure thread
-	QATInstConfig *config = (QATInstConfig *) malloc(sizeof(QATInstConfig));
-        if (config == NULL) return HEQAT_FAIL;
+	HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) 
+                                             malloc(sizeof(QATInstConfig));
+        if (config == NULL) return HE_QAT_FAIL;
         config->inst_handle = _inst_handle[i];
-	pthread_create(&qat_instances[i], &attr, start_inst_polling, config); 
+	pthread_create(&he_qat_instances[i], &attr, start_inst_polling, config); 
     }
 
+    // Dispatch the qat instances to run independently in the background
+    for (int i = 0; i < HE_QAT_SYNC; i++) {
+        pthread_detach(qat_instances[i]);
+    }
 
-    for (int i = 0; i < HEQAT_BLOCK_SYNC; i++) {
-        pthread_
+    // Initialize QAT buffer synchronization attributes
+    he_qat_buffer.count = 0;
+    he_qat_buffer.next_free_slot = 0;
+    he_qat_buffer.next_data_slot = 0;
+
+    // Initialize QAT memory buffer
+    for (int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {	
+        he_qat_buffer.data[i] = NULL;
     }
 
     return ;
@@ -117,18 +138,28 @@ HEQAT_STATUS acquire_qat_devices()
 /// @brief
 /// @function release_qat_devices
 /// Release QAT instances and tear down QAT execution environment.
-void release_qat_devices()
+HE_QAT_STATUS release_qat_devices()
 {
     CpaStatus status = CPA_STATUS_FAIL;
 
-    // signal all qat instance
+    // signal all qat instance to stop polling
+    stop_inst_polling();
 
-    for (int i = 0; i < MAX_NUM_INST; i++) {
-        status = cpaCyStopInstance(qat_inst_config[i].inst_handle);
+    // Release QAT instances handles
+    for (int i = 0; i < HE_QAT_MAX_NUM_INST; i++) {
+        status = cpaCyStopInstance(he_qat_inst_config[i].inst_handle);
         if (CPA_STATUS_SUCCESS != status) {
             printf("Failed to stop QAT instance #%d\n",i);
+	    return HE_QAT_STATUS_FAIL;
 	}
     }
-    return ;
+
+    // Stop QAT SSL service
+    icp_sal_userStop();
+
+    // Release QAT allocated memory 
+    qaeMemDestroy();
+
+    return HE_QAT_STATUS_SUCCESS;
 }
 
