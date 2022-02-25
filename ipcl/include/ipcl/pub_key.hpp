@@ -12,6 +12,7 @@ class PaillierPublicKey {
    * PaillierPublicKey construct function
    * @param[in] n n of public key in paillier paper
    * @param[in] bits bit length of public key
+   * @param[in] enableDJN_ enables DJN scheme
    */
   explicit PaillierPublicKey(const BigNumber& n, int bits = 1024,
                              bool enableDJN_ = false);
@@ -20,6 +21,7 @@ class PaillierPublicKey {
    * PaillierPublicKey construct function
    * @param[in] n n of public key in paillier paper
    * @param[in] bits bit length of public key
+   * @param[in] enableDJN_ enables DJN scheme
    */
   explicit PaillierPublicKey(const Ipp32u n, int bits = 1024,
                              bool enableDJN_ = false)

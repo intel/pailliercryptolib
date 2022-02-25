@@ -5,7 +5,7 @@ PROJECT_NAME           = "Project PHE"
 PROJECT_BRIEF          = "Project Paillier HE library w/ Intel IPP-Crypto"
 
 OUTPUT_DIRECTORY       = @CMAKE_CURRENT_SOURCE_DIR@/doxygen
-INPUT                  = @CMAKE_SOURCE_DIR@/paillier/include \
+INPUT                  = @CMAKE_SOURCE_DIR@/ipcl/include \
                          @CMAKE_SOURCE_DIR@/README.md
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/README.md
