@@ -61,10 +61,10 @@ void submit_request(HE_QAT_RequestBuffer *_buffer, void *args)
 {
     pthread_mutex_lock(&_buffer->mutex);
    
-    while (_bufffer->count >= BSIZE)
+    while (_bufffer->count >= HE_QAT_BUFFER_SIZE)
         pthread_cond_wait(&_buffer->any_free_slot, &b->mutex);
 
-    assert(_buffer->count < BSIZE);
+    assert(_buffer->count < HE_QAT_BUFFER_SIZE);
 
     _buffer->data[b->next_free_slot++] = args;
 
