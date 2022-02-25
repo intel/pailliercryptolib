@@ -135,7 +135,7 @@ void *perform_op(void *_inst_config)
                 case HE_QAT_MODEXP:
                     status = cpaCyLnModExp(config->inst_handle,
         			    lnModExpCallback,
-        			    (void *) request->callback,
+        			    (void *) request,
         			    &request->op_data,
         			    &request->op_output);
 		    retry++;
@@ -149,11 +149,11 @@ void *perform_op(void *_inst_config)
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
 	// Update the status of the request
-	request->op_status = status;
-	if (CPA_STATUS_SUCCESS != status) 
-            request->request_status = HE_QAT_FAIL;
-	else 
-            request->request_status = HE_QAT_READY;
+	//request->op_status = status;
+	//if (CPA_STATUS_SUCCESS != status) 
+        //    request->request_status = HE_QAT_FAIL;
+	//else 
+        //    request->request_status = HE_QAT_READY;
     }
     pthread_exit(NULL);
     //return NULL;
