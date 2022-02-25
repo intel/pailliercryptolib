@@ -160,8 +160,9 @@ void *perform_op(void *_inst_config)
 }
 
 
-CpaStatus bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int nbits)
+HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int nbits)
 {
-        
+   
+   return HE_QAT_SUCCESS; 
 }
 
