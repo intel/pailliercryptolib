@@ -17,13 +17,12 @@ enum HE_QAT_STATUS {
         HE_QAT_FAIL = -1 
 };
 
-typedef pthread_t HE_QAT_Inst;
+enum HE_QAT_OP { 
+        HE_QAT_NO_OP = 0,
+        HE_QAT_MODEXP = 1
+};
 
-typedef struct {
-    CpaInstanceHandle inst_handle;
-    volatile int polling;
-    volatile int running;
-} HE_QAT_InstConfig;
+typedef pthread_t HE_QAT_Inst;
 
 typedef struct {
     void *data[HE_QAT_BUFFER_SIZE]; // 
@@ -34,6 +33,13 @@ typedef struct {
     pthread_cond_t any_more_data;           // more
     pthread_cond_t any_free_slot;            // less
 } HE_QAT_RequestBuffer;
+
+typedef struct {    
+    CpaInstanceHandle inst_handle;
+    HE_QAT_RequestBuffer *he_qat_buffer;
+    volatile int polling;
+    volatile int running;
+} HE_QAT_InstConfig;
 
 //QATOpRequestBuffer qat_request_buffer;
 

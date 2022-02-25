@@ -11,6 +11,8 @@ HE_QAT_Inst          he_qat_instances   [HE_QAT_MAX_NUM_INST];
 HE_QAT_InstConfig    he_qat_inst_config [HE_QAT_MAX_NUM_INST];
 HE_QAT_RequestBuffer he_qat_buffer;
 
+extern void *perform_op(void *_inst_config);
+
 //CpaStatus get_qat_instances(CpaInstanceHandle *_instances, int *_num_instances=-1)
 //{
 //   
@@ -99,6 +101,18 @@ HE_QAT_STATUS acquire_qat_devices()
     if (_inst_handle == NULL) {
         return HE_QAT_STATUS_FAIL;
     } 
+    
+    // Initialize QAT buffer synchronization attributes
+    he_qat_buffer.count = 0;
+    he_qat_buffer.next_free_slot = 0;
+    he_qat_buffer.next_data_slot = 0;
+
+    // Initialize QAT memory buffer
+    for (int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
+        // preallocate for 1024, 2048, 4096 of worksize/or less 
+	// 
+        he_qat_buffer.data[i] = NULL;
+    }
 
     // Creating QAT instances (consumer threads) to process op requests
     pthread_attr_t attr;
@@ -122,15 +136,6 @@ HE_QAT_STATUS acquire_qat_devices()
         pthread_detach(qat_instances[i]);
     }
 
-    // Initialize QAT buffer synchronization attributes
-    he_qat_buffer.count = 0;
-    he_qat_buffer.next_free_slot = 0;
-    he_qat_buffer.next_data_slot = 0;
-
-    // Initialize QAT memory buffer
-    for (int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {	
-        he_qat_buffer.data[i] = NULL;
-    }
 
     return ;
 }
@@ -153,6 +158,8 @@ HE_QAT_STATUS release_qat_devices()
 	    return HE_QAT_STATUS_FAIL;
 	}
     }
+
+    // Deallocate memory of QAT InstConfig
 
     // Stop QAT SSL service
     icp_sal_userStop();
