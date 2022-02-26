@@ -131,7 +131,7 @@ HE_QAT_STATUS release_qat_devices()
 //	}
 //    }
 
-    stop_perform_op(&he_qat_inst_config[0], HE_QAT_SYNC);
+    stop_perform_op(he_qat_inst_config, HE_QAT_SYNC);
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Stopped polling and processing threads.\n");
 #endif

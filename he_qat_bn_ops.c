@@ -2,6 +2,7 @@
 #include "cpa.h"
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
+#include "icp_sal_poll.h"
 
 #include "cpa_sample_utils.h"
 
@@ -119,10 +120,16 @@ static HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
 /// @function start_inst_polling
 /// @param[in] HE_QAT_InstConfig Parameter values to start and poll instances.
 ///                          
-static void start_inst_polling(HE_QAT_InstConfig *config)
+static void *start_inst_polling (void *_inst_config)
 {
-    if (!config) return ;
-    if (!config->inst_handle) return ;
+    if (NULL == _inst_config) {
+        printf("Failed at start_inst_polling: argument is NULL."); //,__FUNC__); 
+        pthread_exit(NULL);
+    }
+
+    HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
+
+    if (!config->inst_handle) return NULL;
 
     CpaStatus status = CPA_STATUS_FAIL;
     status = cpaCyStartInstance(config->inst_handle);
@@ -160,7 +167,10 @@ void *start_perform_op(void *_inst_config)
     CpaStatus status = CPA_STATUS_FAIL;
     HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
 
-    if (!config) return ;
+    if (NULL == config) {
+        printf("Failed in start_perform_op: _inst_config is NULL.\n");
+        pthread_exit(NULL);
+    }
     
     // Start QAT instance and start polling
     pthread_t polling_thread;
@@ -178,8 +188,8 @@ void *start_perform_op(void *_inst_config)
     config->running = 1;
     while (config->running) {
 	// Try consume data from butter to perform requested operation
-	HE_QAT_TaskRequest *request = 
-	            (HE_QAT_TaskRequest *) read_request(config->he_qat_buffer);
+	HE_QAT_TaskRequest *request = NULL; 
+	           // (HE_QAT_TaskRequest *) read_request(config->he_qat_buffer);
 
         if (!request) continue;
 
@@ -218,15 +228,18 @@ void stop_perform_op(HE_QAT_InstConfig *config, unsigned num_inst)
 {
     // Stop runnning and polling instances
     for (unsigned i = 0; i < num_inst; i++) {
-	config[i].running = 0;
 	config[i].polling = 0;
+	config[i].running = 0;
 	OS_SLEEP(10);
+	printf("Stopping instance #%d\n",i);
         //stop_inst_polling(&config[i]);
     }
 
     // Release QAT instances handles
     CpaStatus status = CPA_STATUS_FAIL;
     for (unsigned i = 0; i < num_inst; i++) {
+	if (config[i].inst_handle == NULL) continue;
+	printf("cpaCyStopInstance\n");
         status = cpaCyStopInstance(config[i].inst_handle);
         if (CPA_STATUS_SUCCESS != status) {
             printf("Failed to stop QAT instance #%d\n",i);
