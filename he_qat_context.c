@@ -79,10 +79,12 @@ HE_QAT_STATUS acquire_qat_devices()
 	//HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) 
         //                                     malloc(sizeof(QATInstConfig));
         //if (config == NULL) return HE_QAT_FAIL;
-        he_qat_inst_config->inst_handle = _inst_handle[i];
-	he_qat_inst_config->attr = &he_qat_inst_attr[i];
-	pthread_create(&he_qat_instances[i], he_qat_inst_config->attr, 
-			start_perform_op, (void *) &he_qat_inst_config); 
+	he_qat_inst_config[i].polling = 0;
+	he_qat_inst_config[i].running = 0;
+        he_qat_inst_config[i].inst_handle = _inst_handle[i];
+	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
+	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
+			start_perform_op, (void *) &he_qat_inst_config[i]); 
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Created processing threads.\n");
