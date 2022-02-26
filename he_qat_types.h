@@ -1,9 +1,16 @@
 
 #pragma once
 
+#ifndef _HE_QAT_TYPES_H_
+#define _HE_QAT_TYPES_H_
+
+#include "cpa.h"
+#include "cpa_cy_im.h"
+
 #include <pthread.h>
 
 #define HE_QAT_BUFFER_SIZE 4
+//const unsigned HE_QAT_BUFFER_SIZE = 4;
 
 // Type definitions
 enum HE_QAT_EXEC_MODE { 
@@ -36,10 +43,11 @@ typedef struct {
 
 typedef struct {    
     CpaInstanceHandle inst_handle;
+    pthread_attr_t *attr;
     HE_QAT_RequestBuffer *he_qat_buffer;
     volatile int polling;
     volatile int running;
 } HE_QAT_InstConfig;
 
-//QATOpRequestBuffer qat_request_buffer;
+#endif
 
