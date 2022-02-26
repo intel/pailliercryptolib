@@ -98,7 +98,7 @@ HE_QAT_STATUS acquire_qat_devices()
     printf("Detached processing threads.\n");
 #endif
 
-    return HE_STATUS_SUCCESS;
+    return HE_QAT_STATUS_SUCCESS;
 }
 
 /// @brief
