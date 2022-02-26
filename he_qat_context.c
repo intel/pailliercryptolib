@@ -14,8 +14,9 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "icp_sal_poll.h"
 #include "cpa_sample_utils.h"
+#include "icp_sal_user.h"
+#include "icp_sal_poll.h"
 
 // Global variable declarations
 HE_QAT_Inst          he_qat_instances   [HE_QAT_MAX_NUM_INST];
