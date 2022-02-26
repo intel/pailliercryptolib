@@ -9,8 +9,9 @@
 #include "cpa_cy_ln.h"
 
 #include "he_qat_types.h"
+#include "cpa_sample_utils.h" 
 
-#include <semaphore.h>
+//#include <semaphore.h>
 #include <openssl/bn.h>
 
 // #include "bignum.h" or create a standard interface 
@@ -19,7 +20,8 @@
 
 // One for each consumer
 typedef struct {
-    sem_t callback;
+    //sem_t callback;
+    struct COMPLETION_STRUCT callback;
     HE_QAT_OP op_type;
     CpaStatus op_status;
     CpaFlatBuffer op_output;

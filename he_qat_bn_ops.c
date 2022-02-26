@@ -1,5 +1,6 @@
 
 #include "cpa.h"
+#include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
 
 #include "cpa_sample_utils.h"
@@ -9,6 +10,9 @@
 
 #include <pthread.h>
 #include <assert.h>
+
+// Global buffer for the runtime environment
+HE_QAT_RequestBuffer he_qat_buffer;
 
 /// @brief 
 /// @function 
@@ -41,7 +45,7 @@ static void lnModExpCallback(void *pCallbackTag, // This type can be variable
 	else 
             request->request_status = HE_QAT_FAIL;
         
-	COMPLETE((struct COMPLETION_STRUCT *)request->callback);
+	COMPLETE((struct COMPLETION_STRUCT *)&request->callback);
     }
 
     // Asynchronous call needs to send wake-up signal to semaphore  
@@ -57,7 +61,7 @@ static void lnModExpCallback(void *pCallbackTag, // This type can be variable
 /// @function
 /// Thread-safe producer implementation for the shared request buffer.
 /// Stores requests in a buffer that will be offload to QAT devices.
-void submit_request(HE_QAT_RequestBuffer *_buffer, void *args)
+static void submit_request(HE_QAT_RequestBuffer *_buffer, void *args)
 {
     pthread_mutex_lock(&_buffer->mutex);
    
@@ -85,7 +89,7 @@ void submit_request(HE_QAT_RequestBuffer *_buffer, void *args)
 /// @function
 /// Thread-safe consumer implementation for the shared request buffer.
 /// Read requests from a buffer to finally offload the work to QAT devices.
-HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
+static HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
 {
     void *item = NULL;
     pthread_mutex_lock(&_buffer->mutex);
@@ -112,13 +116,65 @@ HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
 }
 
 /// @brief 
+/// @function start_inst_polling
+/// @param[in] HE_QAT_InstConfig Parameter values to start and poll instances.
+///                          
+static void start_inst_polling(HE_QAT_InstConfig *config)
+{
+    if (!config) return ;
+    if (!config->inst_handle) return ;
+
+    CpaStatus status = CPA_STATUS_FAIL;
+    status = cpaCyStartInstance(config->inst_handle);
+    if (CPA_STATUS_SUCCESS == status) {
+        status = cpaCySetAddressTranslation(config->inst_handle,
+                          sampleVirtToPhys);
+    }
+
+    // What is harmful for polling without performing any operation?
+    config->polling = 1;
+    while (config->polling) {
+        icp_sal_CyPollInstance(config->inst_handle, 0);
+	OS_SLEEP(10);
+    }
+
+    pthread_exit(NULL);
+}
+
+/// @brief This function  
+/// @function stop_inst_polling
+/// Stop polling instances and halt polling thread.     
+static void stop_inst_polling(HE_QAT_InstConfig *config)
+{
+    config->polling = 0;
+    OS_SLEEP(10);
+    return ;
+}
+
+/// @brief 
 /// @function perform_op
 /// Offload operation to QAT endpoints; for example, large number modular exponentiation.
 /// @param[in] HE_QAT_InstConfig *: contains the handle to CPA instance, pointer the global buffer of requests.
-void *perform_op(void *_inst_config)
+void *start_perform_op(void *_inst_config)
 {
     CpaStatus status = CPA_STATUS_FAIL;
     HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
+
+    if (!config) return ;
+    
+    // Start QAT instance and start polling
+    pthread_t polling_thread;
+    if (pthread_create(&polling_thread, config->attr, 
+			    start_inst_polling, (void *) config) != 0) {
+        printf("Failed at creating and starting polling thread.\n");
+        pthread_exit(NULL); 
+    }
+
+    if (pthread_detach(polling_thread) != 0) {
+        printf("Failed at detaching polling thread.\n");
+        pthread_exit(NULL);
+    }
+
     config->running = 1;
     while (config->running) {
 	// Try consume data from butter to perform requested operation
@@ -156,13 +212,37 @@ void *perform_op(void *_inst_config)
         //    request->request_status = HE_QAT_READY;
     }
     pthread_exit(NULL);
-    //return NULL;
 }
 
+void stop_perform_op(HE_QAT_InstConfig *config, unsigned num_inst)
+{
+    // Stop runnning and polling instances
+    for (unsigned i = 0; i < num_inst; i++) {
+	config[i].running = 0;
+	config[i].polling = 0;
+	OS_SLEEP(10);
+        //stop_inst_polling(&config[i]);
+    }
+
+    // Release QAT instances handles
+    CpaStatus status = CPA_STATUS_FAIL;
+    for (unsigned i = 0; i < num_inst; i++) {
+        status = cpaCyStopInstance(config[i].inst_handle);
+        if (CPA_STATUS_SUCCESS != status) {
+            printf("Failed to stop QAT instance #%d\n",i);
+	    //return HE_QAT_STATUS_FAIL;
+	}
+    }
+
+    return ;
+}
 
 HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int nbits)
 {
-   
+   // Unpack data and copy to QAT friendly memory space
+   // Pack it as a QAT Task Request
+   //
+
    return HE_QAT_SUCCESS; 
 }
 
