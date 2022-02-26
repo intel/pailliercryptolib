@@ -252,6 +252,44 @@ typedef struct task_struct *sampleThread;
 #endif
 
 /**
+ *****************************************************************************
+ * @ingroup fipsSampleCodeUtils
+ *      displayHexArray
+ *
+ * @description
+ *      Display the contents of a buffer
+ *
+ * @param[in]  pLabel      String to giving a short description of the printed
+ *                         value
+ * @param[in]  pBuff       pointer to the data to be printed
+ * @param[in]  len         len of the data to be printed
+ *
+ * @retval none
+ *
+ * @pre
+ *     none
+ * @post
+ *     none
+ *****************************************************************************/
+static inline void displayHexArray(const char *restrict pLabel,
+                                   const Cpa8U *restrict pBuff,
+                                   Cpa32U len)
+{
+
+    int i = 0;
+    PRINT("%s(%d)", pLabel, len);
+    if (NULL == pBuff)
+    {
+        PRINT("%s(%d) Buff is NULL!!\n", __FUNCTION__, __LINE__);
+        return;
+    }
+    for (i = 0; i < len; i++)
+    {
+        PRINT("%02x", pBuff[i]);
+    }
+    PRINT("\n");
+}
+/**
  *******************************************************************************
  * @ingroup sampleUtils
  *      This function and associated macro sleeps for ms milliseconds
@@ -578,41 +616,4 @@ void sampleDcStopPolling(void);
 
 #endif
 
-/**
- *****************************************************************************
- * @ingroup fipsSampleCodeUtils
- *      displayHexArray
- *
- * @description
- *      Display the contents of a buffer
- *
- * @param[in]  pLabel      String to giving a short description of the printed
- *                         value
- * @param[in]  pBuff       pointer to the data to be printed
- * @param[in]  len         len of the data to be printed
- *
- * @retval none
- *
- * @pre
- *     none
- * @post
- *     none
- *****************************************************************************/
-static inline void displayHexArray(const char *restrict pLabel,
-                                   const Cpa8U *restrict pBuff,
-                                   Cpa32U len)
-{
 
-    int i = 0;
-    PRINT("%s(%d)", pLabel, len);
-    if (NULL == pBuff)
-    {
-        PRINT("%s(%d) Buff is NULL!!\n", __FUNCTION__, __LINE__);
-        return;
-    }
-    for (i = 0; i < len; i++)
-    {
-        PRINT("%02x", pBuff[i]);
-    }
-    PRINT("\n");
-}

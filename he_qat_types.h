@@ -13,21 +13,21 @@
 //const unsigned HE_QAT_BUFFER_SIZE = 4;
 
 // Type definitions
-enum HE_QAT_EXEC_MODE { 
+typedef enum { 
         HE_QAT_SYNC = 1, 
         HE_QAT_ASYNC = 2  
-};
+} HE_QAT_EXEC_MODE;
 
-enum HE_QAT_STATUS { 
+typedef enum { 
 	HE_QAT_READY = 1,
-        HE_QAT_SUCCESS = 0, 
-        HE_QAT_FAIL = -1 
-};
+        HE_QAT_STATUS_SUCCESS = 0, 
+        HE_QAT_STATUS_FAIL = -1 
+} HE_QAT_STATUS;
 
-enum HE_QAT_OP { 
+typedef enum { 
         HE_QAT_NO_OP = 0,
         HE_QAT_MODEXP = 1
-};
+} HE_QAT_OP;
 
 typedef pthread_t HE_QAT_Inst;
 

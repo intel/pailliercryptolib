@@ -43,7 +43,7 @@ static void lnModExpCallback(void *pCallbackTag, // This type can be variable
 	    // Mark request as complete or ready to be used
             request->request_status = HE_QAT_READY;
 	else 
-            request->request_status = HE_QAT_FAIL;
+            request->request_status = HE_QAT_STATUS_FAIL;
         
 	COMPLETE((struct COMPLETION_STRUCT *)&request->callback);
     }
@@ -65,12 +65,12 @@ static void submit_request(HE_QAT_RequestBuffer *_buffer, void *args)
 {
     pthread_mutex_lock(&_buffer->mutex);
    
-    while (_bufffer->count >= HE_QAT_BUFFER_SIZE)
-        pthread_cond_wait(&_buffer->any_free_slot, &b->mutex);
+    while (_buffer->count >= HE_QAT_BUFFER_SIZE)
+        pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
 
     assert(_buffer->count < HE_QAT_BUFFER_SIZE);
 
-    _buffer->data[b->next_free_slot++] = args;
+    _buffer->data[_buffer->next_free_slot++] = args;
 
     _buffer->next_free_slot %= HE_QAT_BUFFER_SIZE;
     _buffer->count++;
@@ -99,7 +99,7 @@ static HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
     assert(_buffer->count > 0);
 
     //printf("[%02d]:",_buffer->next_data_slot);
-    item = _buffer->data[b->next_data_slot++];
+    item = _buffer->data[_buffer->next_data_slot++];
     _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
     _buffer->count--;
 
@@ -243,6 +243,6 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int 
    // Pack it as a QAT Task Request
    //
 
-   return HE_QAT_SUCCESS; 
+   return HE_QAT_STATUS_SUCCESS; 
 }
 

@@ -1,7 +1,18 @@
 
+#define _GNU_SOURCE
+
+#include "he_qat_types.h"
 #include "he_qat_context.h"
 
 #include <pthread.h>
+
+//#include <sched.h>
+
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <assert.h>
+#include <stdint.h>
+#include <unistd.h>
 
 #include "icp_sal_poll.h"
 #include "cpa_sample_utils.h"
@@ -14,7 +25,7 @@ HE_QAT_InstConfig    he_qat_inst_config [HE_QAT_MAX_NUM_INST];
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern void *start_perform_op(void *_inst_config);
-extern void stop_perform_op(void *_inst_config);
+extern void stop_perform_op(void *_inst_config, unsigned num_inst);
 
 /// @brief 
 /// @function acquire_qat_devices
@@ -81,7 +92,7 @@ HE_QAT_STATUS acquire_qat_devices()
         //if (config == NULL) return HE_QAT_FAIL;
 	he_qat_inst_config[i].polling = 0;
 	he_qat_inst_config[i].running = 0;
-        he_qat_inst_config[i].inst_handle = _inst_handle[i];
+        he_qat_inst_config[i].inst_handle = _inst_handle;
 	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
 	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
 			start_perform_op, (void *) &he_qat_inst_config[i]); 
@@ -120,7 +131,7 @@ HE_QAT_STATUS release_qat_devices()
 //	}
 //    }
 
-    stop_perform_op(&he_qat_inst_config[0],HE_QAT_SYNC);
+    stop_perform_op(&he_qat_inst_config[0], HE_QAT_SYNC);
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Stopped polling and processing threads.\n");
 #endif
