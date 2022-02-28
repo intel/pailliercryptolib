@@ -1,8 +1,8 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
-#define IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
+#ifndef IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
+#define IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
 
 #include "ipcl/bignum.h"
 
@@ -153,4 +153,4 @@ class PaillierPublicKey {
   BigNumber getRandom(int length);
 };
 
-#endif  // IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
+#endif  // IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_

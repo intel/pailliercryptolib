@@ -1,11 +1,11 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+#include "ipcl/paillier_prikey.hpp"
+
 #include <crypto_mb/exp.h>
 
 #include <cstring>
-
-#include "ipcl/pri_key.hpp"
 
 /**
  * Compute lcm for p and q

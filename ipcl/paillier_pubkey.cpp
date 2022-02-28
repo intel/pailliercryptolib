@@ -1,13 +1,13 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+#include "ipcl/paillier_pubkey.hpp"
+
 #include <crypto_mb/exp.h>
 
 #include <climits>
 #include <cstring>
 #include <random>
-
-#include "ipcl/pub_key.hpp"
 
 static inline auto randomUniformUnsignedInt() {
   std::random_device dev;

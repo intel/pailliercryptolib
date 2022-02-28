@@ -9,7 +9,7 @@
 #endif
 #include <iostream>
 
-#include "ipcl/key_pair.hpp"
+#include "ipcl/paillier_keygen.hpp"
 #include "ipcl/paillier_ops.hpp"
 
 static void BM_Add_CTCT(benchmark::State& state) {

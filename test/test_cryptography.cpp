@@ -11,7 +11,7 @@
 #endif
 
 #include "gtest/gtest.h"
-#include "ipcl/key_pair.hpp"
+#include "ipcl/paillier_keygen.hpp"
 #include "ipcl/paillier_ops.hpp"
 
 TEST(CryptoTest, CryptoTest) {

@@ -8,7 +8,7 @@
 #include <omp.h>
 #endif
 
-#include "ipcl/key_pair.hpp"
+#include "ipcl/paillier_keygen.hpp"
 
 static void BM_KeyGen(benchmark::State& state) {
   int64_t n_length = state.range(0);

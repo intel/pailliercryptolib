@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-#include "ipcl/pub_key.hpp"
+#include "ipcl/paillier_pubkey.hpp"
 
 class PaillierEncryptedNumber {
  public:

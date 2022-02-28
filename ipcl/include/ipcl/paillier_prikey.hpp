@@ -1,12 +1,10 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
-#define IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
+#ifndef IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
+#define IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
 
-#include "ipcl/bignum.h"
 #include "ipcl/paillier_ops.hpp"
-#include "ipcl/pub_key.hpp"
 
 class PaillierPrivateKey {
  public:
@@ -130,4 +128,4 @@ class PaillierPrivateKey {
   void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]);
 };
 
-#endif  // IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
+#endif  // IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
