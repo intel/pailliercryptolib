@@ -60,7 +60,7 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int 
 /// Releasing QAT temporary memory.
 
 // wait for all outstanding requests to complete
-void getBnModExpRequest()
+void getBnModExpRequest();
 /// thus, releasing temporary memory.
 // create private buffer for code section
 // create QAT contiguous memory space

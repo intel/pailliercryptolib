@@ -230,7 +230,7 @@ void *start_perform_op(void *_inst_config)
         			    lnModExpCallback,
         			    (void *) request,
         			    (CpaCyLnModExpOpData *) request->op_data,
-        			    &request->op_output);
+        			    &request->op_result);
 		    retry++;
 		    break;
 		case HE_QAT_NO_OP:
@@ -437,7 +437,7 @@ void getBnModExpRequest()
                    PHYS_CONTIG_FREE(op_data->exponent.pData);
                    PHYS_CONTIG_FREE(op_data->modulus.pData); 
 	       }
-	       if (task->op_result) {
+	       if (task->op_result.pData) {
 		   PHYS_CONTIG_FREE(task->op_result.pData);
 	       }
 
