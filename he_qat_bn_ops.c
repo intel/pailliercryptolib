@@ -417,7 +417,6 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int 
 void getBnModExpRequest()
 {
     unsigned int finish = 0; 
-    unsigned int index = 0;
     // TODO: @fdiasmor Introduce global variable that record at which upcoming request it currently is
     while (0 == finish) {
        finish = 1;
