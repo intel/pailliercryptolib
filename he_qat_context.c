@@ -72,6 +72,11 @@ HE_QAT_STATUS acquire_qat_devices()
         printf("Failed to find QAT endpoints.\n");
         return HE_QAT_STATUS_FAIL;
     } 
+    //sampleCyGetInstance(&handle);
+    //if (handle == NULL) {
+    //    printf("Failed to find QAT endpoints.\n");
+    //    return HE_QAT_STATUS_FAIL;
+    //} 
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Found QAT endpoints.\n");
 #endif
@@ -102,12 +107,12 @@ HE_QAT_STATUS acquire_qat_devices()
 	he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].running = 0;
-        he_qat_inst_config[i].status = CPA_STATUS_FAIL;
-//	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
+  he_qat_inst_config[i].status = CPA_STATUS_FAIL;
+  //	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_mutex_init(&he_qat_inst_config[i].mutex,NULL);
-//	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
+  //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
 	pthread_cond_init(&he_qat_inst_config[i].ready,NULL);
-        he_qat_inst_config[i].inst_handle = handle; //_inst_handle[i];
+  he_qat_inst_config[i].inst_handle = _inst_handle;
 	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
 	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
 			start_perform_op, (void *) &he_qat_inst_config[i]); 
