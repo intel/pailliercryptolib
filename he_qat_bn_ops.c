@@ -236,7 +236,7 @@ void *start_perform_op(void *_inst_config)
             
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
-	// Signal any calls to stop_perform_op that now it is safe to shutdown instances
+        // Signal any calls to stop_perform_op that now it is safe to shutdown instances
         pthread_cond_signal(&config->ready);
 
 	// Update the status of the request
@@ -292,6 +292,8 @@ void stop_perform_op(HE_QAT_InstConfig *config, unsigned num_inst)
 	    pthread_cond_signal(&config[i].ready);
 	    pthread_mutex_unlock(&config[i].mutex);
     }
+    //}
+
 
     return ;
 }
