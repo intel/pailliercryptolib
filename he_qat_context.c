@@ -99,7 +99,7 @@ HE_QAT_STATUS acquire_qat_devices()
 	//HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) 
         //                                     malloc(sizeof(QATInstConfig));
         //if (config == NULL) return HE_QAT_FAIL;
-	he_qat_inst_config[i].active = 1;   // HE_QAT_STATUS_INACTIVE
+	he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].running = 0;
         he_qat_inst_config[i].status = CPA_STATUS_FAIL;
