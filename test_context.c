@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include "cpa_sample_utils.h"
 #include "he_qat_context.h"
 
 int main()
@@ -13,6 +14,8 @@ int main()
         printf("acquire_qat_devices() failed.\n");
         exit(1);
     }
+
+    OS_SLEEP(5000);
 
     status = release_qat_devices();
     if (HE_QAT_STATUS_SUCCESS == status) {
