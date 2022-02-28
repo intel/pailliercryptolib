@@ -15,7 +15,7 @@
 #include "ipcl/paillier_ops.hpp"
 
 TEST(CryptoTest, CryptoTest) {
-  keyPair key = generateKeypair(2048);
+  keyPair key = generateKeypair(2048, true);
 
   BigNumber ct[8];
   BigNumber dt[8];
@@ -35,7 +35,7 @@ TEST(CryptoTest, CryptoTest) {
   key.priv_key->decrypt(dt, ct);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
     EXPECT_EQ(v[0], pt[i]);
   }
@@ -45,16 +45,16 @@ TEST(CryptoTest, CryptoTest) {
 }
 
 #ifdef IPCL_UNITTEST_OMP
-void Encryption(int num_threads, vector<BigNumber*> v_ct,
-                vector<BigNumber*> v_ptbn, keyPair key) {
+void Encryption(int num_threads, std::vector<BigNumber*> v_ct,
+                std::vector<BigNumber*> v_ptbn, keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     key.pub_key->encrypt(v_ct[i], v_ptbn[i]);
   }
 }
 
-void Decryption(int num_threads, vector<BigNumber*> v_dt,
-                vector<BigNumber*> v_ct, keyPair key) {
+void Decryption(int num_threads, std::vector<BigNumber*> v_dt,
+                std::vector<BigNumber*> v_ct, keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     key.priv_key->decrypt(v_dt[i], v_ct[i]);
@@ -63,7 +63,7 @@ void Decryption(int num_threads, vector<BigNumber*> v_dt,
 
 TEST(CryptoTest, CryptoTest_OMP) {
   // use one keypair to do several encryption/decryption
-  keyPair key = generateKeypair(2048);
+  keyPair key = generateKeypair(2048, true);
 
   size_t num_threads = omp_get_max_threads();
   // std::cout << "available threads: " << num_threads << std::endl;
@@ -235,7 +235,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   key.priv_key->decrypt(dt, ct);
   key.priv_key->decrypt(dt12, ct12);
 
-  string str1, str2;
+  std::string str1, str2;
 
   c1.num2hex(str1);
   ct[0].num2hex(str2);

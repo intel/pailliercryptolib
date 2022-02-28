@@ -26,6 +26,7 @@ ExternalProject_Add(
   BUILD_BYPRODUCTS ${GBENCHMARK_PATHS}
   # Skip updates
   UPDATE_COMMAND ""
+  EXCLUDE_FROM_ALL TRUE
 )
 
 add_library(libgbenchmark INTERFACE)

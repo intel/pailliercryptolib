@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 
-static inline void rand32u(vector<Ipp32u>& addr) {
+static inline void rand32u(std::vector<Ipp32u>& addr) {
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -17,7 +17,7 @@ static inline void rand32u(vector<Ipp32u>& addr) {
 BigNumber getPrimeBN(int maxBitSize) {
   int PrimeSize;
   ippsPrimeGetSize(maxBitSize, &PrimeSize);
-  auto primeGen = vector<Ipp8u>(PrimeSize);
+  auto primeGen = std::vector<Ipp8u>(PrimeSize);
   ippsPrimeInit(maxBitSize, reinterpret_cast<IppsPrimeState*>(primeGen.data()));
 
   // define Pseudo Random Generator (default settings)
@@ -25,10 +25,10 @@ BigNumber getPrimeBN(int maxBitSize) {
   int seedSize = BITSIZE_WORD(seedBitSize);
 
   ippsPRNGGetSize(&PrimeSize);
-  auto rand = vector<Ipp8u>(PrimeSize);
+  auto rand = std::vector<Ipp8u>(PrimeSize);
   ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rand.data()));
 
-  auto seed = vector<Ipp32u>(seedSize);
+  auto seed = std::vector<Ipp32u>(seedSize);
   rand32u(seed);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
