@@ -102,6 +102,9 @@ static HE_QAT_TaskRequest *read_request(HE_QAT_RequestBuffer *_buffer)
 
     //printf("[%02d]:",_buffer->next_data_slot);
     item = _buffer->data[_buffer->next_data_slot++];
+
+    // make copy of request so that the buffer can be reused
+
     _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
     _buffer->count--;
 
@@ -224,7 +227,7 @@ void *start_perform_op(void *_inst_config)
                     status = cpaCyLnModExp(config->inst_handle,
         			    lnModExpCallback,
         			    (void *) request,
-        			    &request->op_data,
+        			    (CpaCyLnModExpOpData *) request->op_data,
         			    &request->op_output);
 		    retry++;
 		    break;
@@ -300,10 +303,132 @@ void stop_perform_op(HE_QAT_InstConfig *config, unsigned num_inst)
 
 HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int nbits)
 {
-   // Unpack data and copy to QAT friendly memory space
-   // Pack it as a QAT Task Request
-   //
+    // Unpack data and copy to QAT friendly memory space
+    int len = nbits / 8;
 
-   return HE_QAT_STATUS_SUCCESS; 
+    Cpa8U *pBase = NULL;
+    Cpa8U *pModulus = NULL;
+    Cpa8U *pExponent = NULL;
+
+    HE_QAT_TaskRequest *request = (HE_QAT_TaskRequest *) calloc(1,sizeof(HE_QAT_TaskRequest));
+    if (NULL == request) {
+         printf("HE_QAT_TaskRequest memory allocation failed in bnModExpPerformOp.\n");
+	 return HE_QAT_STATUS_FAIL;
+    }
+   
+    // TODO: @fdiasmor Try it with 8-byte alignment.
+    CpaStatus status = PHYS_CONTIG_ALLOC(&pBase, len);
+    if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
+        unsigned char *bin = (unsigned char *) calloc(len, sizeof(unsigned char));
+	if (BN_bn2binpad(b, bin, len)) { 
+	   memcpy(pBase, bin, len);
+	} else { 
+           printf("BN_bn2binpad failed in bnModExpPerformOp.\n");
+	   PHYS_CONTIG_FREE(pBase);
+	   free(bin);
+	   bin = NULL;
+	   return HE_QAT_STATUS_FAIL; 
+	}
+    } else {
+        printf("Contiguous memory allocation failed for pBase.\n");
+	return HE_QAT_STATUS_FAIL;
+    }
+
+    status = PHYS_CONTIG_ALLOC(&pExponent, len);
+    if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
+        unsigned char *bin = (unsigned char *) calloc(len, sizeof(unsigned char));
+	if (BN_bn2binpad(e, bin, len)) { 
+	   memcpy(pExponent, bin, len);
+	} else { 
+           printf("BN_bn2binpad failed in bnModExpPerformOp.\n");
+	   PHYS_CONTIG_FREE(pExponent);
+	   free(bin);
+	   bin = NULL;
+	   return HE_QAT_STATUS_FAIL; 
+	}
+    } else {
+        printf("Contiguous memory allocation failed for pBase.\n");
+	return HE_QAT_STATUS_FAIL;
+    }
+
+    status = PHYS_CONTIG_ALLOC(&pModulus, len);
+    if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
+        unsigned char *bin = (unsigned char *) calloc(len, sizeof(unsigned char));
+	if (BN_bn2binpad(m, bin, len)) { 
+	   memcpy(pModulus, bin, len);
+	} else { 
+           printf("BN_bn2binpad failed in bnModExpPerformOp.\n");
+	   free(bin);
+	   bin = NULL;
+	   return HE_QAT_STATUS_FAIL; 
+	}
+    } else {
+        printf("Contiguous memory allocation failed for pBase.\n");
+	return HE_QAT_STATUS_FAIL;
+    }
+
+    // Pack it as a QAT Task Request  
+    CpaCyLnModExpOpData *op_data = (CpaCyLnModExpOpData *) calloc(1, sizeof(CpaCyLnModExpOpData));
+    if (NULL == op_data) {
+         printf("Cpa memory allocation failed in bnModExpPerformOp.\n");
+	 return HE_QAT_STATUS_FAIL;
+    }
+    op_data->base.pData = pBase;
+    op_data->base.dataLenInBytes = len;
+    op_data->exponent.pData = pExponent;
+    op_data->exponent.dataLenInBytes = len;
+    op_data->modulus.pData = pModulus;
+    op_data->modulus.dataLenInBytes = len;
+    request->op_data = (void *) op_data; 
+    
+    status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
+    if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
+        request->op_result.dataLenInBytes = len;
+    } else {
+        printf("CpaFlatBuffer.pData memory allocation failed in bnModExpPerformOp.\n");
+	return HE_QAT_STATUS_FAIL; 
+    }
+
+    request->op_status = status;
+    request->op_output = (void *) r;
+
+    // Submit request using producer function
+    submit_request(&he_qat_buffer, (void *) request);
+
+    return HE_QAT_STATUS_SUCCESS; 
+}
+
+// Maybe it will be useful to pass the number of requests to retrieve
+// Pass post-processing function as argument to bring output to expected type
+void getBnModExpRequest()
+{
+    unsigned int finish = 0; 
+    unsigned int index = 0;
+    // TODO: @fdiasmor Introduce global variable that record at which upcoming request it currently is
+    while (0 == finish) {
+       finish = 1;
+       for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE && finish; i++) {
+	   HE_QAT_TaskRequest *task = (HE_QAT_TaskRequest *) he_qat_buffer.data[i];
+	   // TODO: @fdiasmor Check if not NULL before read.
+	   finish = (HE_QAT_READY == task->request_status);
+           if (finish) { // ? 1 : 0;
+	       // Set output results to original format
+	       BIGNUM *r = BN_bin2bn(task->op_result.pData, task->op_result.dataLenInBytes, 
+			       (BIGNUM *) task->op_output);
+               
+	       // Free up QAT temporary memory
+	       CpaCyLnModExpOpData *op_data = (CpaCyLnModExpOpData *) task->op_data;
+	       if (op_data) {
+	           PHYS_CONTIG_FREE(op_data->base.pData);
+                   PHYS_CONTIG_FREE(op_data->exponent.pData);
+                   PHYS_CONTIG_FREE(op_data->modulus.pData); 
+	       }
+	       if (task->op_result) {
+		   PHYS_CONTIG_FREE(task->op_result.pData);
+	       }
+	   }
+       }
+    }
+    return ;
 }
 
