@@ -45,8 +45,12 @@ typedef struct {
     CpaInstanceHandle inst_handle;
     pthread_attr_t *attr;
     HE_QAT_RequestBuffer *he_qat_buffer;
+    pthread_mutex_t mutex;
+    pthread_cond_t ready;
+    volatile int active;
     volatile int polling;
     volatile int running;
+    CpaStatus status;
 } HE_QAT_InstConfig;
 
 #endif

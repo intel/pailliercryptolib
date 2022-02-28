@@ -28,6 +28,9 @@ extern HE_QAT_RequestBuffer he_qat_buffer;
 extern void *start_perform_op(void *_inst_config);
 extern void stop_perform_op(void *_inst_config, unsigned num_inst);
 
+
+CpaInstanceHandle handle = NULL;
+
 /// @brief 
 /// @function acquire_qat_devices
 /// Acquire QAT instances and set up QAT execution environment.
@@ -59,8 +62,13 @@ HE_QAT_STATUS acquire_qat_devices()
     // Potential out-of-scope hazard for segmentation fault
     CpaInstanceHandle _inst_handle = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
-    sampleCyGetInstance(&_inst_handle);
-    if (_inst_handle == NULL) {
+    //sampleCyGetInstance(&_inst_handle);
+    //if (_inst_handle == NULL) {
+    //    printf("Failed to find QAT endpoints.\n");
+    //    return HE_QAT_STATUS_FAIL;
+    //} 
+    sampleCyGetInstance(&handle);
+    if (handle == NULL) {
         printf("Failed to find QAT endpoints.\n");
         return HE_QAT_STATUS_FAIL;
     } 
@@ -91,9 +99,15 @@ HE_QAT_STATUS acquire_qat_devices()
 	//HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) 
         //                                     malloc(sizeof(QATInstConfig));
         //if (config == NULL) return HE_QAT_FAIL;
-	he_qat_inst_config[i].polling = 0;
+	he_qat_inst_config[i].active = 1;   // HE_QAT_STATUS_INACTIVE
+	he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].running = 0;
-        he_qat_inst_config[i].inst_handle = _inst_handle;
+        he_qat_inst_config[i].status = CPA_STATUS_FAIL;
+//	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_init(&he_qat_inst_config[i].mutex,NULL);
+//	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
+	pthread_cond_init(&he_qat_inst_config[i].ready,NULL);
+        he_qat_inst_config[i].inst_handle = handle; //_inst_handle[i];
 	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
 	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
 			start_perform_op, (void *) &he_qat_inst_config[i]); 

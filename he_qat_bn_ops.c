@@ -14,6 +14,7 @@
 
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
+//he_qat_buffer.count = 0;
 
 /// @brief 
 /// @function 
@@ -129,14 +130,7 @@ static void *start_inst_polling (void *_inst_config)
 
     HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
 
-    if (!config->inst_handle) return NULL;
-
-    CpaStatus status = CPA_STATUS_FAIL;
-    status = cpaCyStartInstance(config->inst_handle);
-    if (CPA_STATUS_SUCCESS == status) {
-        status = cpaCySetAddressTranslation(config->inst_handle,
-                          sampleVirtToPhys);
-    }
+    if (NULL == config->inst_handle) return NULL;
 
     // What is harmful for polling without performing any operation?
     config->polling = 1;
@@ -164,14 +158,38 @@ static void stop_inst_polling(HE_QAT_InstConfig *config)
 /// @param[in] HE_QAT_InstConfig *: contains the handle to CPA instance, pointer the global buffer of requests.
 void *start_perform_op(void *_inst_config)
 {
-    CpaStatus status = CPA_STATUS_FAIL;
-    HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
-
-    if (NULL == config) {
+    if (NULL == _inst_config) {
         printf("Failed in start_perform_op: _inst_config is NULL.\n");
         pthread_exit(NULL);
     }
+
+    HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) _inst_config;
+
+    CpaStatus status = CPA_STATUS_FAIL;
+
+    // If called again, wait
+    pthread_mutex_lock(&config->mutex);
+    while (config->active)
+        pthread_cond_wait(&config->ready, &config->mutex);
+
+    //assert(0 == config->active);
+    //assert(NULL == config->inst_handle);
+
+    status = cpaCyStartInstance(config->inst_handle);
+    config->status = status;
+    if (CPA_STATUS_SUCCESS == status) {
+	printf("Cpa CyInstance has successfully started.\n ");
+        status = cpaCySetAddressTranslation(config->inst_handle,
+                          sampleVirtToPhys);
+        
+    } 
+
+    pthread_cond_signal(&config->ready);
+    pthread_mutex_unlock(&config->mutex);
     
+    if (CPA_STATUS_SUCCESS != status) 
+        pthread_exit(NULL);
+
     // Start QAT instance and start polling
     pthread_t polling_thread;
     if (pthread_create(&polling_thread, config->attr, 
@@ -191,7 +209,10 @@ void *start_perform_op(void *_inst_config)
 	HE_QAT_TaskRequest *request = NULL; 
 	           // (HE_QAT_TaskRequest *) read_request(config->he_qat_buffer);
 
-        if (!request) continue;
+        if (NULL == request) { 
+            pthread_cond_signal(&config->ready);
+            continue;
+        }
 
         unsigned retry = 0;
         do {
@@ -214,6 +235,8 @@ void *start_perform_op(void *_inst_config)
             
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
+        pthread_cond_signal(&config->ready);
+
 	// Update the status of the request
 	//request->op_status = status;
 	//if (CPA_STATUS_SUCCESS != status) 
@@ -226,26 +249,41 @@ void *start_perform_op(void *_inst_config)
 
 void stop_perform_op(HE_QAT_InstConfig *config, unsigned num_inst)
 {
+    //if () {
     // Stop runnning and polling instances
-    for (unsigned i = 0; i < num_inst; i++) {
-	config[i].polling = 0;
-	config[i].running = 0;
-	OS_SLEEP(10);
-	printf("Stopping instance #%d\n",i);
-        //stop_inst_polling(&config[i]);
-    }
-
     // Release QAT instances handles
+    if (NULL == config) return ;
+
     CpaStatus status = CPA_STATUS_FAIL;
     for (unsigned i = 0; i < num_inst; i++) {
-	if (config[i].inst_handle == NULL) continue;
-	printf("cpaCyStopInstance\n");
-        status = cpaCyStopInstance(config[i].inst_handle);
-        if (CPA_STATUS_SUCCESS != status) {
-            printf("Failed to stop QAT instance #%d\n",i);
-	    //return HE_QAT_STATUS_FAIL;
-	}
+	//if (config[i].polling || config[i].running) { 
+	    pthread_mutex_lock(&config[i].mutex);
+	    printf("Try stopping instance #%d.\n",i);
+	    while (0 == config[i].active) {
+		printf("STUCK\n");
+	        pthread_cond_wait(&config[i].ready, &config[i].mutex);
+	    }
+	    if (CPA_STATUS_SUCCESS == config[i].status && config[i].active) { 
+	        printf("Stopping polling and running instance #%d\n",i);
+	        config[i].polling = 0;
+	        config[i].running = 0;
+	        OS_SLEEP(10);
+	        printf("Stopping instance #%d\n",i);
+	        if (config[i].inst_handle == NULL) continue;
+	        printf("cpaCyStopInstance\n");
+                status = cpaCyStopInstance(config[i].inst_handle);
+                if (CPA_STATUS_SUCCESS != status) {
+                    printf("Failed to stop QAT instance #%d\n",i);
+	            //return HE_QAT_STATUS_FAIL;
+	        }
+	    }
+	    printf("Passed once\n");
+	    pthread_cond_signal(&config[i].ready);
+	    pthread_mutex_unlock(&config[i].mutex);
+	//}
     }
+    //}
+
 
     return ;
 }
