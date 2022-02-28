@@ -62,16 +62,16 @@ HE_QAT_STATUS acquire_qat_devices()
     // Potential out-of-scope hazard for segmentation fault
     CpaInstanceHandle _inst_handle = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
-    //sampleCyGetInstance(&_inst_handle);
-    //if (_inst_handle == NULL) {
-    //    printf("Failed to find QAT endpoints.\n");
-    //    return HE_QAT_STATUS_FAIL;
-    //} 
-    sampleCyGetInstance(&handle);
-    if (handle == NULL) {
+    sampleCyGetInstance(&_inst_handle);
+    if (_inst_handle == NULL) {
         printf("Failed to find QAT endpoints.\n");
         return HE_QAT_STATUS_FAIL;
     } 
+    //sampleCyGetInstance(&handle);
+    //if (handle == NULL) {
+    //    printf("Failed to find QAT endpoints.\n");
+    //    return HE_QAT_STATUS_FAIL;
+    //} 
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Found QAT endpoints.\n");
 #endif
@@ -107,7 +107,7 @@ HE_QAT_STATUS acquire_qat_devices()
 	pthread_mutex_init(&he_qat_inst_config[i].mutex,NULL);
 //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
 	pthread_cond_init(&he_qat_inst_config[i].ready,NULL);
-        he_qat_inst_config[i].inst_handle = handle; //_inst_handle[i];
+        he_qat_inst_config[i].inst_handle = _inst_handle;
 	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
 	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
 			start_perform_op, (void *) &he_qat_inst_config[i]); 
