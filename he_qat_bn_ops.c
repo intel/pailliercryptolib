@@ -204,6 +204,7 @@ void *start_perform_op(void *_inst_config)
     }
 
     config->running = 1;
+    config->active = 1;
     while (config->running) {
 	// Try consume data from butter to perform requested operation
 	HE_QAT_TaskRequest *request = NULL; 
