@@ -218,6 +218,8 @@ void *start_perform_op(void *_inst_config)
             continue;
         }
 
+        COMPLETION_INIT(&request->callback);
+
         unsigned retry = 0;
         do {
 	    // Realize the type of operation from data
@@ -239,7 +241,19 @@ void *start_perform_op(void *_inst_config)
             
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
-        // Signal any calls to stop_perform_op that now it is safe to shutdown instances
+	// Ensure every call to perform operation is blocking for each endpoint
+        if (CPA_STATUS_SUCCESS == status) {
+            // Wait until the callback function has been called
+	    if (0 != COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
+                request->op_status = CPA_STATUS_FAIL;
+		request->request_status = HE_QAT_STATUS_FAIL; // Review it
+		//request->request_status = HE_QAT_STATUS_INCOMPLETE;
+	    }
+	}
+
+
+        // Wake up any blocked call to stop_perform_op, signaling that now it is 
+	// safe to terminate running instances. Check if this detereorate performance.
         pthread_cond_signal(&config->ready);
 
 	// Update the status of the request
@@ -426,6 +440,9 @@ void getBnModExpRequest()
 	       if (task->op_result) {
 		   PHYS_CONTIG_FREE(task->op_result.pData);
 	       }
+
+	       // Destroy synchronization object
+	       COMPLETION_DESTROY(&task->callback);
 	   }
        }
     }
