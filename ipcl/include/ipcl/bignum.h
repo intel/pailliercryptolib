@@ -22,8 +22,6 @@
 #include <ostream>
 #include <vector>
 
-using namespace std;
-
 class BigNumber {
  public:
   BigNumber(Ipp32u value = 0);
@@ -114,12 +112,12 @@ class BigNumber {
   int LSB() const;
   int BitSize() const { return MSB() + 1; }
   int DwordSize() const { return (BitSize() + 31) >> 5; }
-  friend int Bit(const vector<Ipp32u>& v, int n);
+  friend int Bit(const std::vector<Ipp32u>& v, int n);
 
   // conversion and output
-  void num2hex(string& s) const;          // convert to hex string
-  void num2vec(vector<Ipp32u>& v) const;  // convert to 32-bit word vector
-  friend ostream& operator<<(ostream& os, const BigNumber& a);
+  void num2hex(std::string& s) const;          // convert to hex string
+  void num2vec(std::vector<Ipp32u>& v) const;  // convert to 32-bit word vector
+  friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
 
  protected:
   bool create(const Ipp32u* pData, int length,

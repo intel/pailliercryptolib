@@ -24,6 +24,7 @@
 // BigNumber
 //
 //////////////////////////////////////////////////////////////////////
+
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
 bool BigNumber::create(const Ipp32u* pData, int length, IppsBigNumSGN sgn) {
@@ -405,11 +406,11 @@ bool BigNumber::TestBit(int index) const {
 int BigNumber::LSB() const {
   if (*this == BigNumber::Zero()) return 0;
 
-  vector<Ipp32u> v;
+  std::vector<Ipp32u> v;
   num2vec(v);
 
   int lsb = 0;
-  vector<Ipp32u>::iterator i;
+  std::vector<Ipp32u>::iterator i;
   for (i = v.begin(); i != v.end(); i++) {
     Ipp32u x = *i;
     if (0 == x)
@@ -428,11 +429,11 @@ int BigNumber::LSB() const {
 int BigNumber::MSB() const {
   if (*this == BigNumber::Zero()) return 0;
 
-  vector<Ipp32u> v;
+  std::vector<Ipp32u> v;
   num2vec(v);
 
   int msb = (int)v.size() * 32 - 1;
-  vector<Ipp32u>::reverse_iterator i;
+  std::vector<Ipp32u>::reverse_iterator i;
   for (i = v.rbegin(); i != v.rend(); i++) {
     Ipp32u x = *i;
     if (0 == x)
@@ -448,14 +449,14 @@ int BigNumber::MSB() const {
   return msb;
 }
 
-int Bit(const vector<Ipp32u>& v, int n) {
+int Bit(const std::vector<Ipp32u>& v, int n) {
   return 0 != (v[n >> 5] & (1 << (n & 0x1F)));
 }
 
 //
 // conversions and output
 //
-void BigNumber::num2vec(vector<Ipp32u>& v) const {
+void BigNumber::num2vec(std::vector<Ipp32u>& v) const {
   int bnBitLen;
   Ipp32u* bnData;
   ippsRef_BN(nullptr, &bnBitLen, &bnData, *this);
@@ -465,7 +466,7 @@ void BigNumber::num2vec(vector<Ipp32u>& v) const {
   for (int n = 0; n < len; n++) v.push_back(bnData[n]);
 }
 
-void BigNumber::num2hex(string& s) const {
+void BigNumber::num2hex(std::string& s) const {
   IppsBigNumSGN bnSgn;
   int bnBitLen;
   Ipp32u* bnData;
@@ -491,8 +492,8 @@ void BigNumber::num2hex(string& s) const {
   }
 }
 
-ostream& operator<<(ostream& os, const BigNumber& a) {
-  string s;
+std::ostream& operator<<(std::ostream& os, const BigNumber& a) {
+  std::string s;
   a.num2hex(s);
   os << s;
   return os;
