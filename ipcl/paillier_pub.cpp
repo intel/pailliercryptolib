@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 #include <crypto_mb/exp.h>
@@ -24,9 +24,9 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
       m_bits(bits),
       m_dwords(BITSIZE_DWORD(bits * 2)),
       m_init_seed(randomUniformUnsignedInt()),
-      m_enable_DJN(false) {
+      m_enable_DJN(false),
+      m_testv(false) {
   if (enableDJN_) this->enableDJN();  // this sets m_enable_DJN
-  m_testv = false;
 }
 
 // array of 32-bit random, using rand() from stdlib

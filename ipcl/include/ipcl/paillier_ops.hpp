@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 #include <climits>
@@ -106,7 +106,7 @@ TEST(OperationTest, CtPlusCtTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
@@ -147,7 +147,7 @@ TEST(OperationTest, CtPlusCtArrayTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
@@ -186,7 +186,7 @@ TEST(OperationTest, CtPlusPtTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
@@ -226,7 +226,7 @@ TEST(OperationTest, CtPlusPtArrayTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
@@ -265,7 +265,46 @@ TEST(OperationTest, CtMultiplyPtTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
+    dt[i].num2vec(v);
+
+    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
+    uint64_t v_dp = v[0];
+    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+
+    EXPECT_EQ(v_dp, v_pp);
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
+TEST(OperationTest, CtMultiplyZeroPtTest) {
+  keyPair key = generateKeypair(2048);
+
+  BigNumber ct1[8], ct2[8];
+  BigNumber dt[8], res[8];
+
+  uint32_t pt1[8], pt2[8];
+  BigNumber ptbn1[8];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < 8; i++) {
+    pt1[i] = dist(rng);
+    pt2[i] = 0;
+    ptbn1[i] = pt1[i];
+  }
+
+  key.pub_key->encrypt(ct1, ptbn1);
+
+  CtMultiplyPt(res, ct1, pt2, key);
+
+  key.priv_key->decrypt(dt, res);
+
+  for (int i = 0; i < 8; i++) {
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
@@ -305,7 +344,7 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
@@ -345,7 +384,7 @@ TEST(OperationTest, AddSubTest) {
   key.priv_key->decrypt(dt, res);
 
   for (int i = 0; i < 8; i++) {
-    vector<Ipp32u> v;
+    std::vector<Ipp32u> v;
     dt[i].num2vec(v);
 
     uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i] * 3;
@@ -360,8 +399,8 @@ TEST(OperationTest, AddSubTest) {
 }
 
 #ifdef IPCL_UNITTEST_OMP
-void CtPlusCt_OMP(int num_threads, vector<BigNumber*> v_sum,
-                  vector<BigNumber*> v_ct1, vector<BigNumber*> v_ct2,
+void CtPlusCt_OMP(int num_threads, std::vector<BigNumber*> v_sum,
+                  std::vector<BigNumber*> v_ct1, std::vector<BigNumber*> v_ct2,
                   keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -374,8 +413,8 @@ void CtPlusCt_OMP(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtPlusPt_OMP(int num_threads, vector<BigNumber*> v_sum,
-                  vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
+void CtPlusPt_OMP(int num_threads, std::vector<BigNumber*> v_sum,
+                  std::vector<BigNumber*> v_ct1, std::vector<uint32_t*> v_pt2,
                   keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -388,9 +427,9 @@ void CtPlusPt_OMP(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtPlusPtArray_OMP(int num_threads, vector<BigNumber*> v_sum,
-                       vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                       keyPair key) {
+void CtPlusPtArray_OMP(int num_threads, std::vector<BigNumber*> v_sum,
+                       std::vector<BigNumber*> v_ct1,
+                       std::vector<uint32_t*> v_pt2, keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
@@ -403,9 +442,9 @@ void CtPlusPtArray_OMP(int num_threads, vector<BigNumber*> v_sum,
   }
 }
 
-void CtMultiplyPt_OMP(int num_threads, vector<BigNumber*> v_product,
-                      vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                      keyPair key) {
+void CtMultiplyPt_OMP(int num_threads, std::vector<BigNumber*> v_product,
+                      std::vector<BigNumber*> v_ct1,
+                      std::vector<uint32_t*> v_pt2, keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
@@ -417,9 +456,9 @@ void CtMultiplyPt_OMP(int num_threads, vector<BigNumber*> v_product,
   }
 }
 
-void CtMultiplyPtArray_OMP(int num_threads, vector<BigNumber*> v_product,
-                           vector<BigNumber*> v_ct1, vector<uint32_t*> v_pt2,
-                           keyPair key) {
+void CtMultiplyPtArray_OMP(int num_threads, std::vector<BigNumber*> v_product,
+                           std::vector<BigNumber*> v_ct1,
+                           std::vector<uint32_t*> v_pt2, keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
