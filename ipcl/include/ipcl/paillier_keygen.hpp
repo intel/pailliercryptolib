@@ -18,15 +18,15 @@ struct keyPair {
 };
 
 /**
- * Generate Prime Big Number
- * @param[in] maxBitSize Maxmuim bit length of generated Prime
+ * Generate prime number
+ * @param[in] maxBitSize Maximum bit length of to be generated prime number
  */
 BigNumber getPrimeBN(int maxBitSize);
 
 /**
- * Generate a pair of key
+ * Generate a public/private key pair
  * @param[in] n_length Bit length of key size
- * @param[in] enable_DJN Default enabled DJN
+ * @param[in] enable_DJN Enable DJN (default=true)
  */
 keyPair generateKeypair(int64_t n_length, bool enable_DJN = true);
 

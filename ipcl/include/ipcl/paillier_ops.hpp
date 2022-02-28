@@ -11,27 +11,26 @@
 class PaillierEncryptedNumber {
  public:
   /**
-   * PaillierEncryptedNumber construct function
+   * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
-   * @param[in] bn ciphtext encrypted by paillier
+   * @param[in] bn ciphertext encrypted by paillier public key
    */
   PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber& bn);
 
   /**
-   * PaillierEncryptedNumber construct function
+   * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
-   * @param[in] bn array of ciphtext encrypted by paillier
-   * @param[in] length elements of array
+   * @param[in] bn array of ciphertexts encrypted by paillier public key
+   * @param[in] length size of array
    */
   PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber bn[8],
                           size_t length = 8);
 
   /**
-   * PaillierEncryptedNumber construct function
+   * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
-   * @param[in] scalar array of scalar
-   * integer)
-   * @param[in] length elements of array
+   * @param[in] scalar array of integer scalars
+   * @param[in] length size of array
    */
   PaillierEncryptedNumber(PaillierPublicKey* pub_key, const uint32_t scalar[8],
                           size_t length = 8);
@@ -67,8 +66,8 @@ class PaillierEncryptedNumber {
   PaillierEncryptedNumber operator*(const BigNumber& other) const;
 
   /**
-   * Apply obfuscator for ciphertext, obfuscated needed only when the result is
-   * shared to untrusted parties
+   * Apply obfuscator for ciphertext, obfuscated needed only when the ciphertext
+   * is exposed
    */
   void apply_obfuscator() {
     b_isObfuscator = true;
@@ -81,8 +80,8 @@ class PaillierEncryptedNumber {
   }
 
   /**
-   * Get output of Arithmetic operators
-   * @param[in] idx index of output array
+   * Return ciphertext
+   * @param[in] idx index of ciphertext stored in PaillierEncryptedNumber
    */
   BigNumber getBN(size_t idx = 0) const {
     if (m_available == 1 && idx > 0)
@@ -92,28 +91,29 @@ class PaillierEncryptedNumber {
   }
 
   /**
-   * Get public key for python wrapper
+   * Get public key
    */
   PaillierPublicKey getPK() const { return *m_pubkey; }
 
   /**
    * Rotate PaillierEncryptedNumber
+   * @param[in] shift rotate length
    */
   PaillierEncryptedNumber rotate(int shift);
 
   /**
-   * Get array output of Arithmetic operators
+   * Return entire ciphertext array
    * @param[out] bn output array
    */
   void getArrayBN(BigNumber bn[8]) const { std::copy_n(m_bn, 8, bn); }
 
   /**
-   * Element in PaillierEncryptedNumber is single
+   * Check if element in PaillierEncryptedNumber is single
    */
   bool isSingle() const { return m_available == 1; }
 
   /**
-   * Elements in PaillierEncryptedNumber
+   * Get size of array in PaillierEncryptedNumber
    */
   size_t getLength() const { return m_length; }
 

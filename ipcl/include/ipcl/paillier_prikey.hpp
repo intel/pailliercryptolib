@@ -9,29 +9,29 @@
 class PaillierPrivateKey {
  public:
   /**
-   * PaillierPrivateKey construct function
+   * PaillierPrivateKey constructor
    * @param[in] public_key paillier public key
-   * @param[in] p p of private key in paillier paper
-   * @param[in] q q of private key in paillier paper
+   * @param[in] p p of private key in paillier scheme
+   * @param[in] q q of private key in paillier scheme
    */
   PaillierPrivateKey(PaillierPublicKey* public_key, const BigNumber& p,
                      const BigNumber& q);
 
   /**
-   * Chinese-remaindering enabling
-   * @param[in] crt Apply Chinese remaindering theorem
+   * Enable Chinese Remainder Theorem
+   * @param[in] crt Apply Chinese Remainder Theorem
    */
   void enableCRT(bool crt) { m_enable_crt = crt; }
 
   /**
-   * Decrypt ciphtext
+   * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext ciphertext to be decrypted
    */
   void decrypt(BigNumber plaintext[8], const BigNumber ciphertext[8]);
 
   /**
-   * Decrypt ciphtext
+   * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
    */
@@ -41,17 +41,17 @@ class PaillierPrivateKey {
   const void* addr = static_cast<const void*>(this);
 
   /**
-   * Get N of public key in paillier paper
+   * Get N of public key in paillier scheme
    */
   BigNumber getN() const { return m_n; }
 
   /**
-   * Get p of private key in paillier paper
+   * Get p of private key in paillier scheme
    */
   BigNumber getP() const { return m_p; }
 
   /**
-   * Get q of private key in paillier paper
+   * Get q of private key in paillier scheme
    */
   BigNumber getQ() const { return m_q; }
 
@@ -93,21 +93,21 @@ class PaillierPrivateKey {
   bool m_enable_crt;
 
   /**
-   * Compute L function in paillier paper
+   * Compute L function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
    */
   BigNumber computeLfun(const BigNumber& a, const BigNumber& b);
 
   /**
-   * Compute H function in paillier paper
+   * Compute H function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
    */
   BigNumber computeHfun(const BigNumber& a, const BigNumber& b);
 
   /**
-   * Compute CRT function in paillier paper
+   * Compute CRT function in paillier scheme
    * @param[in] mp input mp
    * @param[in] mq input mq
    */

@@ -9,8 +9,8 @@
 class PaillierPublicKey {
  public:
   /**
-   * PaillierPublicKey construct function
-   * @param[in] n n of public key in paillier paper
+   * PaillierPublicKey constructor
+   * @param[in] n n of public key in paillier scheme
    * @param[in] bits bit length of public key
    * @param[in] enableDJN_ enables DJN scheme
    */
@@ -18,8 +18,8 @@ class PaillierPublicKey {
                              bool enableDJN_ = false);
 
   /**
-   * PaillierPublicKey construct function
-   * @param[in] n n of public key in paillier paper
+   * PaillierPublicKey constructor
+   * @param[in] n n of public key in paillier scheme
    * @param[in] bits bit length of public key
    * @param[in] enableDJN_ enables DJN scheme
    */
@@ -35,7 +35,7 @@ class PaillierPublicKey {
   /**
    * Encrypt plaintext
    * @param[out] ciphertext output of the encryption
-   * @param[in] value array plaintext need to be encrypted
+   * @param[in] value array of plaintext to be encrypted
    * @param[in] make_secure apply obfuscator
    */
   void encrypt(BigNumber ciphertext[8], const BigNumber value[8],
@@ -44,7 +44,7 @@ class PaillierPublicKey {
   /**
    * Encrypt plaintext
    * @param[out] ciphertext output of the encryption
-   * @param[in] value plaintext need to be encrypted
+   * @param[in] value plaintext to be encrypted
    */
   void encrypt(BigNumber& ciphertext, const BigNumber& value);
 
@@ -75,17 +75,17 @@ class PaillierPublicKey {
   BigNumber IPP_invert(BigNumber a, BigNumber b);
 
   /**
-   * Get N of public key in paillier paper
+   * Get N of public key in paillier scheme
    */
   BigNumber getN() const { return m_n; }
 
   /**
-   * Get NSQ of public key in paillier paper
+   * Get NSQ of public key in paillier scheme
    */
   BigNumber getNSQ() const { return m_nsquare; }
 
   /**
-   * Get G of public key in paillier paper
+   * Get G of public key in paillier scheme
    */
   BigNumber getG() const { return m_g; }
 
@@ -140,7 +140,7 @@ class PaillierPublicKey {
   /**
    * Raw encrypt function
    * @param[out] ciphertext array output of the encryption
-   * @param[in] plaintext array plaintext need to be encrypted
+   * @param[in] plaintext plaintext array to be encrypted
    * @param[in] make_secure apply obfuscator
    */
   void raw_encrypt(BigNumber ciphertext[8], const BigNumber plaintext[8],
@@ -148,7 +148,7 @@ class PaillierPublicKey {
 
   /**
    * Get random value
-   * @param[in] length bit length of random
+   * @param[in] length bit length
    */
   BigNumber getRandom(int length);
 };
