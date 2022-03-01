@@ -10,6 +10,7 @@
 
 #include "he_qat_types.h"
 #include "cpa_sample_utils.h" 
+#include <pthread.h>
 
 //#include <semaphore.h>
 #include <openssl/bn.h>
@@ -29,6 +30,8 @@ typedef struct {
     void *op_data;
     void *op_output;
     HE_QAT_STATUS request_status;
+    pthread_mutex_t mutex;
+    pthread_cond_t ready;
 } HE_QAT_TaskRequest;
 
 
@@ -60,7 +63,8 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM *r, BIGNUM *b, BIGNUM *e, BIGNUM *m, int 
 /// Releasing QAT temporary memory.
 
 // wait for all outstanding requests to complete
-void getBnModExpRequest();
+//void getBnModExpRequest();
+void getBnModExpRequest(unsigned int num_requests);
 /// thus, releasing temporary memory.
 // create private buffer for code section
 // create QAT contiguous memory space
