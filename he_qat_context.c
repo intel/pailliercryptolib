@@ -19,41 +19,40 @@
 #include "icp_sal_poll.h"
 
 // Global variable declarations
-HE_QAT_Inst          he_qat_instances   [HE_QAT_MAX_NUM_INST];
-pthread_attr_t       he_qat_inst_attr   [HE_QAT_MAX_NUM_INST];
-HE_QAT_InstConfig    he_qat_inst_config [HE_QAT_MAX_NUM_INST];
-//HE_QAT_RequestBuffer he_qat_buffer;
+HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
+pthread_attr_t he_qat_inst_attr[HE_QAT_MAX_NUM_INST];
+HE_QAT_InstConfig he_qat_inst_config[HE_QAT_MAX_NUM_INST];
+// HE_QAT_RequestBuffer he_qat_buffer;
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
-extern void *start_perform_op(void *_inst_config);
-extern void stop_perform_op(void *_inst_config, unsigned num_inst);
-
+extern void* start_perform_op(void* _inst_config);
+extern void stop_perform_op(void* _inst_config, unsigned num_inst);
 
 CpaInstanceHandle handle = NULL;
 
-/// @brief 
+/// @brief
 /// @function acquire_qat_devices
 /// Acquire QAT instances and set up QAT execution environment.
-HE_QAT_STATUS acquire_qat_devices()
-{
+HE_QAT_STATUS acquire_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
 
     // Initialize QAT memory pool allocator
     status = qaeMemInit();
     if (CPA_STATUS_SUCCESS != status) {
         printf("Failed to initialized memory driver.\n");
-        return HE_QAT_STATUS_FAIL; // HEQAT_STATUS_ERROR
+        return HE_QAT_STATUS_FAIL;  // HEQAT_STATUS_ERROR
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("QAT memory successfully initialized.\n");
 #endif
 
-    // Not sure if for multiple instances the id will need to be specified, e.g. "SSL1"
+    // Not sure if for multiple instances the id will need to be specified, e.g.
+    // "SSL1"
     status = icp_sal_userStartMultiProcess("SSL", CPA_FALSE);
     if (CPA_STATUS_SUCCESS != status) {
         printf("Failed to start SAL user process SSL\n");
         qaeMemDestroy();
-        return HE_QAT_STATUS_FAIL; // HEQAT_STATUS_ERROR
+        return HE_QAT_STATUS_FAIL;  // HEQAT_STATUS_ERROR
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("SAL user process successfully started.\n");
@@ -66,17 +65,17 @@ HE_QAT_STATUS acquire_qat_devices()
     if (_inst_handle == NULL) {
         printf("Failed to find QAT endpoints.\n");
         return HE_QAT_STATUS_FAIL;
-    } 
-     
-    //sampleCyGetInstance(&handle);
-    //if (handle == NULL) {
+    }
+
+    // sampleCyGetInstance(&handle);
+    // if (handle == NULL) {
     //    printf("Failed to find QAT endpoints.\n");
     //    return HE_QAT_STATUS_FAIL;
-    //} 
+    //}
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Found QAT endpoints.\n");
 #endif
-    
+
     // Initialize QAT buffer synchronization attributes
     he_qat_buffer.count = 0;
     he_qat_buffer.next_free_slot = 0;
@@ -92,26 +91,27 @@ HE_QAT_STATUS acquire_qat_devices()
     cpu_set_t cpus;
     for (int i = 0; i < HE_QAT_SYNC; i++) {
         CPU_ZERO(&cpus);
-	CPU_SET(i, &cpus);
+        CPU_SET(i, &cpus);
         pthread_attr_init(&he_qat_inst_attr[i]);
-	pthread_attr_setaffinity_np(&he_qat_inst_attr[i], sizeof(cpu_set_t), &cpus);
+        pthread_attr_setaffinity_np(&he_qat_inst_attr[i], sizeof(cpu_set_t),
+                                    &cpus);
 
         // configure thread
-	//HE_QAT_InstConfig *config = (HE_QAT_InstConfig *) 
+        // HE_QAT_InstConfig *config = (HE_QAT_InstConfig *)
         //                                     malloc(sizeof(QATInstConfig));
-        //if (config == NULL) return HE_QAT_FAIL;
-	he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
-	he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
-	he_qat_inst_config[i].running = 0;
+        // if (config == NULL) return HE_QAT_FAIL;
+        he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
+        he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
+        he_qat_inst_config[i].running = 0;
         he_qat_inst_config[i].status = CPA_STATUS_FAIL;
-  //	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_init(&he_qat_inst_config[i].mutex,NULL);
-  //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
-	pthread_cond_init(&he_qat_inst_config[i].ready,NULL);
+        //	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
+        pthread_mutex_init(&he_qat_inst_config[i].mutex, NULL);
+        //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
+        pthread_cond_init(&he_qat_inst_config[i].ready, NULL);
         he_qat_inst_config[i].inst_handle = _inst_handle;
-	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
-	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
-			start_perform_op, (void *) &he_qat_inst_config[i]); 
+        he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
+        pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr,
+                       start_perform_op, (void*)&he_qat_inst_config[i]);
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Created processing threads.\n");
@@ -131,21 +131,20 @@ HE_QAT_STATUS acquire_qat_devices()
 /// @brief
 /// @function release_qat_devices
 /// Release QAT instances and tear down QAT execution environment.
-HE_QAT_STATUS release_qat_devices()
-{
+HE_QAT_STATUS release_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
 
     // signal all qat instance to stop polling
-//    stop_inst_polling();
-//
-//    // Release QAT instances handles
-//    for (int i = 0; i < HE_QAT_MAX_NUM_INST; i++) {
-//        status = cpaCyStopInstance(he_qat_inst_config[i].inst_handle);
-//        if (CPA_STATUS_SUCCESS != status) {
-//            printf("Failed to stop QAT instance #%d\n",i);
-//	    return HE_QAT_STATUS_FAIL;
-//	}
-//    }
+    //    stop_inst_polling();
+    //
+    //    // Release QAT instances handles
+    //    for (int i = 0; i < HE_QAT_MAX_NUM_INST; i++) {
+    //        status = cpaCyStopInstance(he_qat_inst_config[i].inst_handle);
+    //        if (CPA_STATUS_SUCCESS != status) {
+    //            printf("Failed to stop QAT instance #%d\n",i);
+    //	    return HE_QAT_STATUS_FAIL;
+    //	}
+    //    }
 
     stop_perform_op(he_qat_inst_config, HE_QAT_SYNC);
 #ifdef _DESTINY_DEBUG_VERBOSE
@@ -160,7 +159,7 @@ HE_QAT_STATUS release_qat_devices()
     printf("Stopped SAL user process.\n");
 #endif
 
-    // Release QAT allocated memory 
+    // Release QAT allocated memory
     qaeMemDestroy();
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Release QAT memory.\n");
@@ -168,4 +167,3 @@ HE_QAT_STATUS release_qat_devices()
 
     return HE_QAT_STATUS_SUCCESS;
 }
-

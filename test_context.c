@@ -3,14 +3,13 @@
 #include "cpa_sample_utils.h"
 #include "he_qat_context.h"
 
-int main()
-{
+int main() {
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
     status = acquire_qat_devices();
     if (HE_QAT_STATUS_SUCCESS == status) {
         printf("Completed acquire_qat_devices() successfully.\n");
-    } else { 
+    } else {
         printf("acquire_qat_devices() failed.\n");
         exit(1);
     }
@@ -20,10 +19,10 @@ int main()
     status = release_qat_devices();
     if (HE_QAT_STATUS_SUCCESS == status) {
         printf("Completed release_qat_devices() successfully.\n");
-    } else { 
+    } else {
         printf("release_qat_devices() failed.\n");
         exit(1);
-    } 
-    
+    }
+
     return 0;
 }
