@@ -57,6 +57,11 @@ target_link_libraries(test_context PUBLIC cpa_sample_utils)
 target_link_libraries(test_context PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
 
 
+add_executable(test_bnModExpPerformOp test_bnModExpPerformOp.c)
+target_link_libraries(test_bnModExpPerformOp PUBLIC he_qat)
+target_link_libraries(test_bnModExpPerformOp PUBLIC cpa_sample_utils)
+target_link_libraries(test_bnModExpPerformOp PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
+
 # Compile test case
 #add_subdirectory(ln_mod_exp)
 
