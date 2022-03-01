@@ -41,7 +41,7 @@ HE_QAT_STATUS acquire_qat_devices()
     // Initialize QAT memory pool allocator
     status = qaeMemInit();
     if (CPA_STATUS_SUCCESS != status) {
-        printf("Failed to initialized QAT memory.\n");
+        printf("Failed to initialized memory driver.\n");
         return HE_QAT_STATUS_FAIL; // HEQAT_STATUS_ERROR
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
@@ -62,16 +62,12 @@ HE_QAT_STATUS acquire_qat_devices()
     // Potential out-of-scope hazard for segmentation fault
     CpaInstanceHandle _inst_handle = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
-    //sampleCyGetInstance(&_inst_handle);
-    //if (_inst_handle == NULL) {
-    //    printf("Failed to find QAT endpoints.\n");
-    //    return HE_QAT_STATUS_FAIL;
-    //} 
-    sampleCyGetInstance(&handle);
-    if (handle == NULL) {
+    sampleCyGetInstance(&_inst_handle);
+    if (_inst_handle == NULL) {
         printf("Failed to find QAT endpoints.\n");
         return HE_QAT_STATUS_FAIL;
     } 
+     
     //sampleCyGetInstance(&handle);
     //if (handle == NULL) {
     //    printf("Failed to find QAT endpoints.\n");
@@ -107,12 +103,12 @@ HE_QAT_STATUS acquire_qat_devices()
 	he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
 	he_qat_inst_config[i].running = 0;
-  he_qat_inst_config[i].status = CPA_STATUS_FAIL;
+        he_qat_inst_config[i].status = CPA_STATUS_FAIL;
   //	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_mutex_init(&he_qat_inst_config[i].mutex,NULL);
   //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
 	pthread_cond_init(&he_qat_inst_config[i].ready,NULL);
-  he_qat_inst_config[i].inst_handle = _inst_handle;
+        he_qat_inst_config[i].inst_handle = _inst_handle;
 	he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
 	pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr, 
 			start_perform_op, (void *) &he_qat_inst_config[i]); 
