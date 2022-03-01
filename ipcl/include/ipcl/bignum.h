@@ -22,6 +22,8 @@
 #include <ostream>
 #include <vector>
 
+namespace ipcl {
+
 class BigNumber {
  public:
   BigNumber(Ipp32u value = 0);
@@ -131,4 +133,5 @@ class BigNumber {
 // Bin: convert bit size into 64-bit words
 #define BITSIZE_DWORD(n) ((((n) + 63) >> 6))
 
+}  // namespace ipcl
 #endif  // _BIGNUM_H_

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+namespace ipcl {
 // constructors
 //
 PaillierEncryptedNumber::PaillierEncryptedNumber(PaillierPublicKey* pub_key,
@@ -118,9 +119,8 @@ BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
 
 void PaillierEncryptedNumber::raw_mul(BigNumber res[8], BigNumber a[8],
                                       BigNumber b[8]) {
-  BigNumber sq[8];
-  for (int i = 0; i < 8; i++) sq[i] = m_pubkey->getNSQ();
-  m_pubkey->ippMultiBuffExp(res, a, b, sq);
+  std::vector<BigNumber> sq(8, m_pubkey->getNSQ());
+  m_pubkey->ippMultiBuffExp(res, a, b, sq.data());
 }
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
@@ -149,3 +149,5 @@ PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) {
   std::rotate(std::begin(new_bn), std::begin(new_bn) + shift, std::end(new_bn));
   return PaillierEncryptedNumber(m_pubkey, new_bn);
 }
+
+}  // namespace ipcl

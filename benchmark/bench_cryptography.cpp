@@ -13,22 +13,22 @@
 static void BM_KeyGen(benchmark::State& state) {
   int64_t n_length = state.range(0);
   for (auto _ : state) {
-    keyPair key = generateKeypair(n_length, true);
+    ipcl::keyPair key = ipcl::generateKeypair(n_length, true);
   }
 }
 BENCHMARK(BM_KeyGen)->Unit(benchmark::kMicrosecond)->Args({1024})->Args({2048});
 
 static void BM_Encrypt(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize];
-  BigNumber** ct = new BigNumber*[dsize];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize];
 
   for (size_t i = 0; i < dsize; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    pt[i][0] = BigNumber((unsigned int)i);
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    pt[i][0] = ipcl::BigNumber((unsigned int)i);
   }
 
   for (auto _ : state) {
@@ -48,16 +48,16 @@ BENCHMARK(BM_Encrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
 
 static void BM_Encrypt_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize / 8];
-  BigNumber** ct = new BigNumber*[dsize / 8];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize / 8];
 
   for (size_t i = 0; i < dsize / 8; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
     for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = BigNumber((unsigned int)(i * 8 + j));
+      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
   }
 
   for (auto _ : state) {
@@ -79,16 +79,16 @@ BENCHMARK(BM_Encrypt_buff8)
 
 static void BM_Decrypt(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize];
-  BigNumber** ct = new BigNumber*[dsize];
-  BigNumber** de_ct = new BigNumber*[dsize];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** de_ct = new ipcl::BigNumber*[dsize];
   for (size_t i = 0; i < dsize; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    de_ct[i] = new BigNumber[8];
-    pt[i][0] = BigNumber((unsigned int)i);
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    de_ct[i] = new ipcl::BigNumber[8];
+    pt[i][0] = ipcl::BigNumber((unsigned int)i);
   }
 
   for (size_t i = 0; i < dsize; ++i) key.pub_key->encrypt(ct[i], pt[i]);
@@ -114,18 +114,18 @@ BENCHMARK(BM_Decrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
 
 static void BM_Decrypt_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize / 8];
-  BigNumber** ct = new BigNumber*[dsize / 8];
-  BigNumber** de_ct = new BigNumber*[dsize / 8];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** de_ct = new ipcl::BigNumber*[dsize / 8];
 
   for (size_t i = 0; i < dsize / 8; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    de_ct[i] = new BigNumber[8];
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    de_ct[i] = new ipcl::BigNumber[8];
     for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = BigNumber((unsigned int)(i * 8 + j));
+      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
   }
 
   for (size_t i = 0; i < dsize / 8; ++i) key.pub_key->encrypt(ct[i], pt[i]);
@@ -153,15 +153,15 @@ BENCHMARK(BM_Decrypt_buff8)
 #ifdef IPCL_BENCHMARK_OMP
 static void BM_Encrypt_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize];
-  BigNumber** ct = new BigNumber*[dsize];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize];
 
   for (size_t i = 0; i < dsize; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    pt[i][0] = BigNumber((unsigned int)i);
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    pt[i][0] = ipcl::BigNumber((unsigned int)i);
   }
 
   for (auto _ : state) {
@@ -184,16 +184,16 @@ BENCHMARK(BM_Encrypt_OMP)
 
 static void BM_Encrypt_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize / 8];
-  BigNumber** ct = new BigNumber*[dsize / 8];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize / 8];
 
   for (size_t i = 0; i < dsize / 8; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
     for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = BigNumber((unsigned int)(i * 8 + j));
+      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
   }
 
   for (auto _ : state) {
@@ -216,16 +216,16 @@ BENCHMARK(BM_Encrypt_buff8_OMP)
 
 static void BM_Decrypt_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize];
-  BigNumber** ct = new BigNumber*[dsize];
-  BigNumber** de_ct = new BigNumber*[dsize];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize];
+  ipcl::BigNumber** de_ct = new ipcl::BigNumber*[dsize];
   for (size_t i = 0; i < dsize; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    de_ct[i] = new BigNumber[8];
-    pt[i][0] = BigNumber((unsigned int)i);
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    de_ct[i] = new ipcl::BigNumber[8];
+    pt[i][0] = ipcl::BigNumber((unsigned int)i);
   }
 
   for (size_t i = 0; i < dsize; ++i) key.pub_key->encrypt(ct[i], pt[i]);
@@ -255,18 +255,18 @@ BENCHMARK(BM_Decrypt_OMP)
 
 static void BM_Decrypt_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
-  keyPair key = generateKeypair(2048, true);
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  BigNumber** pt = new BigNumber*[dsize / 8];
-  BigNumber** ct = new BigNumber*[dsize / 8];
-  BigNumber** de_ct = new BigNumber*[dsize / 8];
+  ipcl::BigNumber** pt = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** ct = new ipcl::BigNumber*[dsize / 8];
+  ipcl::BigNumber** de_ct = new ipcl::BigNumber*[dsize / 8];
 
   for (size_t i = 0; i < dsize / 8; ++i) {
-    pt[i] = new BigNumber[8];
-    ct[i] = new BigNumber[8];
-    de_ct[i] = new BigNumber[8];
+    pt[i] = new ipcl::BigNumber[8];
+    ct[i] = new ipcl::BigNumber[8];
+    de_ct[i] = new ipcl::BigNumber[8];
     for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = BigNumber((unsigned int)(i * 8 + j));
+      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
   }
 
   for (size_t i = 0; i < dsize / 8; ++i) key.pub_key->encrypt(ct[i], pt[i]);

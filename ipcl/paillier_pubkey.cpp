@@ -9,6 +9,8 @@
 #include <cstring>
 #include <random>
 
+namespace ipcl {
+
 static inline auto randomUniformUnsignedInt() {
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -30,39 +32,57 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
 }
 
 // array of 32-bit random, using rand() from stdlib
-Ipp32u* PaillierPublicKey::randIpp32u(Ipp32u* addr, int size) {
-  for (int i = 0; i < size; i++)
-    addr[i] = (rand_r(&m_init_seed) << 16) + rand_r(&m_init_seed);
-  return addr;
+void PaillierPublicKey::randIpp32u(std::vector<Ipp32u>& addr, int size) {
+  for (auto& a : addr) a = (rand_r(&m_init_seed) << 16) + rand_r(&m_init_seed);
 }
 
 // length is Arbitery
 BigNumber PaillierPublicKey::getRandom(int length) {
+  IppStatus stat;
   int size;
   int seedBitSize = 160;
   int seedSize = BITSIZE_WORD(seedBitSize);
-  Ipp32u* seed = reinterpret_cast<Ipp32u*>(alloca(seedSize * sizeof(Ipp32u)));
-  if (nullptr == seed) throw std::runtime_error("error alloc memory");
-  ippsPRNGGetSize(&size);
-  IppsPRNGState* pRand = reinterpret_cast<IppsPRNGState*>(alloca(size));
-  if (nullptr == pRand) throw std::runtime_error("error alloc memory");
-  ippsPRNGInit(seedBitSize, pRand);
 
-  Ipp32u* addr = randIpp32u(seed, seedSize);
-  BigNumber bseed(addr, seedSize, IppsBigNumPOS);
+  auto seed = std::vector<Ipp32u>(seedSize);
 
-  ippsPRNGSetSeed(BN(bseed), pRand);
+  stat = ippsPRNGGetSize(&size);
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("getRandom: get IppsPRNGState context error.");
+
+  auto pRand = std::vector<Ipp8u>(size);
+
+  stat =
+      ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(pRand.data()));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("getRandom: init rand context error.");
+
+  randIpp32u(seed, seedSize);
+  BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
+
+  stat = ippsPRNGSetSeed(BN(bseed),
+                         reinterpret_cast<IppsPRNGState*>(pRand.data()));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("getRandom: set up seed value error.");
 
   // define length Big Numbers
   int bn_size = BITSIZE_WORD(length);
-  ippsBigNumGetSize(bn_size, &size);
+  stat = ippsBigNumGetSize(bn_size, &size);
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("getRandom: get IppsBigNumState context error.");
+
   IppsBigNumState* pBN = reinterpret_cast<IppsBigNumState*>(alloca(size));
-  if (nullptr == pBN) throw std::runtime_error("error alloc memory");
-  ippsBigNumInit(bn_size, pBN);
+  if (nullptr == pBN)
+    throw std::runtime_error("getRandom: big number alloca error");
+
+  stat = ippsBigNumInit(bn_size, pBN);
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("getRandom: init big number context error.");
 
   int bnBitSize = length;
-  ippsPRNGenRDRAND_BN(pBN, bnBitSize, pRand);
+  ippsPRNGenRDRAND_BN(pBN, bnBitSize,
+                      reinterpret_cast<IppsPRNGState*>(pRand.data()));
   BigNumber rand(pBN);
+
   return rand;
 }
 
@@ -86,19 +106,16 @@ void PaillierPublicKey::enableDJN() {
 }
 
 void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
-  BigNumber r[8];
-  BigNumber pown[8];
-  BigNumber base[8];
-  BigNumber sq[8];
+  std::vector<BigNumber> r(8);
+  std::vector<BigNumber> pown(8, m_n);
+  std::vector<BigNumber> base(8, m_hs);
+  std::vector<BigNumber> sq(8, m_nsquare);
 
   if (m_enable_DJN) {
-    for (int i = 0; i < 8; i++) {
-      r[i] = getRandom(m_randbits);
-      base[i] = m_hs;
-      sq[i] = m_nsquare;
+    for (auto& r_ : r) {
+      r_ = getRandom(m_randbits);
     }
-
-    ippMultiBuffExp(obfuscator, base, r, sq);
+    ippMultiBuffExp(obfuscator, base.data(), r.data(), sq.data());
   } else {
     for (int i = 0; i < 8; i++) {
       if (m_testv) {
@@ -110,7 +127,7 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
       pown[i] = m_n;
       sq[i] = m_nsquare;
     }
-    ippMultiBuffExp(obfuscator, r, pown, sq);
+    ippMultiBuffExp(obfuscator, r.data(), pown.data(), sq.data());
   }
 }
 
@@ -155,49 +172,47 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
                                         const BigNumber pow[8],
                                         BigNumber m[8]) {
   mbx_status st = MBX_STATUS_OK;
-
-  // Memory used for multi-buffered modular exponentiation
-  Ipp64u* out_x[8];
-
-  int64u* b_array[8];
-  int64u* p_array[8];
-
-  int bufferLen;
-  Ipp8u* pBuffer;
-
-  // setup buffer for mbx_exp
   int bits = m[0].BitSize();
   int dwords = BITSIZE_DWORD(bits);
-  bufferLen = mbx_exp_BufferSize(bits);
-  pBuffer = reinterpret_cast<Ipp8u*>(alloca(bufferLen));
-  if (nullptr == pBuffer) throw std::runtime_error("error alloc memory");
+  int bufferLen = mbx_exp_BufferSize(bits);
+  auto pBuffer = std::vector<Ipp8u>(bufferLen);
 
+  std::vector<int64u*> out_x(8), b_array(8), p_array(8);
   int length = dwords * sizeof(int64u);
+
   for (int i = 0; i < 8; i++) {
     out_x[i] = reinterpret_cast<int64u*>(alloca(length));
-
     b_array[i] = reinterpret_cast<int64u*>(alloca(length));
     p_array[i] = reinterpret_cast<int64u*>(alloca(length));
 
-    if (nullptr == out_x[i] || nullptr == b_array[i] || nullptr == p_array[i])
-      throw std::runtime_error("error alloc memory");
+    if (out_x[i] == nullptr || b_array[i] == nullptr || p_array[i] == nullptr)
+      throw std::runtime_error("ippMultiBuffExp: alloc memory for error");
+
+    memset(out_x[i], 0, length);
+    memset(b_array[i], 0, length);
+    memset(p_array[i], 0, length);
   }
 
-  for (int i = 0; i < 8; i++) {
-    memset(b_array[i], 0, dwords * 8);
-    memset(p_array[i], 0, dwords * 8);
-  }
-
-  Ipp32u *pow_b[8], *pow_p[8], *pow_nsquare[8];
+  /*
+   * These two intermediate variables pow_b & pow_p are necessary
+   * because if they are not used, the length returned from ippsRef_BN
+   * will be inconsistent with the length allocated by b_array/p_array,
+   * resulting in data errors.
+   */
+  std::vector<Ipp32u*> pow_b(8), pow_p(8), pow_nsquare(8);
   int bBitLen, pBitLen, nsqBitLen;
   int expBitLen = 0;
+
   for (int i = 0; i < 8; i++) {
-    ippsRef_BN(nullptr, &bBitLen, &pow_b[i], base[i]);
-    ippsRef_BN(nullptr, &pBitLen, &pow_p[i], pow[i]);
+    ippsRef_BN(nullptr, &bBitLen, reinterpret_cast<Ipp32u**>(&pow_b[i]),
+               base[i]);
+    ippsRef_BN(nullptr, &pBitLen, reinterpret_cast<Ipp32u**>(&pow_p[i]),
+               pow[i]);
     ippsRef_BN(nullptr, &nsqBitLen, &pow_nsquare[i], m[i]);
 
     memcpy(b_array[i], pow_b[i], BITSIZE_WORD(bBitLen) * 4);
     memcpy(p_array[i], pow_p[i], BITSIZE_WORD(pBitLen) * 4);
+
     if (expBitLen < pBitLen) expBitLen = pBitLen;
   }
 
@@ -206,9 +221,9 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
    *to maximum size of the actual module in bit size and extend all the modules
    *with zero bits
    */
-  st = mbx_exp_mb8(out_x, b_array, p_array, expBitLen,
-                   reinterpret_cast<Ipp64u**>(pow_nsquare), nsqBitLen, pBuffer,
-                   bufferLen);
+  st = mbx_exp_mb8(out_x.data(), b_array.data(), p_array.data(), expBitLen,
+                   reinterpret_cast<Ipp64u**>(pow_nsquare.data()), nsqBitLen,
+                   reinterpret_cast<Ipp8u*>(pBuffer.data()), bufferLen);
 
   for (int i = 0; i < 8; i++) {
     if (MBX_STATUS_OK != MBX_GET_STS(st, i))
@@ -219,10 +234,10 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
 
   // It is important to hold a copy of nsquare for thread-safe purpose
   BigNumber bn_c(m[0]);
+
   for (int i = 0; i < 8; i++) {
     bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
              IppsBigNumPOS);
-
     res[i] = bn_c;
   }
 }
@@ -230,7 +245,7 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
 BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
                                         const BigNumber& pow,
                                         const BigNumber& m) {
-  IppStatus st = ippStsNoErr;
+  IppStatus stat = ippStsNoErr;
   // It is important to declear res * bform bit length refer to ipp-crypto spec:
   // R should not be less than the data length of the modulus m
   BigNumber res(m);
@@ -242,32 +257,51 @@ BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
 
   int size;
   // define and initialize Montgomery Engine over Modulus N
-  ippsMontGetSize(IppsBinaryMethod, nlen, &size);
-  IppsMontState* pMont = reinterpret_cast<IppsMontState*>(new Ipp8u[size]);
-  if (nullptr == pMont) throw std::runtime_error("error alloc memory");
-  ippsMontInit(IppsBinaryMethod, nlen, pMont);
-  ippsMontSet(pow_m, nlen, pMont);
+  stat = ippsMontGetSize(IppsBinaryMethod, nlen, &size);
+  if (stat != ippStsNoErr)
+    throw std::runtime_error(
+        "ippMontExp: get the size of IppsMontState context error.");
+
+  auto pMont = std::vector<Ipp8u>(size);
+
+  stat = ippsMontInit(IppsBinaryMethod, nlen,
+                      reinterpret_cast<IppsMontState*>(pMont.data()));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("ippMontExp: init Mont context error.");
+
+  stat =
+      ippsMontSet(pow_m, nlen, reinterpret_cast<IppsMontState*>(pMont.data()));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error("ippMontExp: set Mont input error.");
 
   // encode base into Montfomery form
   BigNumber bform(m);
-  ippsMontForm(BN(base), pMont, BN(bform));
+  stat = ippsMontForm(BN(base), reinterpret_cast<IppsMontState*>(pMont.data()),
+                      BN(bform));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error(
+        "ippMontExp: convet big number into Mont form error.");
 
   // compute R = base^pow mod N
-  st = ippsMontExp(BN(bform), BN(pow), pMont, BN(res));
-  if (ippStsNoErr != st)
-    throw std::runtime_error(std::string("ippsMontExp error code = ") +
-                             std::to_string(st));
+  stat = ippsMontExp(BN(bform), BN(pow),
+                     reinterpret_cast<IppsMontState*>(pMont.data()), BN(res));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error(std::string("ippsMontExp: error code = ") +
+                             std::to_string(stat));
 
   BigNumber one(1);
-  st = ippsMontMul(BN(res), BN(one), pMont, BN(res));  // R = MontMul(R,1)
-  if (ippStsNoErr != st)
-    throw std::runtime_error(std::string("ippsMontMul error code = ") +
-                             std::to_string(st));
+  // R = MontMul(R,1)
+  stat = ippsMontMul(BN(res), BN(one),
+                     reinterpret_cast<IppsMontState*>(pMont.data()), BN(res));
+  if (stat != ippStsNoErr)
+    throw std::runtime_error(std::string("ippsMontMul: error code = ") +
+                             std::to_string(stat));
 
-  delete[] reinterpret_cast<Ipp8u*>(pMont);
   return res;
 }
 
 BigNumber PaillierPublicKey::IPP_invert(BigNumber a, BigNumber b) {
   return b.InverseMul(a);
 }
+
+}  // namespace ipcl

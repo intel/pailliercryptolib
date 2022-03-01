@@ -6,6 +6,8 @@
 
 #include "ipcl/paillier_ops.hpp"
 
+namespace ipcl {
+
 class PaillierPrivateKey {
  public:
   /**
@@ -96,6 +98,7 @@ class PaillierPrivateKey {
    * Compute L function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
+   * @return the L function result of type BigNumber
    */
   BigNumber computeLfun(const BigNumber& a, const BigNumber& b);
 
@@ -103,6 +106,7 @@ class PaillierPrivateKey {
    * Compute H function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
+   * @return the H function result of type BigNumber
    */
   BigNumber computeHfun(const BigNumber& a, const BigNumber& b);
 
@@ -110,6 +114,7 @@ class PaillierPrivateKey {
    * Compute CRT function in paillier scheme
    * @param[in] mp input mp
    * @param[in] mq input mq
+   * @return the CRT result of type BigNumber
    */
   BigNumber computeCRT(const BigNumber& mp, const BigNumber& mq);
 
@@ -128,4 +133,5 @@ class PaillierPrivateKey {
   void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]);
 };
 
+}  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_

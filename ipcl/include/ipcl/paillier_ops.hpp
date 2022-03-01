@@ -8,6 +8,8 @@
 
 #include "ipcl/paillier_pubkey.hpp"
 
+namespace ipcl {
+
 class PaillierEncryptedNumber {
  public:
   /**
@@ -21,7 +23,7 @@ class PaillierEncryptedNumber {
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] bn array of ciphertexts encrypted by paillier public key
-   * @param[in] length size of array
+   * @param[in] length size of array(default value is 8)
    */
   PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber bn[8],
                           size_t length = 8);
@@ -30,7 +32,7 @@ class PaillierEncryptedNumber {
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] scalar array of integer scalars
-   * @param[in] length size of array
+   * @param[in] length size of array(default value is 8)
    */
   PaillierEncryptedNumber(PaillierPublicKey* pub_key, const uint32_t scalar[8],
                           size_t length = 8);
@@ -82,6 +84,7 @@ class PaillierEncryptedNumber {
   /**
    * Return ciphertext
    * @param[in] idx index of ciphertext stored in PaillierEncryptedNumber
+   * @param[in] idx index of output array(default value is 0)
    */
   BigNumber getBN(size_t idx = 0) const {
     if (m_available == 1 && idx > 0)
@@ -131,4 +134,5 @@ class PaillierEncryptedNumber {
   void raw_mul(BigNumber res[8], BigNumber a[8], BigNumber b[8]);
 };
 
+}  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_

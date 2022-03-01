@@ -7,6 +7,10 @@
 #include <random>
 #include <vector>
 
+namespace ipcl {
+
+#define N_BIT_SIZE_MAX 2048
+
 static inline void rand32u(std::vector<Ipp32u>& addr) {
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -46,8 +50,8 @@ BigNumber getPrimeBN(int maxBitSize) {
   return pBN;
 }
 
-inline void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                        BigNumber& n) {
+static inline void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
+                               BigNumber& n) {
   for (int64_t len = 0; len != n_length; len = n.BitSize()) {
     p = getPrimeBN(n_length / 2);
     q = p;
@@ -58,8 +62,8 @@ inline void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
   }
 }
 
-inline void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                     BigNumber& n) {
+static inline void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
+                            BigNumber& n) {
   BigNumber gcd;
   do {
     do {
@@ -83,7 +87,7 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
   https://www.intel.com/content/www/us/en/develop/documentation/ipp-crypto-reference/top/multi-buffer-cryptography-functions/modular-exponentiation/mbx-exp-1024-2048-3072-4096-mb8.html
   modulus size = n * n (keySize * keySize )
   */
-  if (n_length > 2048) {
+  if (n_length > N_BIT_SIZE_MAX) {
     throw std::runtime_error(
         "modulus size in bits should belong to either 1Kb, 2Kb, "
         "3Kb or 4Kb range only, key size exceed the range!!!");
@@ -102,3 +106,5 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
 
   return keyPair{public_key, private_key};
 }
+
+}  // namespace ipcl

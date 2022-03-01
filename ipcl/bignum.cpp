@@ -25,6 +25,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+namespace ipcl {
+
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
 bool BigNumber::create(const Ipp32u* pData, int length, IppsBigNumSGN sgn) {
@@ -498,3 +500,5 @@ std::ostream& operator<<(std::ostream& os, const BigNumber& a) {
   os << s;
   return os;
 }
+
+}  // namespace ipcl
