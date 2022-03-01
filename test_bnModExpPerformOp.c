@@ -101,10 +101,11 @@ int main(int argc, const char** argv) {
 
         if (!bn_mod) continue;
 
-        char* bn_str = BN_bn2hex(bn_mod);
 #ifdef _DESTINY_DEBUG_VERBOSE
+        char* bn_str = BN_bn2hex(bn_mod);
         printf("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
+        OPENSSL_free(bn_str);
 #endif
         // bn_exponent in [0..bn_mod]
         BIGNUM* bn_exponent = BN_new();
@@ -122,11 +123,12 @@ int main(int argc, const char** argv) {
 
         // if (BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx)) {
         if (!ERR_get_error()) {
-            bn_str = BN_bn2hex(ssl_res);
 #ifdef _DESTINY_DEBUG_VERBOSE
+            bn_str = BN_bn2hex(ssl_res);
             printf("SSL BN mod exp: %s num_bytes: %d num_bits: %d\n", bn_str,
                    BN_num_bytes(ssl_res), BN_num_bits(ssl_res));
             showHexBN(ssl_res, bit_length);
+            OPENSSL_free(bn_str);
 #endif
         } else {
             printf("Modular exponentiation failed.\n");
@@ -165,8 +167,6 @@ int main(int argc, const char** argv) {
             printf("\t** FAIL **\n");
         else
             printf("\t** PASS **\n");
-
-        OPENSSL_free(bn_str);
 
         BN_free(ssl_res);
         BN_free(qat_res);
