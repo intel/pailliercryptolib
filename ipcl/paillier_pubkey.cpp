@@ -32,12 +32,14 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
 }
 
 // array of 32-bit random, using rand() from stdlib
-void PaillierPublicKey::randIpp32u(std::vector<Ipp32u>& addr, int size) {
-  for (auto& a : addr) a = (rand_r(&m_init_seed) << 16) + rand_r(&m_init_seed);
+void PaillierPublicKey::randIpp32u(std::vector<Ipp32u>& addr, int size) const {
+  // TODO(skmono): check if copy of m_init_seed is needed for const
+  unsigned int init_seed = m_init_seed;
+  for (auto& a : addr) a = (rand_r(&init_seed) << 16) + rand_r(&init_seed);
 }
 
 // length is Arbitery
-BigNumber PaillierPublicKey::getRandom(int length) {
+BigNumber PaillierPublicKey::getRandom(int length) const {
   IppStatus stat;
   int size;
   int seedBitSize = 160;
@@ -105,7 +107,7 @@ void PaillierPublicKey::enableDJN() {
   m_enable_DJN = true;
 }
 
-void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
+void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) const {
   std::vector<BigNumber> r(8);
   std::vector<BigNumber> pown(8, m_n);
   std::vector<BigNumber> base(8, m_hs);
@@ -133,7 +135,7 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
 
 void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
                                     const BigNumber plaintext[8],
-                                    bool make_secure) {
+                                    bool make_secure) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber sq = m_nsquare;
   for (int i = 0; i < 8; i++) {
@@ -151,12 +153,14 @@ void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
 }
 
 void PaillierPublicKey::encrypt(BigNumber ciphertext[8],
-                                const BigNumber value[8], bool make_secure) {
+                                const BigNumber value[8],
+                                bool make_secure) const {
   raw_encrypt(ciphertext, value, make_secure);
 }
 
 // Used for CT+PT, where PT do not need to add obfuscator
-void PaillierPublicKey::encrypt(BigNumber& ciphertext, const BigNumber& value) {
+void PaillierPublicKey::encrypt(BigNumber& ciphertext,
+                                const BigNumber& value) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber bn = value;
   BigNumber sq = m_nsquare;
@@ -168,9 +172,10 @@ void PaillierPublicKey::encrypt(BigNumber& ciphertext, const BigNumber& value) {
   ---------------------------------------------------------- */
 }
 
-void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
+void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8],
+                                        const BigNumber base[8],
                                         const BigNumber pow[8],
-                                        BigNumber m[8]) {
+                                        const BigNumber m[8]) const {
   mbx_status st = MBX_STATUS_OK;
   int bits = m[0].BitSize();
   int dwords = BITSIZE_DWORD(bits);
@@ -244,7 +249,7 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
 
 BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
                                         const BigNumber& pow,
-                                        const BigNumber& m) {
+                                        const BigNumber& m) const {
   IppStatus stat = ippStsNoErr;
   // It is important to declear res * bform bit length refer to ipp-crypto spec:
   // R should not be less than the data length of the modulus m

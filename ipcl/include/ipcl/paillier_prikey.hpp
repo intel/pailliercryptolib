@@ -16,7 +16,7 @@ class PaillierPrivateKey {
    * @param[in] p p of private key in paillier scheme
    * @param[in] q q of private key in paillier scheme
    */
-  PaillierPrivateKey(PaillierPublicKey* public_key, const BigNumber& p,
+  PaillierPrivateKey(const PaillierPublicKey* public_key, const BigNumber& p,
                      const BigNumber& q);
 
   /**
@@ -30,7 +30,7 @@ class PaillierPrivateKey {
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext ciphertext to be decrypted
    */
-  void decrypt(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decrypt(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
 
   /**
    * Decrypt ciphertext
@@ -38,7 +38,7 @@ class PaillierPrivateKey {
    * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
    */
   void decrypt(BigNumber plaintext[8],
-               const PaillierEncryptedNumber ciphertext);
+               const PaillierEncryptedNumber ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
 
@@ -65,17 +65,17 @@ class PaillierPrivateKey {
   /**
    * Get public key
    */
-  PaillierPublicKey* getPubKey() const { return m_pubkey; }
+  const PaillierPublicKey* getPubKey() const { return m_pubkey; }
 
   /**
    * @brief Support function for ISO/IEC 18033-6 compliance check
    *
    * @return BigNumber
    */
-  BigNumber getLambda() { return m_lambda; }
+  BigNumber getLambda() const { return m_lambda; }
 
  private:
-  PaillierPublicKey* m_pubkey;
+  const PaillierPublicKey* m_pubkey;
   BigNumber m_n;
   BigNumber m_nsquare;
   BigNumber m_g;
@@ -100,7 +100,7 @@ class PaillierPrivateKey {
    * @param[in] b input b
    * @return the L function result of type BigNumber
    */
-  BigNumber computeLfun(const BigNumber& a, const BigNumber& b);
+  BigNumber computeLfun(const BigNumber& a, const BigNumber& b) const;
 
   /**
    * Compute H function in paillier scheme
@@ -108,7 +108,7 @@ class PaillierPrivateKey {
    * @param[in] b input b
    * @return the H function result of type BigNumber
    */
-  BigNumber computeHfun(const BigNumber& a, const BigNumber& b);
+  BigNumber computeHfun(const BigNumber& a, const BigNumber& b) const;
 
   /**
    * Compute CRT function in paillier scheme
@@ -116,21 +116,21 @@ class PaillierPrivateKey {
    * @param[in] mq input mq
    * @return the CRT result of type BigNumber
    */
-  BigNumber computeCRT(const BigNumber& mp, const BigNumber& mq);
+  BigNumber computeCRT(const BigNumber& mp, const BigNumber& mq) const;
 
   /**
    * Raw decryption function without CRT optimization
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptRAW(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decryptRAW(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
 
   /**
    * Raw decryption function with CRT optimization
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
 };
 
 }  // namespace ipcl

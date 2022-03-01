@@ -17,7 +17,8 @@ class PaillierEncryptedNumber {
    * @param[in] pub_key paillier public key
    * @param[in] bn ciphertext encrypted by paillier public key
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber& bn);
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const BigNumber& bn);
 
   /**
    * PaillierEncryptedNumber constructor
@@ -25,8 +26,8 @@ class PaillierEncryptedNumber {
    * @param[in] bn array of ciphertexts encrypted by paillier public key
    * @param[in] length size of array(default value is 8)
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber bn[8],
-                          size_t length = 8);
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const BigNumber bn[8], size_t length = 8);
 
   /**
    * PaillierEncryptedNumber constructor
@@ -34,8 +35,8 @@ class PaillierEncryptedNumber {
    * @param[in] scalar array of integer scalars
    * @param[in] length size of array(default value is 8)
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const uint32_t scalar[8],
-                          size_t length = 8);
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const uint32_t scalar[8], size_t length = 8);
 
   /**
    * Arithmetic addition operator
@@ -102,7 +103,7 @@ class PaillierEncryptedNumber {
    * Rotate PaillierEncryptedNumber
    * @param[in] shift rotate length
    */
-  PaillierEncryptedNumber rotate(int shift);
+  PaillierEncryptedNumber rotate(int shift) const;
 
   /**
    * Return entire ciphertext array
@@ -125,13 +126,14 @@ class PaillierEncryptedNumber {
  private:
   bool b_isObfuscator;
   int m_available;
-  PaillierPublicKey* m_pubkey;
+  const PaillierPublicKey* m_pubkey;
   size_t m_length;
   BigNumber m_bn[8];
 
-  BigNumber raw_add(const BigNumber& a, const BigNumber& b);
-  BigNumber raw_mul(const BigNumber& a, const BigNumber& b);
-  void raw_mul(BigNumber res[8], BigNumber a[8], BigNumber b[8]);
+  BigNumber raw_add(const BigNumber& a, const BigNumber& b) const;
+  BigNumber raw_mul(const BigNumber& a, const BigNumber& b) const;
+  void raw_mul(BigNumber res[8], const BigNumber a[8],
+               const BigNumber b[8]) const;
 };
 
 }  // namespace ipcl

@@ -43,14 +43,14 @@ class PaillierPublicKey {
    * @param[in] make_secure apply obfuscator(default value is true)
    */
   void encrypt(BigNumber ciphertext[8], const BigNumber value[8],
-               bool make_secure = true);
+               bool make_secure = true) const;
 
   /**
    * Encrypt plaintext
    * @param[out] ciphertext output of the encryption
    * @param[in] value plaintext to be encrypted
    */
-  void encrypt(BigNumber& ciphertext, const BigNumber& value);
+  void encrypt(BigNumber& ciphertext, const BigNumber& value) const;
 
   /**
    * Modular exponentiation
@@ -60,7 +60,7 @@ class PaillierPublicKey {
    * @return the modular exponentiation result of type BigNumber
    */
   BigNumber ippMontExp(const BigNumber& base, const BigNumber& pow,
-                       const BigNumber& m);
+                       const BigNumber& m) const;
 
   /**
    * Multi-buffered modular exponentiation
@@ -69,8 +69,8 @@ class PaillierPublicKey {
    * @param[in] pow arrya pow of the exponentiation
    * @param[in] m arrayodular
    */
-  void ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
-                       const BigNumber pow[8], BigNumber m[8]);
+  void ippMultiBuffExp(BigNumber res[8], const BigNumber base[8],
+                       const BigNumber pow[8], const BigNumber m[8]) const;
 
   /**
    * Invert function needed by encoder(float to integer)
@@ -109,7 +109,7 @@ class PaillierPublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  void apply_obfuscator(BigNumber obfuscator[8]);
+  void apply_obfuscator(BigNumber obfuscator[8]) const;
 
   /**
    * @brief Set the Random object for ISO/IEC 18033-6 compliance check
@@ -141,7 +141,7 @@ class PaillierPublicKey {
    * @param[in,out] addr addr of random
    * @param[in] size size of random
    */
-  void randIpp32u(std::vector<Ipp32u>& addr, int size);
+  void randIpp32u(std::vector<Ipp32u>& addr, int size) const;
 
   /**
    * Raw encrypt function
@@ -150,14 +150,14 @@ class PaillierPublicKey {
    * @param[in] make_secure apply obfuscator(default value is true)
    */
   void raw_encrypt(BigNumber ciphertext[8], const BigNumber plaintext[8],
-                   bool make_secure = true);
+                   bool make_secure = true) const;
 
   /**
    * Get random value
    * @param[in] length bit length
    * @return the random value of type BigNumber
    */
-  BigNumber getRandom(int length);
+  BigNumber getRandom(int length) const;
 };
 
 }  // namespace ipcl

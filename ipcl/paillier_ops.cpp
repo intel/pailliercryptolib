@@ -8,8 +8,8 @@
 namespace ipcl {
 // constructors
 //
-PaillierEncryptedNumber::PaillierEncryptedNumber(PaillierPublicKey* pub_key,
-                                                 const BigNumber& bn)
+PaillierEncryptedNumber::PaillierEncryptedNumber(
+    const PaillierPublicKey* pub_key, const BigNumber& bn)
     : b_isObfuscator(false),
       m_available(1),
       m_pubkey(pub_key),
@@ -17,18 +17,16 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(PaillierPublicKey* pub_key,
       m_bn{bn}  // m_bn[0]
 {}
 
-PaillierEncryptedNumber::PaillierEncryptedNumber(PaillierPublicKey* pub_key,
-                                                 const BigNumber bn[8],
-                                                 size_t length)
+PaillierEncryptedNumber::PaillierEncryptedNumber(
+    const PaillierPublicKey* pub_key, const BigNumber bn[8], size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
       m_available(8),
       m_length(length),
       m_bn{bn[0], bn[1], bn[2], bn[3], bn[4], bn[5], bn[6], bn[7]} {}
 
-PaillierEncryptedNumber::PaillierEncryptedNumber(PaillierPublicKey* pub_key,
-                                                 const uint32_t scalar[8],
-                                                 size_t length)
+PaillierEncryptedNumber::PaillierEncryptedNumber(
+    const PaillierPublicKey* pub_key, const uint32_t scalar[8], size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
       m_available(8),
@@ -111,25 +109,25 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
 }
 
 BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
-                                           const BigNumber& b) {
+                                           const BigNumber& b) const {
   // Hold a copy of nsquare for multi-threaded
   BigNumber sq = m_pubkey->getNSQ();
   return a * b % sq;
 }
 
-void PaillierEncryptedNumber::raw_mul(BigNumber res[8], BigNumber a[8],
-                                      BigNumber b[8]) {
+void PaillierEncryptedNumber::raw_mul(BigNumber res[8], const BigNumber a[8],
+                                      const BigNumber b[8]) const {
   std::vector<BigNumber> sq(8, m_pubkey->getNSQ());
   m_pubkey->ippMultiBuffExp(res, a, b, sq.data());
 }
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
-                                           const BigNumber& b) {
+                                           const BigNumber& b) const {
   BigNumber sq = m_pubkey->getNSQ();
   return m_pubkey->ippMontExp(a, b, sq);
 }
 
-PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) {
+PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {
   if (m_available == 1)
     throw std::invalid_argument("Cannot rotate single PaillierEncryptedNumber");
   if (shift > 8 || shift < -8)

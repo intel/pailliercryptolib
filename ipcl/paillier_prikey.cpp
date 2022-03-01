@@ -20,7 +20,7 @@ static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
   return p * q / gcd;
 }
 
-PaillierPrivateKey::PaillierPrivateKey(PaillierPublicKey* public_key,
+PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
                                        const BigNumber& p, const BigNumber& q)
     : m_pubkey(public_key),
       m_n(m_pubkey->getN()),
@@ -55,7 +55,7 @@ PaillierPrivateKey::PaillierPrivateKey(PaillierPublicKey* public_key,
 }
 
 void PaillierPrivateKey::decryptRAW(BigNumber plaintext[8],
-                                    const BigNumber ciphertext[8]) {
+                                    const BigNumber ciphertext[8]) const {
   mbx_status st = MBX_STATUS_OK;
 
   // setup buffer for mbx_exp
@@ -118,15 +118,15 @@ void PaillierPrivateKey::decryptRAW(BigNumber plaintext[8],
 }
 
 void PaillierPrivateKey::decrypt(BigNumber plaintext[8],
-                                 const BigNumber ciphertext[8]) {
+                                 const BigNumber ciphertext[8]) const {
   if (m_enable_crt)
     decryptCRT(plaintext, ciphertext);
   else
     decryptRAW(plaintext, ciphertext);
 }
 
-void PaillierPrivateKey::decrypt(BigNumber plaintext[8],
-                                 const PaillierEncryptedNumber ciphertext) {
+void PaillierPrivateKey::decrypt(
+    BigNumber plaintext[8], const PaillierEncryptedNumber ciphertext) const {
   // check key match
   if (ciphertext.getPK().getN() != m_pubkey->getN())
     throw std::runtime_error("decrypt: public key mismatch error.");
@@ -141,7 +141,7 @@ void PaillierPrivateKey::decrypt(BigNumber plaintext[8],
 
 // CRT to calculate base^exp mod n^2
 void PaillierPrivateKey::decryptCRT(BigNumber plaintext[8],
-                                    const BigNumber ciphertext[8]) {
+                                    const BigNumber ciphertext[8]) const {
   std::vector<BigNumber> resp(8), resq(8);
   std::vector<BigNumber> basep(8), baseq(8);
   std::vector<BigNumber> pm1(8, m_pminusone), qm1(8, m_qminusone);
@@ -164,18 +164,18 @@ void PaillierPrivateKey::decryptCRT(BigNumber plaintext[8],
 }
 
 BigNumber PaillierPrivateKey::computeCRT(const BigNumber& mp,
-                                         const BigNumber& mq) {
+                                         const BigNumber& mq) const {
   BigNumber u = (mq - mp) * m_pinverse % m_q;
   return mp + (u * m_p);
 }
 
 BigNumber PaillierPrivateKey::computeLfun(const BigNumber& a,
-                                          const BigNumber& b) {
+                                          const BigNumber& b) const {
   return (a - 1) / b;
 }
 
 BigNumber PaillierPrivateKey::computeHfun(const BigNumber& a,
-                                          const BigNumber& b) {
+                                          const BigNumber& b) const {
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber xm = a - 1;
   BigNumber base = m_g % b;
