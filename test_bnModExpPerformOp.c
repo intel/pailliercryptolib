@@ -17,7 +17,7 @@
 #define ODD_RND_NUM 1
 #define BATCH_SIZE 1
 
-int gDebugParam = 1;
+//int gDebugParam = 1;
 
 BIGNUM* generateTestBNData(int nbits) {
     if (!RAND_status()) return NULL;
@@ -82,21 +82,27 @@ void showHexBin(unsigned char* bin, int len) {
 }
 
 int main(int argc, const char** argv) {
+    const int bit_length = 4096; //1024;
     const size_t num_trials = 100;
-    const int bit_length = 1024;
 
-    // Set up QAT runtime environment
+    double avg_speed_up = 0.0;
+    double ssl_avg_time = 0.0;
+    double qat_avg_time = 0.0;
+
+    clock_t start = CLOCKS_PER_SEC;
+    clock_t ssl_elapsed = CLOCKS_PER_SEC;
+    clock_t qat_elapsed = CLOCKS_PER_SEC;
+
+    HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+
+    // Set up QAT runtime context
     acquire_qat_devices();
 
-    // OpenSSL as baseline
+    // Set up OpenSSL context (as baseline)
     BN_CTX* ctx = BN_CTX_new();
     BN_CTX_start(ctx);
 
-    CpaStatus status = CPA_STATUS_SUCCESS;
-
     for (size_t mod = 0; mod < num_trials; mod++) {
-        printf("Trial #%0.3lu\t", mod + 1);
-
         BIGNUM* bn_mod = generateTestBNData(bit_length);
 
         if (!bn_mod) continue;
@@ -116,12 +122,12 @@ int main(int argc, const char** argv) {
 
         BIGNUM* bn_base = generateTestBNData(bit_length);
 
+	// Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
-        clock_t start = clock();
+        start = clock();
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
-        clock_t elapsed = clock() - start;
+        ssl_elapsed = clock() - start;
 
-        // if (BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx)) {
         if (!ERR_get_error()) {
 #ifdef _DESTINY_DEBUG_VERBOSE
             bn_str = BN_bn2hex(ssl_res);
@@ -138,20 +144,40 @@ int main(int argc, const char** argv) {
         PRINT_DBG("\nStarting QAT bnModExp...\n");
 #endif
 
-        printf("OpenSSL: %.1lfus\t", elapsed / (CLOCKS_PER_SEC / 1000000.0));
+        //        printf("OpenSSL: %.1lfus\t", ssl_elapsed / (CLOCKS_PER_SEC /
+        //        1000000.0));
 
+	// Perform QAT ModExp Op
         BIGNUM* qat_res = BN_new();
-        HE_QAT_STATUS he_qat_status = HE_QAT_STATUS_FAIL;
         start = clock();
         for (unsigned int j = 0; j < BATCH_SIZE; j++)
-            he_qat_status = bnModExpPerformOp(qat_res, bn_base, bn_exponent,
+            status = bnModExpPerformOp(qat_res, bn_base, bn_exponent,
                                               bn_mod, bit_length);
         getBnModExpRequest(BATCH_SIZE);
-        elapsed = clock() - start;
+        qat_elapsed = clock() - start;
 
-        printf("QAT: %.1lfus\t", elapsed / (CLOCKS_PER_SEC / 1000000.0));
+        ssl_avg_time = (mod * ssl_avg_time +
+                        (ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0))) /
+                       (mod + 1);
+        qat_avg_time =
+            (mod * qat_avg_time +
+             (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)) / BATCH_SIZE) /
+            (mod + 1);
+        avg_speed_up =
+            (mod * avg_speed_up +
+             (ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0)) /
+                 ((qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)) / BATCH_SIZE)) /
+            (mod + 1);
 
-        if (HE_QAT_STATUS_SUCCESS != he_qat_status) {
+        printf("Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
+               (mod+1), ssl_avg_time, qat_avg_time, avg_speed_up);
+
+        //        printf("QAT: %.1lfus\t", qat_elapsed / (CLOCKS_PER_SEC /
+        //        1000000.0)); printf("Speed Up: %.1lfx\t", (ssl_elapsed /
+        //        (CLOCKS_PER_SEC / 1000000.0) / BATCH_SIZE) / (qat_elapsed /
+        //        (CLOCKS_PER_SEC / 1000000.0) / BATCH_SIZE) );
+
+        if (HE_QAT_STATUS_SUCCESS != status) {
             PRINT_ERR("\nQAT bnModExpOp failed\n");
         }
 #ifdef _DESTINY_DEBUG_VERBOSE
@@ -159,9 +185,6 @@ int main(int argc, const char** argv) {
             PRINT_DBG("\nQAT bnModExpOp finished\n");
         }
 #endif
-
-        //        icp_sal_userStop();
-        //        qaeMemDestroy();
 
         if (BN_cmp(qat_res, ssl_res) != 0)
             printf("\t** FAIL **\n");
@@ -176,9 +199,10 @@ int main(int argc, const char** argv) {
         BN_free(bn_exponent);
     }
 
+    // Tear down OpenSSL context
     BN_CTX_end(ctx);
 
-    // Tear down QAT runtime environment
+    // Tear down QAT runtime context
     release_qat_devices();
 
     return (int)status;
