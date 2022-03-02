@@ -177,7 +177,7 @@ void* start_perform_op(void* _inst_config) {
     status = cpaCyStartInstance(config->inst_handle);
     config->status = status;
     if (CPA_STATUS_SUCCESS == status) {
-        printf("Cpa CyInstance has successfully started.\n ");
+        printf("Cpa CyInstance has successfully started.\n");
         status =
             cpaCySetAddressTranslation(config->inst_handle, sampleVirtToPhys);
     }
@@ -435,6 +435,7 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
     // Submit request using producer function
     // printf("Submit request \n");
     submit_request(&he_qat_buffer, (void*)request);
+    // printf("Submitted\n");
 
     return HE_QAT_STATUS_SUCCESS;
 }
@@ -442,7 +443,7 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
 // Maybe it will be useful to pass the number of requests to retrieve
 // Pass post-processing function as argument to bring output to expected type
 void getBnModExpRequest(unsigned int batch_size) {
-    static unsigned int block_at_index = 0;
+    static unsigned long block_at_index = 0;
     unsigned int j = 0;
     do {
         // Buffer read may be safe for single-threaded blocking calls only.
@@ -467,8 +468,8 @@ void getBnModExpRequest(unsigned int batch_size) {
         if (task->op_result.pData) {
             PHYS_CONTIG_FREE(task->op_result.pData);
         }
-	free(he_qat_buffer.data[block_at_index]);
-	he_qat_buffer.data[block_at_index] = NULL;
+        free(he_qat_buffer.data[block_at_index]);
+        he_qat_buffer.data[block_at_index] = NULL;
         // Move forward to wait for the next request that will be offloaded
         pthread_mutex_unlock(&task->mutex);
         block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
