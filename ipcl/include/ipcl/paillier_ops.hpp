@@ -4,7 +4,7 @@
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
 #define IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
 
-#include <algorithm>
+#include <vector>
 
 #include "ipcl/paillier_pubkey.hpp"
 
@@ -27,7 +27,7 @@ class PaillierEncryptedNumber {
    * @param[in] length size of array(default value is 8)
    */
   PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const BigNumber bn[8], size_t length = 8);
+                          const std::vector<BigNumber>& bn, size_t length = 8);
 
   /**
    * PaillierEncryptedNumber constructor
@@ -36,7 +36,8 @@ class PaillierEncryptedNumber {
    * @param[in] length size of array(default value is 8)
    */
   PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const uint32_t scalar[8], size_t length = 8);
+                          const std::vector<uint32_t>& scalar,
+                          size_t length = 8);
 
   /**
    * Arithmetic addition operator
@@ -54,7 +55,7 @@ class PaillierEncryptedNumber {
    * Arithmetic addition operator
    * @param[in] other array of augend
    */
-  PaillierEncryptedNumber operator+(const BigNumber other[8]) const;
+  PaillierEncryptedNumber operator+(const std::vector<BigNumber>& other) const;
 
   /**
    * Arithmetic multiply operator
@@ -74,7 +75,7 @@ class PaillierEncryptedNumber {
    */
   void apply_obfuscator() {
     b_isObfuscator = true;
-    BigNumber obfuscator[8];
+    std::vector<BigNumber> obfuscator(8);
     m_pubkey->apply_obfuscator(obfuscator);
 
     BigNumber sq = m_pubkey->getNSQ();
@@ -109,7 +110,7 @@ class PaillierEncryptedNumber {
    * Return entire ciphertext array
    * @param[out] bn output array
    */
-  void getArrayBN(BigNumber bn[8]) const { std::copy_n(m_bn, 8, bn); }
+  std::vector<BigNumber> getArrayBN() const { return m_bn; }
 
   /**
    * Check if element in PaillierEncryptedNumber is single
@@ -128,12 +129,12 @@ class PaillierEncryptedNumber {
   int m_available;
   const PaillierPublicKey* m_pubkey;
   size_t m_length;
-  BigNumber m_bn[8];
+  std::vector<BigNumber> m_bn;
 
   BigNumber raw_add(const BigNumber& a, const BigNumber& b) const;
   BigNumber raw_mul(const BigNumber& a, const BigNumber& b) const;
-  void raw_mul(BigNumber res[8], const BigNumber a[8],
-               const BigNumber b[8]) const;
+  std::vector<BigNumber> raw_mul(const std::vector<BigNumber>& a,
+                                 const std::vector<BigNumber>& b) const;
 };
 
 }  // namespace ipcl

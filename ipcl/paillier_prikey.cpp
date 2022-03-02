@@ -54,8 +54,9 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
   }
 }
 
-void PaillierPrivateKey::decryptRAW(BigNumber plaintext[8],
-                                    const BigNumber ciphertext[8]) const {
+void PaillierPrivateKey::decryptRAW(
+    std::vector<BigNumber>& plaintext,
+    const std::vector<BigNumber>& ciphertext) const {
   mbx_status st = MBX_STATUS_OK;
 
   // setup buffer for mbx_exp
@@ -117,8 +118,9 @@ void PaillierPrivateKey::decryptRAW(BigNumber plaintext[8],
   }
 }
 
-void PaillierPrivateKey::decrypt(BigNumber plaintext[8],
-                                 const BigNumber ciphertext[8]) const {
+void PaillierPrivateKey::decrypt(
+    std::vector<BigNumber>& plaintext,
+    const std::vector<BigNumber>& ciphertext) const {
   if (m_enable_crt)
     decryptCRT(plaintext, ciphertext);
   else
@@ -126,23 +128,23 @@ void PaillierPrivateKey::decrypt(BigNumber plaintext[8],
 }
 
 void PaillierPrivateKey::decrypt(
-    BigNumber plaintext[8], const PaillierEncryptedNumber ciphertext) const {
+    std::vector<BigNumber>& plaintext,
+    const PaillierEncryptedNumber ciphertext) const {
   // check key match
   if (ciphertext.getPK().getN() != m_pubkey->getN())
     throw std::runtime_error("decrypt: public key mismatch error.");
 
-  std::vector<BigNumber> res(8);
-  ciphertext.getArrayBN(res.data());
+  std::vector<BigNumber> res = ciphertext.getArrayBN();
   if (m_enable_crt)
-    decryptCRT(plaintext, res.data());
+    decryptCRT(plaintext, res);
   else
-    decryptRAW(plaintext, res.data());
+    decryptRAW(plaintext, res);
 }
 
 // CRT to calculate base^exp mod n^2
-void PaillierPrivateKey::decryptCRT(BigNumber plaintext[8],
-                                    const BigNumber ciphertext[8]) const {
-  std::vector<BigNumber> resp(8), resq(8);
+void PaillierPrivateKey::decryptCRT(
+    std::vector<BigNumber>& plaintext,
+    const std::vector<BigNumber>& ciphertext) const {
   std::vector<BigNumber> basep(8), baseq(8);
   std::vector<BigNumber> pm1(8, m_pminusone), qm1(8, m_qminusone);
   std::vector<BigNumber> psq(8, m_psquare), qsq(8, m_qsquare);
@@ -153,8 +155,8 @@ void PaillierPrivateKey::decryptCRT(BigNumber plaintext[8],
   }
 
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  m_pubkey->ippMultiBuffExp(resp.data(), basep.data(), pm1.data(), psq.data());
-  m_pubkey->ippMultiBuffExp(resq.data(), baseq.data(), qm1.data(), qsq.data());
+  std::vector<BigNumber> resp = m_pubkey->ippMultiBuffExp(basep, pm1, psq);
+  std::vector<BigNumber> resq = m_pubkey->ippMultiBuffExp(baseq, qm1, qsq);
 
   for (int i = 0; i < 8; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;

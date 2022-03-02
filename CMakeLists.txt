@@ -102,7 +102,7 @@ include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
 
-if(IPCL_TEST OR IPCL_OMP_TEST)
+if(IPCL_TEST)
   include(cmake/gtest.cmake)
 endif()
 if(IPCL_BENCHMARK)

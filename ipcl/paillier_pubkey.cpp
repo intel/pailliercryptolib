@@ -5,6 +5,7 @@
 
 #include <crypto_mb/exp.h>
 
+#include <algorithm>
 #include <climits>
 #include <cstring>
 #include <random>
@@ -28,14 +29,16 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
       m_init_seed(randomUniformUnsignedInt()),
       m_enable_DJN(false),
       m_testv(false) {
-  if (enableDJN_) this->enableDJN();  // this sets m_enable_DJN
+  if (enableDJN_) this->enableDJN();  // sets m_enable_DJN
 }
 
 // array of 32-bit random, using rand() from stdlib
-void PaillierPublicKey::randIpp32u(std::vector<Ipp32u>& addr, int size) const {
+std::vector<Ipp32u> PaillierPublicKey::randIpp32u(int size) const {
+  std::vector<Ipp32u> addr(size);
   // TODO(skmono): check if copy of m_init_seed is needed for const
   unsigned int init_seed = m_init_seed;
   for (auto& a : addr) a = (rand_r(&init_seed) << 16) + rand_r(&init_seed);
+  return addr;
 }
 
 // length is Arbitery
@@ -44,8 +47,6 @@ BigNumber PaillierPublicKey::getRandom(int length) const {
   int size;
   int seedBitSize = 160;
   int seedSize = BITSIZE_WORD(seedBitSize);
-
-  auto seed = std::vector<Ipp32u>(seedSize);
 
   stat = ippsPRNGGetSize(&size);
   if (stat != ippStsNoErr)
@@ -58,7 +59,7 @@ BigNumber PaillierPublicKey::getRandom(int length) const {
   if (stat != ippStsNoErr)
     throw std::runtime_error("getRandom: init rand context error.");
 
-  randIpp32u(seed, seedSize);
+  auto seed = randIpp32u(seedSize);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
   stat = ippsPRNGSetSeed(BN(bseed),
@@ -107,7 +108,8 @@ void PaillierPublicKey::enableDJN() {
   m_enable_DJN = true;
 }
 
-void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) const {
+void PaillierPublicKey::apply_obfuscator(
+    std::vector<BigNumber>& obfuscator) const {
   std::vector<BigNumber> r(8);
   std::vector<BigNumber> pown(8, m_n);
   std::vector<BigNumber> base(8, m_hs);
@@ -117,7 +119,7 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) const {
     for (auto& r_ : r) {
       r_ = getRandom(m_randbits);
     }
-    ippMultiBuffExp(obfuscator, base.data(), r.data(), sq.data());
+    obfuscator = ippMultiBuffExp(base, r, sq);
   } else {
     for (int i = 0; i < 8; i++) {
       if (m_testv) {
@@ -129,12 +131,17 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) const {
       pown[i] = m_n;
       sq[i] = m_nsquare;
     }
-    ippMultiBuffExp(obfuscator, r.data(), pown.data(), sq.data());
+    obfuscator = ippMultiBuffExp(r, pown, sq);
   }
 }
 
-void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
-                                    const BigNumber plaintext[8],
+void PaillierPublicKey::setRandom(const std::vector<BigNumber>& r) {
+  std::copy(r.begin(), r.end(), std::back_inserter(m_r));
+  m_testv = true;
+}
+
+void PaillierPublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
+                                    const std::vector<BigNumber>& plaintext,
                                     bool make_secure) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber sq = m_nsquare;
@@ -144,7 +151,7 @@ void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
   }
 
   if (make_secure) {
-    BigNumber obfuscator[8];
+    std::vector<BigNumber> obfuscator(8);
     apply_obfuscator(obfuscator);
 
     for (int i = 0; i < 8; i++)
@@ -152,8 +159,8 @@ void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
   }
 }
 
-void PaillierPublicKey::encrypt(BigNumber ciphertext[8],
-                                const BigNumber value[8],
+void PaillierPublicKey::encrypt(std::vector<BigNumber>& ciphertext,
+                                const std::vector<BigNumber>& value,
                                 bool make_secure) const {
   raw_encrypt(ciphertext, value, make_secure);
 }
@@ -172,11 +179,11 @@ void PaillierPublicKey::encrypt(BigNumber& ciphertext,
   ---------------------------------------------------------- */
 }
 
-void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8],
-                                        const BigNumber base[8],
-                                        const BigNumber pow[8],
-                                        const BigNumber m[8]) const {
+std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
+    const std::vector<BigNumber>& base, const std::vector<BigNumber>& pow,
+    const std::vector<BigNumber>& m) const {
   mbx_status st = MBX_STATUS_OK;
+
   int bits = m[0].BitSize();
   int dwords = BITSIZE_DWORD(bits);
   int bufferLen = mbx_exp_BufferSize(bits);
@@ -240,11 +247,13 @@ void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8],
   // It is important to hold a copy of nsquare for thread-safe purpose
   BigNumber bn_c(m[0]);
 
+  std::vector<BigNumber> res(8, 0);
   for (int i = 0; i < 8; i++) {
     bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
              IppsBigNumPOS);
     res[i] = bn_c;
   }
+  return res;
 }
 
 BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,

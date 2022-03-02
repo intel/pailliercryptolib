@@ -70,13 +70,13 @@ cmake --build build -j
 
 It is possible to pass additional options to enable more features. The following table contains the current CMake options, default values are in bold.
 
-| CMake options           | Values    | Default | Comments                     |
-|-------------------------|-----------|---------|------------------------------|
-|`IPCL_TEST`              | ON/OFF    | ON      | unit-test                    |
-|`IPCL_TEST_OMP`          | ON/OFF    | ON      | unit-test w/ OpenMP          |
-|`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                    |
-|`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation  |
-|`IPCL_SHARED`            | ON/OFF    | ON      | build shared library         |
+| CMake options           | Values    | Default | Comments                            |
+|-------------------------|-----------|---------|-------------------------------------|
+|`IPCL_TEST`              | ON/OFF    | ON      | unit-test                           |
+|`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                           |
+|`IPCL_ENABLE_OMP`        | ON/OFF    | ON      | enables OMP unit-test and benchmark |
+|`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation         |
+|`IPCL_SHARED`            | ON/OFF    | ON      | build shared library                |
 
 ## Testing and Benchmarking
 To run a set of unit tests via [Googletest](https://github.com/google/googletest), configure and build library with `-DIPCL_TEST=ON` (see [Instructions](#instructions)).
@@ -84,23 +84,19 @@ Then, run
 ```bash
 cmake --build build --target unittest
 ```
-For OpenMP testing, configure and build with `-DIPCL_TEST_OMP=ON`, and run
-```bash
-cmake --build build --target unittest_omp
-```
 
 For running benchmark via [Google Benchmark](https://github.com/google/benchmark), configure and build library with `-DIPCL_BENCHMARK=ON` (see [Instructions](#instructions)).
 Then, run
 ```bash
 cmake --build build --target benchmark
 ```
-OpenMP benchmarks will automatically be applied if `-DIPCL_TEST_OMP=ON` is set.
+OpenMP unit-tests and benchmarks will automatically be applied if `-DIPCL_ENABLE_OMP=ON` is set.
 
-The unit-test executable itself is located at `${IPCL_DIR}/build/test/unit-test`, `${IPCL_DIR}/build/test/unit-test_omp` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
 
 # Standardization
 This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
-The compliance test is included in the [unit-test](test/test_cryptography.cpp#L117-L258).
+The compliance test is included in the [unit-test](test/test_cryptography.cpp#L112-L256).
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:

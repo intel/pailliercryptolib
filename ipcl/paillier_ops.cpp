@@ -14,11 +14,11 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
       m_available(1),
       m_pubkey(pub_key),
       m_length(1),
-      m_bn{bn}  // m_bn[0]
-{}
+      m_bn{bn} {}
 
 PaillierEncryptedNumber::PaillierEncryptedNumber(
-    const PaillierPublicKey* pub_key, const BigNumber bn[8], size_t length)
+    const PaillierPublicKey* pub_key, const std::vector<BigNumber>& bn,
+    size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
       m_available(8),
@@ -26,7 +26,8 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
       m_bn{bn[0], bn[1], bn[2], bn[3], bn[4], bn[5], bn[6], bn[7]} {}
 
 PaillierEncryptedNumber::PaillierEncryptedNumber(
-    const PaillierPublicKey* pub_key, const uint32_t scalar[8], size_t length)
+    const PaillierPublicKey* pub_key, const std::vector<uint32_t>& scalar,
+    size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
       m_available(8),
@@ -48,7 +49,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     BigNumber sum = a.raw_add(a.m_bn[0], b.m_bn[0]);
     return PaillierEncryptedNumber(m_pubkey, sum);
   } else {
-    BigNumber sum[8];
+    std::vector<BigNumber> sum(8);
     for (int i = 0; i < m_available; i++)
       sum[i] = a.raw_add(a.m_bn[i], b.m_bn[i]);
     return PaillierEncryptedNumber(m_pubkey, sum);
@@ -68,10 +69,11 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
 
 // multi encrypted CT+PT
 PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
-    const BigNumber other[8]) const {
+    const std::vector<BigNumber>& other) const {
   PaillierEncryptedNumber a = *this;
 
-  BigNumber b[8], sum[8];
+  std::vector<BigNumber> b(8);
+  std::vector<BigNumber> sum(8);
   a.m_pubkey->encrypt(b, other, false);
   for (int i = 0; i < 8; i++) sum[i] = a.raw_add(a.m_bn[i], b[i]);
   return PaillierEncryptedNumber(m_pubkey, sum);
@@ -92,8 +94,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
     BigNumber product = a.raw_mul(a.m_bn[0], b.m_bn[0]);
     return PaillierEncryptedNumber(m_pubkey, product);
   } else {
-    BigNumber product[8];
-    a.raw_mul(product, a.m_bn, b.m_bn);
+    std::vector<BigNumber> product = a.raw_mul(a.m_bn, b.m_bn);
     return PaillierEncryptedNumber(m_pubkey, product);
   }
 }
@@ -115,10 +116,10 @@ BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
   return a * b % sq;
 }
 
-void PaillierEncryptedNumber::raw_mul(BigNumber res[8], const BigNumber a[8],
-                                      const BigNumber b[8]) const {
+std::vector<BigNumber> PaillierEncryptedNumber::raw_mul(
+    const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
   std::vector<BigNumber> sq(8, m_pubkey->getNSQ());
-  m_pubkey->ippMultiBuffExp(res, a, b, sq.data());
+  return m_pubkey->ippMultiBuffExp(a, b, sq);
 }
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
@@ -141,8 +142,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {
   else
     shift = -shift;
 
-  BigNumber new_bn[8];
-  getArrayBN(new_bn);
+  std::vector<BigNumber> new_bn = getArrayBN();
 
   std::rotate(std::begin(new_bn), std::begin(new_bn) + shift, std::end(new_bn));
   return PaillierEncryptedNumber(m_pubkey, new_bn);

@@ -17,11 +17,11 @@
 TEST(CryptoTest, CryptoTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  ipcl::BigNumber ct[8];
-  ipcl::BigNumber dt[8];
+  std::vector<ipcl::BigNumber> ct(8);
+  std::vector<ipcl::BigNumber> dt(8);
 
-  uint32_t pt[8];
-  ipcl::BigNumber ptbn[8];
+  std::vector<uint32_t> pt(8);
+  std::vector<ipcl::BigNumber> ptbn(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -45,16 +45,20 @@ TEST(CryptoTest, CryptoTest) {
 }
 
 #ifdef IPCL_UNITTEST_OMP
-void Encryption(int num_threads, std::vector<ipcl::BigNumber*> v_ct,
-                std::vector<ipcl::BigNumber*> v_ptbn, ipcl::keyPair key) {
+void Encryption(int num_threads,
+                std::vector<std::vector<ipcl::BigNumber>>& v_ct,
+                const std::vector<std::vector<ipcl::BigNumber>>& v_ptbn,
+                const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     key.pub_key->encrypt(v_ct[i], v_ptbn[i]);
   }
 }
 
-void Decryption(int num_threads, std::vector<ipcl::BigNumber*> v_dt,
-                std::vector<ipcl::BigNumber*> v_ct, ipcl::keyPair key) {
+void Decryption(int num_threads,
+                std::vector<std::vector<ipcl::BigNumber>>& v_dt,
+                const std::vector<std::vector<ipcl::BigNumber>>& v_ct,
+                const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     key.priv_key->decrypt(v_dt[i], v_ct[i]);
@@ -66,23 +70,21 @@ TEST(CryptoTest, CryptoTest_OMP) {
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
   size_t num_threads = omp_get_max_threads();
-  // std::cout << "available threads: " << num_threads << std::endl;
 
-  std::vector<ipcl::BigNumber*> v_ct(num_threads);
-  std::vector<ipcl::BigNumber*> v_dt(num_threads);
-  std::vector<uint32_t*> v_pt(num_threads);
-  std::vector<ipcl::BigNumber*> v_ptbn(num_threads);
+  std::vector<std::vector<ipcl::BigNumber>> v_ct(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<uint32_t>> v_pt(num_threads,
+                                          std::vector<uint32_t>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn(
+      num_threads, std::vector<ipcl::BigNumber>(8));
 
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
   for (int i = 0; i < num_threads; i++) {
-    v_ct[i] = new ipcl::BigNumber[8];
-    v_dt[i] = new ipcl::BigNumber[8];
-    v_pt[i] = new uint32_t[8];
-    v_ptbn[i] = new ipcl::BigNumber[8];
-
     // for each threads, generated different rand testing value
     for (int j = 0; j < 8; j++) {
       v_pt[i][j] = dist(rng);
@@ -100,13 +102,6 @@ TEST(CryptoTest, CryptoTest_OMP) {
       v_dt[i][j].num2vec(v);
       EXPECT_EQ(v[0], v_pt[i][j]);
     }
-  }
-
-  for (int i = 0; i < num_threads; i++) {
-    delete[] v_ct[i];
-    delete[] v_dt[i];
-    delete[] v_pt[i];
-    delete[] v_ptbn[i];
   }
 
   delete key.pub_key;
@@ -136,10 +131,10 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   ipcl::keyPair key = {public_key, private_key};
 
-  ipcl::BigNumber ptbn[8];
-  ipcl::BigNumber ct[8];
-  ipcl::BigNumber dt[8];
-  ipcl::BigNumber ir[8];
+  std::vector<ipcl::BigNumber> ptbn(8);
+  std::vector<ipcl::BigNumber> ct(8);
+  std::vector<ipcl::BigNumber> dt(8);
+  std::vector<ipcl::BigNumber> ir(8);
 
   ipcl::BigNumber c1 =
       "0x1fb7f08a42deb47876e4cbdc3f0b172c033563a696ad7a7c76fa5971b793fa488dcdd6"
@@ -229,7 +224,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   ipcl::PaillierEncryptedNumber sum = a + b;
   ipcl::BigNumber res = sum.getBN();
 
-  ipcl::BigNumber ct12[8], dt12[8];
+  std::vector<ipcl::BigNumber> ct12(8);
+  std::vector<ipcl::BigNumber> dt12(8);
   for (int i = 0; i < 8; i++) {
     ct12[i] = res;
   }

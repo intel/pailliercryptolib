@@ -4,6 +4,8 @@
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
 #define IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
 
+#include <vector>
+
 #include "ipcl/paillier_ops.hpp"
 
 namespace ipcl {
@@ -30,14 +32,15 @@ class PaillierPrivateKey {
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext ciphertext to be decrypted
    */
-  void decrypt(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
+  void decrypt(std::vector<BigNumber>& plaintext,
+               const std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
    */
-  void decrypt(BigNumber plaintext[8],
+  void decrypt(std::vector<BigNumber>& plaintext,
                const PaillierEncryptedNumber ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
@@ -123,14 +126,16 @@ class PaillierPrivateKey {
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptRAW(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
+  void decryptRAW(std::vector<BigNumber>& plaintext,
+                  const std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Raw decryption function with CRT optimization
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]) const;
+  void decryptCRT(std::vector<BigNumber>& plaintext,
+                  const std::vector<BigNumber>& ciphertext) const;
 };
 
 }  // namespace ipcl

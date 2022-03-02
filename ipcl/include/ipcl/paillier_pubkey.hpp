@@ -42,7 +42,8 @@ class PaillierPublicKey {
    * @param[in] value array of plaintext to be encrypted
    * @param[in] make_secure apply obfuscator(default value is true)
    */
-  void encrypt(BigNumber ciphertext[8], const BigNumber value[8],
+  void encrypt(std::vector<BigNumber>& ciphertext,
+               const std::vector<BigNumber>& value,
                bool make_secure = true) const;
 
   /**
@@ -69,8 +70,9 @@ class PaillierPublicKey {
    * @param[in] pow arrya pow of the exponentiation
    * @param[in] m arrayodular
    */
-  void ippMultiBuffExp(BigNumber res[8], const BigNumber base[8],
-                       const BigNumber pow[8], const BigNumber m[8]) const;
+  std::vector<BigNumber> ippMultiBuffExp(const std::vector<BigNumber>& base,
+                                         const std::vector<BigNumber>& pow,
+                                         const std::vector<BigNumber>& m) const;
 
   /**
    * Invert function needed by encoder(float to integer)
@@ -109,17 +111,14 @@ class PaillierPublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  void apply_obfuscator(BigNumber obfuscator[8]) const;
+  void apply_obfuscator(std::vector<BigNumber>& obfuscator) const;
 
   /**
    * @brief Set the Random object for ISO/IEC 18033-6 compliance check
    *
    * @param r
    */
-  void setRandom(BigNumber r[8]) {
-    for (int i = 0; i < 8; i++) m_r[i] = r[i];
-    m_testv = true;
-  }
+  void setRandom(const std::vector<BigNumber>& r);
 
   const void* addr = static_cast<const void*>(this);
 
@@ -133,15 +132,15 @@ class PaillierPublicKey {
   int m_dwords;
   unsigned int m_init_seed;
   bool m_enable_DJN;
-  BigNumber m_r[8];
+  std::vector<BigNumber> m_r;
   bool m_testv;
 
   /**
    * Get random value
-   * @param[in,out] addr addr of random
    * @param[in] size size of random
+   * @return addr of random
    */
-  void randIpp32u(std::vector<Ipp32u>& addr, int size) const;
+  std::vector<Ipp32u> randIpp32u(int size) const;
 
   /**
    * Raw encrypt function
@@ -149,7 +148,8 @@ class PaillierPublicKey {
    * @param[in] plaintext plaintext array to be encrypted
    * @param[in] make_secure apply obfuscator(default value is true)
    */
-  void raw_encrypt(BigNumber ciphertext[8], const BigNumber plaintext[8],
+  void raw_encrypt(std::vector<BigNumber>& ciphertext,
+                   const std::vector<BigNumber>& plaintext,
                    bool make_secure = true) const;
 
   /**
