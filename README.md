@@ -10,6 +10,7 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
   - [Testing and Benchmarking](#testing-and-benchmarking)
+- [Python Extension](#python-extension)
 - [Standardization](#standardization)
 - [Contributors](#contributors)
 
@@ -93,6 +94,9 @@ cmake --build build --target benchmark
 OpenMP unit-tests and benchmarks will automatically be applied if `-DIPCL_ENABLE_OMP=ON` is set.
 
 The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+
+# Python Extension
+Alongside the Intel Paillier Cryptosystem Library, we provide a Python extension package utilizing this library as a backend. For installation and usage detail, refer to [Intel Paillier Cryptosystem Library - Python](https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.pailliercryptolib-python).
 
 # Standardization
 This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
