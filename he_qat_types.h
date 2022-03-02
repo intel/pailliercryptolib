@@ -9,7 +9,7 @@
 
 #include <pthread.h>
 
-#define HE_QAT_BUFFER_SIZE 4
+#define HE_QAT_BUFFER_SIZE 16
 // const unsigned HE_QAT_BUFFER_SIZE = 4;
 
 // Type definitions
