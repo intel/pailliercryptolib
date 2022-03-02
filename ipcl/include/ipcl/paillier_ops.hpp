@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ipcl/paillier_pubkey.hpp"
+#include "ipcl/util.hpp"
 
 namespace ipcl {
 
@@ -89,8 +90,8 @@ class PaillierEncryptedNumber {
    * @param[in] idx index of output array(default value is 0)
    */
   BigNumber getBN(size_t idx = 0) const {
-    if (m_available == 1 && idx > 0)
-      throw std::out_of_range("PaillierEncryptedNumber only has 1 BigNumber");
+    ERROR_CHECK(m_available != 1 || idx <= 0,
+                "getBN: PaillierEncryptedNumber only has 1 BigNumber");
 
     return m_bn[idx];
   }

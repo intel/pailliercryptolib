@@ -127,11 +127,8 @@ class BigNumber {
   IppsBigNumState* m_pBN;
 };
 
-// convert bit size into 32-bit words
-#define BITSIZE_WORD(n) ((((n) + 31) >> 5))
-
-// Bin: convert bit size into 64-bit words
-#define BITSIZE_DWORD(n) ((((n) + 63) >> 6))
+int BITSIZE_WORD(int n);
+int BITSIZE_DWORD(int n);
 
 }  // namespace ipcl
 #endif  // _BIGNUM_H_

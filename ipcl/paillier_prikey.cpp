@@ -7,6 +7,8 @@
 
 #include <cstring>
 
+#include "ipcl/util.hpp"
+
 namespace ipcl {
 /**
  * Compute lcm for p and q
@@ -45,13 +47,9 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
       m_bits(m_pubkey->getBits()),
       m_dwords(m_pubkey->getDwords()),
       m_enable_crt(true) {
-  if (p * q != m_n) {
-    throw std::runtime_error("Public key does not match p * q.");
-  }
-
-  if (p == q) {
-    throw std::runtime_error("p and q error.");
-  }
+  ERROR_CHECK(p * q == m_n,
+              "PaillierPrivateKey ctor: Public key does not match p * q.");
+  ERROR_CHECK(p != q, "PaillierPrivateKey ctor: p and q are same");
 }
 
 void PaillierPrivateKey::decryptRAW(
@@ -69,9 +67,8 @@ void PaillierPrivateKey::decryptRAW(
   for (int i = 0; i < 8; i++) {
     out_m[i] = reinterpret_cast<int64u*>(alloca(length));
     cip_array[i] = reinterpret_cast<int64u*>(alloca(length));
-
-    if (out_m[i] == nullptr || cip_array[i] == nullptr)
-      throw std::runtime_error("decryptRAW: alloc memory for error");
+    ERROR_CHECK(out_m[i] != nullptr && cip_array[i] != nullptr,
+                "decryptRAW: alloc memory for error");
 
     memset(out_m[i], 0, length);
     memset(cip_array[i], 0, length);
@@ -98,11 +95,11 @@ void PaillierPrivateKey::decryptRAW(
                    pBuffer.data(), bufferLen);
 
   for (int i = 0; i < 8; i++) {
-    if (MBX_STATUS_OK != MBX_GET_STS(st, i))
-      throw std::runtime_error(
-          std::string(
-              "decryptRAW: error multi buffered exp modules, error code = ") +
-          std::to_string(MBX_GET_STS(st, i)));
+    ERROR_CHECK(
+        MBX_STATUS_OK == MBX_GET_STS(st, i),
+        std::string(
+            "decryptRAW: error multi buffered exp modules, error code = ") +
+            std::to_string(MBX_GET_STS(st, i)));
   }
 
   BigNumber ipp_res(m_nsquare);
@@ -121,6 +118,9 @@ void PaillierPrivateKey::decryptRAW(
 void PaillierPrivateKey::decrypt(
     std::vector<BigNumber>& plaintext,
     const std::vector<BigNumber>& ciphertext) const {
+  VEC_SIZE_CHECK(plaintext);
+  VEC_SIZE_CHECK(ciphertext);
+
   if (m_enable_crt)
     decryptCRT(plaintext, ciphertext);
   else
@@ -130,9 +130,10 @@ void PaillierPrivateKey::decrypt(
 void PaillierPrivateKey::decrypt(
     std::vector<BigNumber>& plaintext,
     const PaillierEncryptedNumber ciphertext) const {
+  VEC_SIZE_CHECK(plaintext);
   // check key match
-  if (ciphertext.getPK().getN() != m_pubkey->getN())
-    throw std::runtime_error("decrypt: public key mismatch error.");
+  ERROR_CHECK(ciphertext.getPK().getN() == m_pubkey->getN(),
+              "decrypt: public key mismatch error.");
 
   std::vector<BigNumber> res = ciphertext.getArrayBN();
   if (m_enable_crt)

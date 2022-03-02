@@ -10,6 +10,8 @@
 #include <cstring>
 #include <random>
 
+#include "ipcl/util.hpp"
+
 namespace ipcl {
 
 static inline auto randomUniformUnsignedInt() {
@@ -49,37 +51,33 @@ BigNumber PaillierPublicKey::getRandom(int length) const {
   int seedSize = BITSIZE_WORD(seedBitSize);
 
   stat = ippsPRNGGetSize(&size);
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("getRandom: get IppsPRNGState context error.");
+  ERROR_CHECK(stat == ippStsNoErr,
+              "getRandom: get IppsPRNGState context error.");
 
   auto pRand = std::vector<Ipp8u>(size);
 
   stat =
       ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(pRand.data()));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("getRandom: init rand context error.");
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init rand context error.");
 
   auto seed = randIpp32u(seedSize);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
   stat = ippsPRNGSetSeed(BN(bseed),
                          reinterpret_cast<IppsPRNGState*>(pRand.data()));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("getRandom: set up seed value error.");
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: set up seed value error.");
 
   // define length Big Numbers
   int bn_size = BITSIZE_WORD(length);
   stat = ippsBigNumGetSize(bn_size, &size);
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("getRandom: get IppsBigNumState context error.");
+  ERROR_CHECK(stat == ippStsNoErr,
+              "getRandom: get IppsBigNumState context error.");
 
   IppsBigNumState* pBN = reinterpret_cast<IppsBigNumState*>(alloca(size));
-  if (nullptr == pBN)
-    throw std::runtime_error("getRandom: big number alloca error");
+  ERROR_CHECK(pBN != nullptr, "getRandom: big number alloca error");
 
   stat = ippsBigNumInit(bn_size, pBN);
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("getRandom: init big number context error.");
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init big number context error.");
 
   int bnBitSize = length;
   ippsPRNGenRDRAND_BN(pBN, bnBitSize,
@@ -115,6 +113,8 @@ void PaillierPublicKey::apply_obfuscator(
   std::vector<BigNumber> base(8, m_hs);
   std::vector<BigNumber> sq(8, m_nsquare);
 
+  VEC_SIZE_CHECK(obfuscator);
+
   if (m_enable_DJN) {
     for (auto& r_ : r) {
       r_ = getRandom(m_randbits);
@@ -136,6 +136,8 @@ void PaillierPublicKey::apply_obfuscator(
 }
 
 void PaillierPublicKey::setRandom(const std::vector<BigNumber>& r) {
+  VEC_SIZE_CHECK(r);
+
   std::copy(r.begin(), r.end(), std::back_inserter(m_r));
   m_testv = true;
 }
@@ -162,6 +164,9 @@ void PaillierPublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
 void PaillierPublicKey::encrypt(std::vector<BigNumber>& ciphertext,
                                 const std::vector<BigNumber>& value,
                                 bool make_secure) const {
+  VEC_SIZE_CHECK(ciphertext);
+  VEC_SIZE_CHECK(value);
+
   raw_encrypt(ciphertext, value, make_secure);
 }
 
@@ -182,6 +187,10 @@ void PaillierPublicKey::encrypt(BigNumber& ciphertext,
 std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& pow,
     const std::vector<BigNumber>& m) const {
+  VEC_SIZE_CHECK(base);
+  VEC_SIZE_CHECK(pow);
+  VEC_SIZE_CHECK(m);
+
   mbx_status st = MBX_STATUS_OK;
 
   int bits = m[0].BitSize();
@@ -197,8 +206,9 @@ std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
     b_array[i] = reinterpret_cast<int64u*>(alloca(length));
     p_array[i] = reinterpret_cast<int64u*>(alloca(length));
 
-    if (out_x[i] == nullptr || b_array[i] == nullptr || p_array[i] == nullptr)
-      throw std::runtime_error("ippMultiBuffExp: alloc memory for error");
+    ERROR_CHECK(
+        out_x[i] != nullptr && b_array[i] != nullptr && p_array[i] != nullptr,
+        "ippMultiBuffExp: alloc memory for error");
 
     memset(out_x[i], 0, length);
     memset(b_array[i], 0, length);
@@ -238,10 +248,10 @@ std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
                    reinterpret_cast<Ipp8u*>(pBuffer.data()), bufferLen);
 
   for (int i = 0; i < 8; i++) {
-    if (MBX_STATUS_OK != MBX_GET_STS(st, i))
-      throw std::runtime_error(
-          std::string("error multi buffered exp modules, error code = ") +
-          std::to_string(MBX_GET_STS(st, i)));
+    ERROR_CHECK(MBX_STATUS_OK == MBX_GET_STS(st, i),
+                std::string("ippMultiBuffExp: error multi buffered exp "
+                            "modules, error code = ") +
+                    std::to_string(MBX_GET_STS(st, i)));
   }
 
   // It is important to hold a copy of nsquare for thread-safe purpose
@@ -272,44 +282,39 @@ BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
   int size;
   // define and initialize Montgomery Engine over Modulus N
   stat = ippsMontGetSize(IppsBinaryMethod, nlen, &size);
-  if (stat != ippStsNoErr)
-    throw std::runtime_error(
-        "ippMontExp: get the size of IppsMontState context error.");
+  ERROR_CHECK(stat == ippStsNoErr,
+              "ippMontExp: get the size of IppsMontState context error.");
 
   auto pMont = std::vector<Ipp8u>(size);
 
   stat = ippsMontInit(IppsBinaryMethod, nlen,
                       reinterpret_cast<IppsMontState*>(pMont.data()));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("ippMontExp: init Mont context error.");
+  ERROR_CHECK(stat == ippStsNoErr, "ippMontExp: init Mont context error.");
 
   stat =
       ippsMontSet(pow_m, nlen, reinterpret_cast<IppsMontState*>(pMont.data()));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error("ippMontExp: set Mont input error.");
+  ERROR_CHECK(stat == ippStsNoErr, "ippMontExp: set Mont input error.");
 
   // encode base into Montfomery form
   BigNumber bform(m);
   stat = ippsMontForm(BN(base), reinterpret_cast<IppsMontState*>(pMont.data()),
                       BN(bform));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error(
-        "ippMontExp: convet big number into Mont form error.");
+  ERROR_CHECK(stat == ippStsNoErr,
+              "ippMontExp: convet big number into Mont form error.");
 
   // compute R = base^pow mod N
   stat = ippsMontExp(BN(bform), BN(pow),
                      reinterpret_cast<IppsMontState*>(pMont.data()), BN(res));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error(std::string("ippsMontExp: error code = ") +
-                             std::to_string(stat));
+  ERROR_CHECK(stat == ippStsNoErr,
+              std::string("ippsMontExp: error code = ") + std::to_string(stat));
 
   BigNumber one(1);
   // R = MontMul(R,1)
   stat = ippsMontMul(BN(res), BN(one),
                      reinterpret_cast<IppsMontState*>(pMont.data()), BN(res));
-  if (stat != ippStsNoErr)
-    throw std::runtime_error(std::string("ippsMontMul: error code = ") +
-                             std::to_string(stat));
+
+  ERROR_CHECK(stat == ippStsNoErr,
+              std::string("ippsMontMul: error code = ") + std::to_string(stat));
 
   return res;
 }

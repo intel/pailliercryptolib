@@ -5,6 +5,8 @@
 
 #include <algorithm>
 
+#include "ipcl/util.hpp"
+
 namespace ipcl {
 // constructors
 //
@@ -38,9 +40,8 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
 // CT+CT
 PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     const PaillierEncryptedNumber& other) const {
-  if (m_pubkey->getN() != other.m_pubkey->getN()) {
-    throw std::runtime_error("two different public keys detected!!");
-  }
+  ERROR_CHECK(m_pubkey->getN() == other.m_pubkey->getN(),
+              "operator+: two different public keys detected!!");
 
   PaillierEncryptedNumber a = *this;
   PaillierEncryptedNumber b = other;
@@ -70,6 +71,8 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
 // multi encrypted CT+PT
 PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     const std::vector<BigNumber>& other) const {
+  VEC_SIZE_CHECK(other);
+
   PaillierEncryptedNumber a = *this;
 
   std::vector<BigNumber> b(8);
@@ -83,9 +86,8 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
 // integer
 PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
     const PaillierEncryptedNumber& other) const {
-  if (m_pubkey->getN() != other.m_pubkey->getN()) {
-    throw std::runtime_error("two different public keys detected!!");
-  }
+  ERROR_CHECK(m_pubkey->getN() == other.m_pubkey->getN(),
+              "operator*: two different public keys detected!!");
 
   PaillierEncryptedNumber a = *this;
   PaillierEncryptedNumber b = other;
@@ -129,10 +131,10 @@ BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
 }
 
 PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {
-  if (m_available == 1)
-    throw std::invalid_argument("Cannot rotate single PaillierEncryptedNumber");
-  if (shift > 8 || shift < -8)
-    throw std::invalid_argument("Cannot shift more than 8 or -8");
+  ERROR_CHECK(m_available != 1,
+              "rotate: Cannot rotate single PaillierEncryptedNumber");
+  ERROR_CHECK(shift >= -8 && shift <= 8,
+              "rotate: Cannot shift more than 8 or -8");
 
   if (shift == 0 || shift == 8 || shift == -8)
     return PaillierEncryptedNumber(m_pubkey, m_bn);

@@ -7,6 +7,8 @@
 #include <random>
 #include <vector>
 
+#include "ipcl/util.hpp"
+
 namespace ipcl {
 
 #define N_BIT_SIZE_MAX 2048
@@ -87,11 +89,10 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
   https://www.intel.com/content/www/us/en/develop/documentation/ipp-crypto-reference/top/multi-buffer-cryptography-functions/modular-exponentiation/mbx-exp-1024-2048-3072-4096-mb8.html
   modulus size = n * n (keySize * keySize )
   */
-  if (n_length > N_BIT_SIZE_MAX) {
-    throw std::runtime_error(
-        "modulus size in bits should belong to either 1Kb, 2Kb, "
-        "3Kb or 4Kb range only, key size exceed the range!!!");
-  }
+  ERROR_CHECK(
+      n_length <= N_BIT_SIZE_MAX,
+      "generateKeyPair: modulus size in bits should belong to either 1Kb, 2Kb, "
+      "3Kb or 4Kb range only, key size exceed the range!!!");
 
   BigNumber p, q, n;
 

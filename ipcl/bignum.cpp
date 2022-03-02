@@ -501,4 +501,7 @@ std::ostream& operator<<(std::ostream& os, const BigNumber& a) {
   return os;
 }
 
+int BITSIZE_WORD(int n) { return (((n) + 31) >> 5); }
+int BITSIZE_DWORD(int n) { return (((n) + 63) >> 6); }
+
 }  // namespace ipcl
