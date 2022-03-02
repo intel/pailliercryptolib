@@ -49,7 +49,7 @@ target_link_directories(he_qat PUBLIC /opt/openssl/lib)
 target_link_libraries(he_qat PRIVATE cpa_sample_utils)
 target_link_libraries(he_qat PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
 
-add_definitions(-D_DESTINY_DEBUG_VERBOSE)
+#add_definitions(-D_DESTINY_DEBUG_VERBOSE)
 
 add_executable(test_context test_context.c)
 target_link_libraries(test_context PUBLIC he_qat)
