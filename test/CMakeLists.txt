@@ -18,6 +18,5 @@ target_link_libraries(unittest_ipcl PRIVATE
 # enable OpenMP unittests
 if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
-  add_compile_definitions(IPCL_UNITTEST_OMP)
   target_link_libraries(unittest_ipcl PRIVATE OpenMP::OpenMP_CXX)
 endif()

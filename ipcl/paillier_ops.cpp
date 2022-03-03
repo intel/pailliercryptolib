@@ -121,13 +121,13 @@ BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
 std::vector<BigNumber> PaillierEncryptedNumber::raw_mul(
     const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
   std::vector<BigNumber> sq(8, m_pubkey->getNSQ());
-  return m_pubkey->ippMultiBuffExp(a, b, sq);
+  return m_pubkey->ippModExp(a, b, sq);
 }
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
                                            const BigNumber& b) const {
   BigNumber sq = m_pubkey->getNSQ();
-  return m_pubkey->ippMontExp(a, b, sq);
+  return m_pubkey->ippModExp(a, b, sq);
 }
 
 PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {

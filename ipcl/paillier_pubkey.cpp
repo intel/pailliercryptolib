@@ -10,6 +10,10 @@
 #include <cstring>
 #include <random>
 
+#ifdef IPCL_CRYPTO_OMP
+#include <omp.h>
+#endif
+
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -100,7 +104,7 @@ void PaillierPublicKey::enableDJN() {
   BigNumber rmod_sq = rmod * rmod;
   BigNumber rmod_neg = rmod_sq * -1;
   BigNumber h = rmod_neg % m_n;
-  m_hs = ippMontExp(h, m_n, m_nsquare);
+  m_hs = ippSBModExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
@@ -119,7 +123,7 @@ void PaillierPublicKey::apply_obfuscator(
     for (auto& r_ : r) {
       r_ = getRandom(m_randbits);
     }
-    obfuscator = ippMultiBuffExp(base, r, sq);
+    obfuscator = ippModExp(base, r, sq);
   } else {
     for (int i = 0; i < 8; i++) {
       if (m_testv) {
@@ -131,7 +135,7 @@ void PaillierPublicKey::apply_obfuscator(
       pown[i] = m_n;
       sq[i] = m_nsquare;
     }
-    obfuscator = ippMultiBuffExp(r, pown, sq);
+    obfuscator = ippModExp(r, pown, sq);
   }
 }
 
@@ -184,7 +188,30 @@ void PaillierPublicKey::encrypt(BigNumber& ciphertext,
   ---------------------------------------------------------- */
 }
 
-std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
+std::vector<BigNumber> PaillierPublicKey::ippModExp(
+    const std::vector<BigNumber>& base, const std::vector<BigNumber>& pow,
+    const std::vector<BigNumber>& m) const {
+#ifdef IPCL_CRYPTO_MB_MOD_EXP
+  return ippMBModExp(base, pow, m);
+#else
+  std::vector<BigNumber> res(8);
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif
+  for (int i = 0; i < 8; i++) {
+    res[i] = ippSBModExp(base[i], pow[i], m[i]);
+  }
+  return res;
+#endif
+}
+
+BigNumber PaillierPublicKey::ippModExp(const BigNumber& base,
+                                       const BigNumber& pow,
+                                       const BigNumber& m) const {
+  return ippSBModExp(base, pow, m);
+}
+
+std::vector<BigNumber> PaillierPublicKey::ippMBModExp(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& pow,
     const std::vector<BigNumber>& m) const {
   VEC_SIZE_CHECK(base);
@@ -266,9 +293,9 @@ std::vector<BigNumber> PaillierPublicKey::ippMultiBuffExp(
   return res;
 }
 
-BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
-                                        const BigNumber& pow,
-                                        const BigNumber& m) const {
+BigNumber PaillierPublicKey::ippSBModExp(const BigNumber& base,
+                                         const BigNumber& pow,
+                                         const BigNumber& m) const {
   IppStatus stat = ippStsNoErr;
   // It is important to declear res * bform bit length refer to ipp-crypto spec:
   // R should not be less than the data length of the modulus m

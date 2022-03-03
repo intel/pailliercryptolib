@@ -60,19 +60,11 @@ class PaillierPublicKey {
    * @param[in] m modular
    * @return the modular exponentiation result of type BigNumber
    */
-  BigNumber ippMontExp(const BigNumber& base, const BigNumber& pow,
-                       const BigNumber& m) const;
-
-  /**
-   * Multi-buffered modular exponentiation
-   * @param[out] res array result of the modular exponentiation
-   * @param[in] base array base of the exponentiation
-   * @param[in] pow arrya pow of the exponentiation
-   * @param[in] m arrayodular
-   */
-  std::vector<BigNumber> ippMultiBuffExp(const std::vector<BigNumber>& base,
-                                         const std::vector<BigNumber>& pow,
-                                         const std::vector<BigNumber>& m) const;
+  std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
+                                   const std::vector<BigNumber>& pow,
+                                   const std::vector<BigNumber>& m) const;
+  BigNumber ippModExp(const BigNumber& base, const BigNumber& pow,
+                      const BigNumber& m) const;
 
   /**
    * Invert function needed by encoder(float to integer)
@@ -138,7 +130,7 @@ class PaillierPublicKey {
   /**
    * Get random value
    * @param[in] size size of random
-   * @return addr of random
+   * @return addr of random of type Ipp32u vector
    */
   std::vector<Ipp32u> randIpp32u(int size) const;
 
@@ -151,13 +143,43 @@ class PaillierPublicKey {
   void raw_encrypt(std::vector<BigNumber>& ciphertext,
                    const std::vector<BigNumber>& plaintext,
                    bool make_secure = true) const;
-
+  //   /**
+  //    * Raw Multi-buffered modular exponentiation
+  //    * @param[in] base array base of the exponentiation
+  //    * @param[in] pow arrya pow of the exponentiation
+  //    * @param[in] m arrayodular
+  //    * @return result of the modular exponentiation of type BigNumber vector
+  //    */
+  //   std::vector<BigNumber> raw_ippMultiBuffExp(
+  //       const std::vector<BigNumber>& base, const std::vector<BigNumber>&
+  //       pow, const std::vector<BigNumber>& m) const;
   /**
    * Get random value
    * @param[in] length bit length
    * @return the random value of type BigNumber
    */
   BigNumber getRandom(int length) const;
+
+  /**
+   * Single-buffered modular exponentiation
+   * @param[in] base base of the exponentiation
+   * @param[in] pow pow of the exponentiation
+   * @param[in] m modular
+   * @return the modular exponentiation result of type BigNumber
+   */
+  BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
+                        const BigNumber& m) const;
+
+  /**
+   * Multi-buffered modular exponentiation
+   * @param[in] base array base of the exponentiation
+   * @param[in] pow arrya pow of the exponentiation
+   * @param[in] m arrayodular
+   * @return result of the modular exponentiation of type BigNumber vector
+   */
+  std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
+                                     const std::vector<BigNumber>& pow,
+                                     const std::vector<BigNumber>& m) const;
 };
 
 }  // namespace ipcl

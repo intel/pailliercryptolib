@@ -6,9 +6,9 @@
 #include <random>
 #include <vector>
 
-#ifdef IPCL_UNITTEST_OMP
+#ifdef IPCL_USE_OMP
 #include <omp.h>
-#endif
+#endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
 #include "ipcl/paillier_keygen.hpp"
@@ -44,7 +44,7 @@ TEST(CryptoTest, CryptoTest) {
   delete key.priv_key;
 }
 
-#ifdef IPCL_UNITTEST_OMP
+#ifdef IPCL_USE_OMP
 void Encryption(int num_threads,
                 std::vector<std::vector<ipcl::BigNumber>>& v_ct,
                 const std::vector<std::vector<ipcl::BigNumber>>& v_ptbn,
@@ -107,7 +107,7 @@ TEST(CryptoTest, CryptoTest_OMP) {
   delete key.pub_key;
   delete key.priv_key;
 }
-#endif
+#endif  // IPCL_USE_OMP
 
 TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   ipcl::BigNumber p =

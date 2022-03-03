@@ -6,9 +6,9 @@
 #include <random>
 #include <vector>
 
-#ifdef IPCL_UNITTEST_OMP
+#ifdef IPCL_USE_OMP
 #include <omp.h>
-#endif
+#endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
 #include "ipcl/paillier_keygen.hpp"
@@ -409,7 +409,7 @@ TEST(OperationTest, AddSubTest) {
   delete key.priv_key;
 }
 
-#ifdef IPCL_UNITTEST_OMP
+#ifdef IPCL_USE_OMP
 void CtPlusCt_OMP(int num_threads,
                   std::vector<std::vector<ipcl::BigNumber>>& v_sum,
                   const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
@@ -804,4 +804,4 @@ TEST(OperationTest, CtMultiplyPtArrayTest_OMP) {
   delete key.pub_key;
   delete key.priv_key;
 }
-#endif
+#endif  // IPCL_USE_OMP

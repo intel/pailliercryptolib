@@ -42,7 +42,7 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
       m_lambda(lcm(m_pminusone, m_qminusone)),
       // TODO(bwang30): check if ippsModInv_BN does the same thing with
       // mpz_invert
-      m_x(m_n.InverseMul(m_pubkey->ippMontExp(m_g, m_lambda, m_nsquare) - 1) /
+      m_x(m_n.InverseMul(m_pubkey->ippModExp(m_g, m_lambda, m_nsquare) - 1) /
           m_n),
       m_bits(m_pubkey->getBits()),
       m_dwords(m_pubkey->getDwords()),
@@ -55,61 +55,16 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
 void PaillierPrivateKey::decryptRAW(
     std::vector<BigNumber>& plaintext,
     const std::vector<BigNumber>& ciphertext) const {
-  mbx_status st = MBX_STATUS_OK;
+  std::vector<BigNumber> pow_lambda(IPCL_CRYPTO_MB_SIZE, m_lambda);
+  std::vector<BigNumber> modulo(IPCL_CRYPTO_MB_SIZE, m_nsquare);
+  std::vector<BigNumber> res =
+      m_pubkey->ippModExp(ciphertext, pow_lambda, modulo);
 
-  // setup buffer for mbx_exp
-  int bufferLen = mbx_exp_BufferSize(m_bits * 2);
-  auto pBuffer = std::vector<Ipp8u>(bufferLen);
-
-  std::vector<int64u*> out_m(8), cip_array(8);
-  int length = m_dwords * sizeof(int64u);
-
-  for (int i = 0; i < 8; i++) {
-    out_m[i] = reinterpret_cast<int64u*>(alloca(length));
-    cip_array[i] = reinterpret_cast<int64u*>(alloca(length));
-    ERROR_CHECK(out_m[i] != nullptr && cip_array[i] != nullptr,
-                "decryptRAW: alloc memory for error");
-
-    memset(out_m[i], 0, length);
-    memset(cip_array[i], 0, length);
-  }
-
-  // TODO(bwang30): add multi-buffered modular exponentiation
-  std::vector<Ipp32u*> pow_c(8), pow_nsquare(8), pow_lambda(8);
-
-  int cBitLen, lBitLen, nsqBitLen;
-  BigNumber lambda = m_lambda;
-
-  for (int i = 0; i < 8; i++) {
-    ippsRef_BN(nullptr, &cBitLen, reinterpret_cast<Ipp32u**>(&pow_c[i]),
-               ciphertext[i]);
-    ippsRef_BN(nullptr, &lBitLen, &pow_lambda[i], lambda);
-    ippsRef_BN(nullptr, &nsqBitLen, &pow_nsquare[i], m_nsquare);
-
-    memcpy(cip_array[i], pow_c[i], BITSIZE_WORD(cBitLen) * 4);
-  }
-
-  st = mbx_exp_mb8(out_m.data(), cip_array.data(),
-                   reinterpret_cast<Ipp64u**>(pow_lambda.data()), lBitLen,
-                   reinterpret_cast<Ipp64u**>(pow_nsquare.data()), nsqBitLen,
-                   pBuffer.data(), bufferLen);
-
-  for (int i = 0; i < 8; i++) {
-    ERROR_CHECK(
-        MBX_STATUS_OK == MBX_GET_STS(st, i),
-        std::string(
-            "decryptRAW: error multi buffered exp modules, error code = ") +
-            std::to_string(MBX_GET_STS(st, i)));
-  }
-
-  BigNumber ipp_res(m_nsquare);
   BigNumber nn = m_n;
   BigNumber xx = m_x;
 
   for (int i = 0; i < 8; i++) {
-    ipp_res.Set(reinterpret_cast<Ipp32u*>(out_m[i]), BITSIZE_WORD(nsqBitLen),
-                IppsBigNumPOS);
-    BigNumber m = (ipp_res - 1) / nn;
+    BigNumber m = (res[i] - 1) / nn;
     m = m * xx;
     plaintext[i] = m % nn;
   }
@@ -156,8 +111,8 @@ void PaillierPrivateKey::decryptCRT(
   }
 
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  std::vector<BigNumber> resp = m_pubkey->ippMultiBuffExp(basep, pm1, psq);
-  std::vector<BigNumber> resq = m_pubkey->ippMultiBuffExp(baseq, qm1, qsq);
+  std::vector<BigNumber> resp = m_pubkey->ippModExp(basep, pm1, psq);
+  std::vector<BigNumber> resq = m_pubkey->ippModExp(baseq, qm1, qsq);
 
   for (int i = 0; i < 8; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
@@ -182,7 +137,7 @@ BigNumber PaillierPrivateKey::computeHfun(const BigNumber& a,
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber xm = a - 1;
   BigNumber base = m_g % b;
-  BigNumber pm = m_pubkey->ippMontExp(base, xm, b);
+  BigNumber pm = m_pubkey->ippModExp(base, xm, b);
   BigNumber lcrt = computeLfun(pm, a);
   return a.InverseMul(lcrt);
 }

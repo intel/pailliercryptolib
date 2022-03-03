@@ -4,9 +4,9 @@
 #include <benchmark/benchmark.h>
 
 #include <vector>
-#ifdef IPCL_BENCHMARK_OMP
+#ifdef IPCL_USE_OMP
 #include <omp.h>
-#endif
+#endif  // IPCL_USE_OMP
 #include <iostream>
 
 #include "ipcl/paillier_keygen.hpp"
@@ -203,7 +203,7 @@ BENCHMARK(BM_Mul_CTPT_buff8)
     ->Args({16})
     ->Args({64});
 
-#ifdef IPCL_BENCHMARK_OMP
+#ifdef IPCL_USE_OMP
 static void BM_Add_CTCT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
@@ -409,4 +409,4 @@ BENCHMARK(BM_Mul_CTPT_buff8_OMP)
     ->Unit(benchmark::kMicrosecond)
     ->Args({16})
     ->Args({64});
-#endif
+#endif  // IPCL_USE_OMP
