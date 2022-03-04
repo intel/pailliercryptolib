@@ -42,8 +42,8 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
       m_lambda(lcm(m_pminusone, m_qminusone)),
       // TODO(bwang30): check if ippsModInv_BN does the same thing with
       // mpz_invert
-      m_x(m_n.InverseMul(m_pubkey->ippModExp(m_g, m_lambda, m_nsquare) - 1) /
-          m_n),
+      m_x(m_n.InverseMul((m_pubkey->ippModExp(m_g, m_lambda, m_nsquare) - 1) /
+                         m_n)),
       m_bits(m_pubkey->getBits()),
       m_dwords(m_pubkey->getDwords()),
       m_enable_crt(true) {
