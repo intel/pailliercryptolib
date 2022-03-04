@@ -32,7 +32,7 @@ For increased security, typically the key length is at least 1024 bits, but reco
 To be added after P2CA review
 ## Building the Library
 ### Prerequisites
-For best performance, especially due to the multi-buffer modular exponentiation function, it is best to use the library on AVX512IFMA enabled systems, as listed below Intel CPU codenames:
+For best performance, especially due to the multi-buffer modular exponentiation function, the library is to be used on AVX512IFMA enabled systems, as listed below in Intel CPU codenames:
  - Intel Cannon Lake
  - Intel Ice Lake
 
