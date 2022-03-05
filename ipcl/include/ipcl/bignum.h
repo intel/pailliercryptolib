@@ -120,6 +120,7 @@ class BigNumber {
   void num2hex(std::string& s) const;          // convert to hex string
   void num2vec(std::vector<Ipp32u>& v) const;  // convert to 32-bit word vector
   friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
+  void num2char(std::vector<Ipp8u>& dest) const;
 
  protected:
   bool create(const Ipp32u* pData, int length,
