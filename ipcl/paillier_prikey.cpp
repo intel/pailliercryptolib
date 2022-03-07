@@ -7,6 +7,7 @@
 
 #include <cstring>
 
+#include "ipcl/mod_exp.hpp"
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -42,7 +43,7 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
       m_lambda(lcm(m_pminusone, m_qminusone)),
       // TODO(bwang30): check if ippsModInv_BN does the same thing with
       // mpz_invert
-      m_x(m_n.InverseMul((m_pubkey->ippModExp(m_g, m_lambda, m_nsquare) - 1) /
+      m_x(m_n.InverseMul((ipcl::ippModExp(m_g, m_lambda, m_nsquare) - 1) /
                          m_n)),
       m_bits(m_pubkey->getBits()),
       m_dwords(m_pubkey->getDwords()),
@@ -57,8 +58,7 @@ void PaillierPrivateKey::decryptRAW(
     const std::vector<BigNumber>& ciphertext) const {
   std::vector<BigNumber> pow_lambda(IPCL_CRYPTO_MB_SIZE, m_lambda);
   std::vector<BigNumber> modulo(IPCL_CRYPTO_MB_SIZE, m_nsquare);
-  std::vector<BigNumber> res =
-      m_pubkey->ippModExp(ciphertext, pow_lambda, modulo);
+  std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
 
   BigNumber nn = m_n;
   BigNumber xx = m_x;
@@ -111,8 +111,8 @@ void PaillierPrivateKey::decryptCRT(
   }
 
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  std::vector<BigNumber> resp = m_pubkey->ippModExp(basep, pm1, psq);
-  std::vector<BigNumber> resq = m_pubkey->ippModExp(baseq, qm1, qsq);
+  std::vector<BigNumber> resp = ipcl::ippModExp(basep, pm1, psq);
+  std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
   for (int i = 0; i < 8; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
@@ -137,7 +137,7 @@ BigNumber PaillierPrivateKey::computeHfun(const BigNumber& a,
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber xm = a - 1;
   BigNumber base = m_g % b;
-  BigNumber pm = m_pubkey->ippModExp(base, xm, b);
+  BigNumber pm = ipcl::ippModExp(base, xm, b);
   BigNumber lcrt = computeLfun(pm, a);
   return a.InverseMul(lcrt);
 }

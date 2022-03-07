@@ -63,16 +63,6 @@ class PaillierPublicKey {
   std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
                                    const std::vector<BigNumber>& pow,
                                    const std::vector<BigNumber>& m) const;
-  BigNumber ippModExp(const BigNumber& base, const BigNumber& pow,
-                      const BigNumber& m) const;
-
-  /**
-   * Invert function needed by encoder(float to integer)
-   * @param[in] a input of a
-   * @param[in] b input of b
-   * @return the invert result of type BigNumber
-   */
-  BigNumber IPP_invert(BigNumber a, BigNumber b);
 
   /**
    * Get N of public key in paillier scheme
@@ -159,27 +149,6 @@ class PaillierPublicKey {
    * @return the random value of type BigNumber
    */
   BigNumber getRandom(int length) const;
-
-  /**
-   * Single-buffered modular exponentiation
-   * @param[in] base base of the exponentiation
-   * @param[in] pow pow of the exponentiation
-   * @param[in] m modular
-   * @return the modular exponentiation result of type BigNumber
-   */
-  BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
-                        const BigNumber& m) const;
-
-  /**
-   * Multi-buffered modular exponentiation
-   * @param[in] base array base of the exponentiation
-   * @param[in] pow arrya pow of the exponentiation
-   * @param[in] m arrayodular
-   * @return result of the modular exponentiation of type BigNumber vector
-   */
-  std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
-                                     const std::vector<BigNumber>& pow,
-                                     const std::vector<BigNumber>& m) const;
 };
 
 }  // namespace ipcl

@@ -6,6 +6,7 @@ set(IPCL_SRCS paillier_prikey.cpp
 							paillier_ops.cpp
 							paillier_keygen.cpp
 							bignum.cpp
+							mod_exp.cpp
 )
 
 
