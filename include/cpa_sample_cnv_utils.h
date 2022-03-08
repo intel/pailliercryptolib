@@ -78,6 +78,10 @@
 #ifndef QAT_SAMPLE_CNV_UTILS_H_
 #define QAT_SAMPLE_CNV_UTILS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Common macro definitions */
 #ifndef DC_API_VERSION_AT_LEAST
 #define DC_API_VERSION_AT_LEAST(major, minor)                                  \
@@ -257,4 +261,9 @@ static CpaStatus getSampleDcCapabilities(
 
     return CPA_STATUS_SUCCESS;
 }
+
+#ifdef __cplusplus
+} // close extern "C" {
+#endif
+
 #endif /* QAT_SAMPLE_CNV_UTILS_H_ */

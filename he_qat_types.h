@@ -4,24 +4,28 @@
 #ifndef _HE_QAT_TYPES_H_
 #define _HE_QAT_TYPES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "cpa.h"
 #include "cpa_cy_im.h"
 
 #include <pthread.h>
 
 #define HE_QAT_BUFFER_SIZE 16
-// const unsigned HE_QAT_BUFFER_SIZE = 4;
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
 
 typedef enum {
-    HE_QAT_READY = 1,
+    HE_QAT_STATUS_INVALID_PARAM = 2,
+    HE_QAT_STATUS_READY = 1,
     HE_QAT_STATUS_SUCCESS = 0,
     HE_QAT_STATUS_FAIL = -1
 } HE_QAT_STATUS;
 
-typedef enum { HE_QAT_NO_OP = 0, HE_QAT_MODEXP = 1 } HE_QAT_OP;
+typedef enum { HE_QAT_OP_NONE = 0, HE_QAT_OP_MODEXP = 1 } HE_QAT_OP;
 
 typedef pthread_t HE_QAT_Inst;
 
@@ -48,4 +52,8 @@ typedef struct {
     CpaStatus status;
 } HE_QAT_InstConfig;
 
+#ifdef __cplusplus
+} // close the extern "C" {
 #endif
+
+#endif // _HE_QAT_TYPES_H_

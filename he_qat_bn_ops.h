@@ -5,6 +5,10 @@
 #ifndef _HE_QAT_BN_OPS_H_
 #define _HE_QAT_BN_OPS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "cpa.h"
 #include "cpa_cy_ln.h"
 
@@ -74,5 +78,23 @@ void getBnModExpRequest(unsigned int num_requests);
 // copy data and package into a request
 // use producer to place request into qat buffer
 // wait for all outstanding requests to complete
+
+/// @brief
+/// @function
+/// Generic big number modular exponentiation for input data in primitive type format (unsigned char *).
+/// @details
+/// Create private buffer for code section. Create QAT contiguous memory space.
+/// Copy data and package into a request and call producer function to submit
+/// request into qat buffer.
+/// @param[out] r Remainder number of the modular exponentiation operation.
+/// @param[in] b Base number of the modular exponentiation operation.
+/// @param[in] e Exponent number of the modular exponentiation operation.
+/// @param[in] m Modulus number of the modular exponentiation operation.
+/// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
+HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char* e, unsigned char* m, int nbits);
+
+#ifdef __cplusplus
+} //extern "C" {
+#endif
 
 #endif
