@@ -5,7 +5,6 @@
 #define IPCL_INCLUDE_IPCL_PAILLIER_KEYGEN_HPP_
 
 #include "ipcl/paillier_prikey.hpp"
-#include "ipcl/paillier_pubkey.hpp"
 
 namespace ipcl {
 

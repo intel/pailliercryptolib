@@ -106,7 +106,7 @@ Alongside the Intel Paillier Cryptosystem Library, we provide a Python extension
 
 # Standardization
 This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
-The compliance test is included in the [unit-test](test/test_cryptography.cpp#L112-L256).
+The compliance test is included in the [unit-test](https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.pailliercryptolib/blob/main/test/test_cryptography.cpp#L112-L256).
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:
