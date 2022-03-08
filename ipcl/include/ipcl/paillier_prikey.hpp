@@ -4,7 +4,11 @@
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
 #define IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
 
+#include <vector>
+
 #include "ipcl/paillier_ops.hpp"
+
+namespace ipcl {
 
 class PaillierPrivateKey {
  public:
@@ -14,7 +18,7 @@ class PaillierPrivateKey {
    * @param[in] p p of private key in paillier scheme
    * @param[in] q q of private key in paillier scheme
    */
-  PaillierPrivateKey(PaillierPublicKey* public_key, const BigNumber& p,
+  PaillierPrivateKey(const PaillierPublicKey* public_key, const BigNumber& p,
                      const BigNumber& q);
 
   /**
@@ -28,15 +32,16 @@ class PaillierPrivateKey {
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext ciphertext to be decrypted
    */
-  void decrypt(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decrypt(std::vector<BigNumber>& plaintext,
+               const std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
    * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
    */
-  void decrypt(BigNumber plaintext[8],
-               const PaillierEncryptedNumber ciphertext);
+  void decrypt(std::vector<BigNumber>& plaintext,
+               const PaillierEncryptedNumber ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
 
@@ -63,17 +68,17 @@ class PaillierPrivateKey {
   /**
    * Get public key
    */
-  PaillierPublicKey* getPubKey() const { return m_pubkey; }
+  const PaillierPublicKey* getPubKey() const { return m_pubkey; }
 
   /**
    * @brief Support function for ISO/IEC 18033-6 compliance check
    *
    * @return BigNumber
    */
-  BigNumber getLambda() { return m_lambda; }
+  BigNumber getLambda() const { return m_lambda; }
 
  private:
-  PaillierPublicKey* m_pubkey;
+  const PaillierPublicKey* m_pubkey;
   BigNumber m_n;
   BigNumber m_nsquare;
   BigNumber m_g;
@@ -96,36 +101,42 @@ class PaillierPrivateKey {
    * Compute L function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
+   * @return the L function result of type BigNumber
    */
-  BigNumber computeLfun(const BigNumber& a, const BigNumber& b);
+  BigNumber computeLfun(const BigNumber& a, const BigNumber& b) const;
 
   /**
    * Compute H function in paillier scheme
    * @param[in] a input a
    * @param[in] b input b
+   * @return the H function result of type BigNumber
    */
-  BigNumber computeHfun(const BigNumber& a, const BigNumber& b);
+  BigNumber computeHfun(const BigNumber& a, const BigNumber& b) const;
 
   /**
    * Compute CRT function in paillier scheme
    * @param[in] mp input mp
    * @param[in] mq input mq
+   * @return the CRT result of type BigNumber
    */
-  BigNumber computeCRT(const BigNumber& mp, const BigNumber& mq);
+  BigNumber computeCRT(const BigNumber& mp, const BigNumber& mq) const;
 
   /**
    * Raw decryption function without CRT optimization
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptRAW(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decryptRAW(std::vector<BigNumber>& plaintext,
+                  const std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Raw decryption function with CRT optimization
    * @param[out] plaintext output plaintext
    * @param[in] ciphertext input ciphertext
    */
-  void decryptCRT(BigNumber plaintext[8], const BigNumber ciphertext[8]);
+  void decryptCRT(std::vector<BigNumber>& plaintext,
+                  const std::vector<BigNumber>& ciphertext) const;
 };
 
+}  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_

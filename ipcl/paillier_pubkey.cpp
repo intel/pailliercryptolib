@@ -5,9 +5,19 @@
 
 #include <crypto_mb/exp.h>
 
+#include <algorithm>
 #include <climits>
 #include <cstring>
 #include <random>
+
+#ifdef IPCL_CRYPTO_OMP
+#include <omp.h>
+#endif
+
+#include "ipcl/mod_exp.hpp"
+#include "ipcl/util.hpp"
+
+namespace ipcl {
 
 static inline auto randomUniformUnsignedInt() {
   std::random_device dev;
@@ -26,43 +36,59 @@ PaillierPublicKey::PaillierPublicKey(const BigNumber& n, int bits,
       m_init_seed(randomUniformUnsignedInt()),
       m_enable_DJN(false),
       m_testv(false) {
-  if (enableDJN_) this->enableDJN();  // this sets m_enable_DJN
+  if (enableDJN_) this->enableDJN();  // sets m_enable_DJN
 }
 
 // array of 32-bit random, using rand() from stdlib
-Ipp32u* PaillierPublicKey::randIpp32u(Ipp32u* addr, int size) {
-  for (int i = 0; i < size; i++)
-    addr[i] = (rand_r(&m_init_seed) << 16) + rand_r(&m_init_seed);
+std::vector<Ipp32u> PaillierPublicKey::randIpp32u(int size) const {
+  std::vector<Ipp32u> addr(size);
+  // TODO(skmono): check if copy of m_init_seed is needed for const
+  unsigned int init_seed = m_init_seed;
+  for (auto& a : addr) a = (rand_r(&init_seed) << 16) + rand_r(&init_seed);
   return addr;
 }
 
 // length is Arbitery
-BigNumber PaillierPublicKey::getRandom(int length) {
+BigNumber PaillierPublicKey::getRandom(int length) const {
+  IppStatus stat;
   int size;
   int seedBitSize = 160;
   int seedSize = BITSIZE_WORD(seedBitSize);
-  Ipp32u* seed = reinterpret_cast<Ipp32u*>(alloca(seedSize * sizeof(Ipp32u)));
-  if (nullptr == seed) throw std::runtime_error("error alloc memory");
-  ippsPRNGGetSize(&size);
-  IppsPRNGState* pRand = reinterpret_cast<IppsPRNGState*>(alloca(size));
-  if (nullptr == pRand) throw std::runtime_error("error alloc memory");
-  ippsPRNGInit(seedBitSize, pRand);
 
-  Ipp32u* addr = randIpp32u(seed, seedSize);
-  BigNumber bseed(addr, seedSize, IppsBigNumPOS);
+  stat = ippsPRNGGetSize(&size);
+  ERROR_CHECK(stat == ippStsNoErr,
+              "getRandom: get IppsPRNGState context error.");
 
-  ippsPRNGSetSeed(BN(bseed), pRand);
+  auto pRand = std::vector<Ipp8u>(size);
+
+  stat =
+      ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(pRand.data()));
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init rand context error.");
+
+  auto seed = randIpp32u(seedSize);
+  BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
+
+  stat = ippsPRNGSetSeed(BN(bseed),
+                         reinterpret_cast<IppsPRNGState*>(pRand.data()));
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: set up seed value error.");
 
   // define length Big Numbers
   int bn_size = BITSIZE_WORD(length);
-  ippsBigNumGetSize(bn_size, &size);
+  stat = ippsBigNumGetSize(bn_size, &size);
+  ERROR_CHECK(stat == ippStsNoErr,
+              "getRandom: get IppsBigNumState context error.");
+
   IppsBigNumState* pBN = reinterpret_cast<IppsBigNumState*>(alloca(size));
-  if (nullptr == pBN) throw std::runtime_error("error alloc memory");
-  ippsBigNumInit(bn_size, pBN);
+  ERROR_CHECK(pBN != nullptr, "getRandom: big number alloca error");
+
+  stat = ippsBigNumInit(bn_size, pBN);
+  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init big number context error.");
 
   int bnBitSize = length;
-  ippsPRNGenRDRAND_BN(pBN, bnBitSize, pRand);
+  ippsPRNGenRDRAND_BN(pBN, bnBitSize,
+                      reinterpret_cast<IppsPRNGState*>(pRand.data()));
   BigNumber rand(pBN);
+
   return rand;
 }
 
@@ -79,26 +105,26 @@ void PaillierPublicKey::enableDJN() {
   BigNumber rmod_sq = rmod * rmod;
   BigNumber rmod_neg = rmod_sq * -1;
   BigNumber h = rmod_neg % m_n;
-  m_hs = ippMontExp(h, m_n, m_nsquare);
+  m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
 }
 
-void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
-  BigNumber r[8];
-  BigNumber pown[8];
-  BigNumber base[8];
-  BigNumber sq[8];
+void PaillierPublicKey::apply_obfuscator(
+    std::vector<BigNumber>& obfuscator) const {
+  std::vector<BigNumber> r(8);
+  std::vector<BigNumber> pown(8, m_n);
+  std::vector<BigNumber> base(8, m_hs);
+  std::vector<BigNumber> sq(8, m_nsquare);
+
+  VEC_SIZE_CHECK(obfuscator);
 
   if (m_enable_DJN) {
-    for (int i = 0; i < 8; i++) {
-      r[i] = getRandom(m_randbits);
-      base[i] = m_hs;
-      sq[i] = m_nsquare;
+    for (auto& r_ : r) {
+      r_ = getRandom(m_randbits);
     }
-
-    ippMultiBuffExp(obfuscator, base, r, sq);
+    obfuscator = ipcl::ippModExp(base, r, sq);
   } else {
     for (int i = 0; i < 8; i++) {
       if (m_testv) {
@@ -110,13 +136,20 @@ void PaillierPublicKey::apply_obfuscator(BigNumber obfuscator[8]) {
       pown[i] = m_n;
       sq[i] = m_nsquare;
     }
-    ippMultiBuffExp(obfuscator, r, pown, sq);
+    obfuscator = ipcl::ippModExp(r, pown, sq);
   }
 }
 
-void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
-                                    const BigNumber plaintext[8],
-                                    bool make_secure) {
+void PaillierPublicKey::setRandom(const std::vector<BigNumber>& r) {
+  VEC_SIZE_CHECK(r);
+
+  std::copy(r.begin(), r.end(), std::back_inserter(m_r));
+  m_testv = true;
+}
+
+void PaillierPublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
+                                    const std::vector<BigNumber>& plaintext,
+                                    bool make_secure) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber sq = m_nsquare;
   for (int i = 0; i < 8; i++) {
@@ -125,7 +158,7 @@ void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
   }
 
   if (make_secure) {
-    BigNumber obfuscator[8];
+    std::vector<BigNumber> obfuscator(8);
     apply_obfuscator(obfuscator);
 
     for (int i = 0; i < 8; i++)
@@ -133,13 +166,18 @@ void PaillierPublicKey::raw_encrypt(BigNumber ciphertext[8],
   }
 }
 
-void PaillierPublicKey::encrypt(BigNumber ciphertext[8],
-                                const BigNumber value[8], bool make_secure) {
+void PaillierPublicKey::encrypt(std::vector<BigNumber>& ciphertext,
+                                const std::vector<BigNumber>& value,
+                                bool make_secure) const {
+  VEC_SIZE_CHECK(ciphertext);
+  VEC_SIZE_CHECK(value);
+
   raw_encrypt(ciphertext, value, make_secure);
 }
 
 // Used for CT+PT, where PT do not need to add obfuscator
-void PaillierPublicKey::encrypt(BigNumber& ciphertext, const BigNumber& value) {
+void PaillierPublicKey::encrypt(BigNumber& ciphertext,
+                                const BigNumber& value) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber bn = value;
   BigNumber sq = m_nsquare;
@@ -151,123 +189,4 @@ void PaillierPublicKey::encrypt(BigNumber& ciphertext, const BigNumber& value) {
   ---------------------------------------------------------- */
 }
 
-void PaillierPublicKey::ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
-                                        const BigNumber pow[8],
-                                        BigNumber m[8]) {
-  mbx_status st = MBX_STATUS_OK;
-
-  // Memory used for multi-buffered modular exponentiation
-  Ipp64u* out_x[8];
-
-  int64u* b_array[8];
-  int64u* p_array[8];
-
-  int bufferLen;
-  Ipp8u* pBuffer;
-
-  // setup buffer for mbx_exp
-  int bits = m[0].BitSize();
-  int dwords = BITSIZE_DWORD(bits);
-  bufferLen = mbx_exp_BufferSize(bits);
-  pBuffer = reinterpret_cast<Ipp8u*>(alloca(bufferLen));
-  if (nullptr == pBuffer) throw std::runtime_error("error alloc memory");
-
-  int length = dwords * sizeof(int64u);
-  for (int i = 0; i < 8; i++) {
-    out_x[i] = reinterpret_cast<int64u*>(alloca(length));
-
-    b_array[i] = reinterpret_cast<int64u*>(alloca(length));
-    p_array[i] = reinterpret_cast<int64u*>(alloca(length));
-
-    if (nullptr == out_x[i] || nullptr == b_array[i] || nullptr == p_array[i])
-      throw std::runtime_error("error alloc memory");
-  }
-
-  for (int i = 0; i < 8; i++) {
-    memset(b_array[i], 0, dwords * 8);
-    memset(p_array[i], 0, dwords * 8);
-  }
-
-  Ipp32u *pow_b[8], *pow_p[8], *pow_nsquare[8];
-  int bBitLen, pBitLen, nsqBitLen;
-  int expBitLen = 0;
-  for (int i = 0; i < 8; i++) {
-    ippsRef_BN(nullptr, &bBitLen, &pow_b[i], base[i]);
-    ippsRef_BN(nullptr, &pBitLen, &pow_p[i], pow[i]);
-    ippsRef_BN(nullptr, &nsqBitLen, &pow_nsquare[i], m[i]);
-
-    memcpy(b_array[i], pow_b[i], BITSIZE_WORD(bBitLen) * 4);
-    memcpy(p_array[i], pow_p[i], BITSIZE_WORD(pBitLen) * 4);
-    if (expBitLen < pBitLen) expBitLen = pBitLen;
-  }
-
-  /*
-   *Note: If actual sizes of exp are different, set the exp_bits parameter equal
-   *to maximum size of the actual module in bit size and extend all the modules
-   *with zero bits
-   */
-  st = mbx_exp_mb8(out_x, b_array, p_array, expBitLen,
-                   reinterpret_cast<Ipp64u**>(pow_nsquare), nsqBitLen, pBuffer,
-                   bufferLen);
-
-  for (int i = 0; i < 8; i++) {
-    if (MBX_STATUS_OK != MBX_GET_STS(st, i))
-      throw std::runtime_error(
-          std::string("error multi buffered exp modules, error code = ") +
-          std::to_string(MBX_GET_STS(st, i)));
-  }
-
-  // It is important to hold a copy of nsquare for thread-safe purpose
-  BigNumber bn_c(m[0]);
-  for (int i = 0; i < 8; i++) {
-    bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
-             IppsBigNumPOS);
-
-    res[i] = bn_c;
-  }
-}
-
-BigNumber PaillierPublicKey::ippMontExp(const BigNumber& base,
-                                        const BigNumber& pow,
-                                        const BigNumber& m) {
-  IppStatus st = ippStsNoErr;
-  // It is important to declear res * bform bit length refer to ipp-crypto spec:
-  // R should not be less than the data length of the modulus m
-  BigNumber res(m);
-
-  int bnBitLen;
-  Ipp32u* pow_m;
-  ippsRef_BN(nullptr, &bnBitLen, &pow_m, BN(m));
-  int nlen = BITSIZE_WORD(bnBitLen);
-
-  int size;
-  // define and initialize Montgomery Engine over Modulus N
-  ippsMontGetSize(IppsBinaryMethod, nlen, &size);
-  IppsMontState* pMont = reinterpret_cast<IppsMontState*>(new Ipp8u[size]);
-  if (nullptr == pMont) throw std::runtime_error("error alloc memory");
-  ippsMontInit(IppsBinaryMethod, nlen, pMont);
-  ippsMontSet(pow_m, nlen, pMont);
-
-  // encode base into Montfomery form
-  BigNumber bform(m);
-  ippsMontForm(BN(base), pMont, BN(bform));
-
-  // compute R = base^pow mod N
-  st = ippsMontExp(BN(bform), BN(pow), pMont, BN(res));
-  if (ippStsNoErr != st)
-    throw std::runtime_error(std::string("ippsMontExp error code = ") +
-                             std::to_string(st));
-
-  BigNumber one(1);
-  st = ippsMontMul(BN(res), BN(one), pMont, BN(res));  // R = MontMul(R,1)
-  if (ippStsNoErr != st)
-    throw std::runtime_error(std::string("ippsMontMul error code = ") +
-                             std::to_string(st));
-
-  delete[] reinterpret_cast<Ipp8u*>(pMont);
-  return res;
-}
-
-BigNumber PaillierPublicKey::IPP_invert(BigNumber a, BigNumber b) {
-  return b.InverseMul(a);
-}
+}  // namespace ipcl

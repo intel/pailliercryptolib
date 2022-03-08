@@ -5,11 +5,13 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
 - [Intel Paillier Cryptosystem Library](#intel-paillier-cryptosystem-library)
   - [Contents](#contents)
   - [Introduction](#introduction)
+    - [Performance](#performance)
   - [Building the Library](#building-the-library)
-    - [Requirements](#requirements)
+    - [Prerequisites](#prerequisites)
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
   - [Testing and Benchmarking](#testing-and-benchmarking)
+- [Python Extension](#python-extension)
 - [Standardization](#standardization)
 - [Contributors](#contributors)
 
@@ -26,16 +28,21 @@ As a public key encryption scheme, Paillier cryptosystem has three stages:
 
 For increased security, typically the key length is at least 1024 bits, but recommendation is 2048 bits or larger. To handle such large size integers, conventional implementations of the Paillier cryptosystem utilizes the GNU Multiple Precision Arithmetic Library (GMP). The essential computation of the scheme relies on the modular exponentiation, and our library takes advantage of the multi-buffer modular exponentiation function (```mbx_exp_mb8```) of IPP-Crypto library, which is enabled in AVX512IFMA instruction sets supporting SKUs, such as Intel Icelake Xeon CPUs.
 
+### Performance
+To be added after P2CA review
 ## Building the Library
-### Requirements
-The hardware requirement to use the library is AVX512IFMA instruction sets enabled CPUs, as listed in Intel codenames:
+### Prerequisites
+For best performance, especially due to the multi-buffer modular exponentiation function, the library is to be used on AVX512IFMA enabled systems, as listed below in Intel CPU codenames:
  - Intel Cannon Lake
  - Intel Ice Lake
 
-Note: We are planning to add support for more SKUs.
+The library can be built and used without AVX512IFMA, as if the instruction set is not detected on the system, it will automatically switch to non multi-buffer modular exponentiation.
 
-As for the operating systems, ehe library has been tested and confirmed to work on Ubuntu 18.04, 20.04 and RHEL 8.0.
+The following operating systems have been tested and deemed to be fully functional.
+  - Ubuntu 18.04 and higher
+  - Red Hat Enterprise Linux 8.1 and higher
 
+We will keep working on adding more supported operating systems.
 ### Dependencies
 Must have dependencies include:
 ```
@@ -45,7 +52,7 @@ pthread
 g++ >= 7.0 or clang >= 10.0
 ```
 
-The following libraries are also required,
+The following libraries and tools are also required,
 ```
 nasm>=2.15
 OpenSSL>=1.1.0
@@ -53,12 +60,12 @@ OpenSSL>=1.1.0
 
 For ```nasm```, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.
 
-On Ubuntu, ```OpenSSL``` can be installed by:
+On Ubuntu, ```OpenSSL``` can be installed with:
 ```bash
 sudo apt update
 sudo apt install libssl-dev
 ```
-On RHEL, it needs to be built and installed from source as the static libraries are not installed with package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details for static libraries.
+For RHEL, ```OpenSSL``` needs to be built and installed from source as the static libraries are missing when installed through the package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details for static libraries.
 
 ### Instructions
 The library can be built using the following commands:
@@ -70,13 +77,13 @@ cmake --build build -j
 
 It is possible to pass additional options to enable more features. The following table contains the current CMake options, default values are in bold.
 
-| CMake options           | Values    | Default | Comments                     |
-|-------------------------|-----------|---------|------------------------------|
-|`IPCL_TEST`              | ON/OFF    | ON      | unit-test                    |
-|`IPCL_TEST_OMP`          | ON/OFF    | ON      | unit-test w/ OpenMP          |
-|`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                    |
-|`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation  |
-|`IPCL_SHARED`            | ON/OFF    | ON      | build shared library         |
+| CMake options           | Values    | Default | Comments                            |
+|-------------------------|-----------|---------|-------------------------------------|
+|`IPCL_TEST`              | ON/OFF    | ON      | unit-test                           |
+|`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                           |
+|`IPCL_ENABLE_OMP`        | ON/OFF    | ON      | enables OpenMP functionalities      |
+|`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation         |
+|`IPCL_SHARED`            | ON/OFF    | ON      | build shared library                |
 
 ## Testing and Benchmarking
 To run a set of unit tests via [Googletest](https://github.com/google/googletest), configure and build library with `-DIPCL_TEST=ON` (see [Instructions](#instructions)).
@@ -84,23 +91,22 @@ Then, run
 ```bash
 cmake --build build --target unittest
 ```
-For OpenMP testing, configure and build with `-DIPCL_TEST_OMP=ON`, and run
-```bash
-cmake --build build --target unittest_omp
-```
 
 For running benchmark via [Google Benchmark](https://github.com/google/benchmark), configure and build library with `-DIPCL_BENCHMARK=ON` (see [Instructions](#instructions)).
 Then, run
 ```bash
 cmake --build build --target benchmark
 ```
-OpenMP benchmarks will automatically be applied if `-DIPCL_TEST_OMP=ON` is set.
+Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will automatically enable OpenMP unit-tests and benchmarks.
 
-The unit-test executable itself is located at `${IPCL_DIR}/build/test/unit-test`, `${IPCL_DIR}/build/test/unit-test_omp` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+
+# Python Extension
+Alongside the Intel Paillier Cryptosystem Library, we provide a Python extension package utilizing this library as a backend. For installation and usage detail, refer to [Intel Paillier Cryptosystem Library - Python](https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.pailliercryptolib-python).
 
 # Standardization
 This library is in compliance with the homomorphic encryption standards [ISO/IEC 18033-6](https://www.iso.org/standard/67740.html).
-The compliance test is included in the [unit-test](test/test_cryptography.cpp#L117-L258).
+The compliance test is included in the [unit-test](test/test_cryptography.cpp#L112-L256).
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:

@@ -4,9 +4,12 @@
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
 #define IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
 
-#include <algorithm>
+#include <vector>
 
 #include "ipcl/paillier_pubkey.hpp"
+#include "ipcl/util.hpp"
+
+namespace ipcl {
 
 class PaillierEncryptedNumber {
  public:
@@ -15,24 +18,26 @@ class PaillierEncryptedNumber {
    * @param[in] pub_key paillier public key
    * @param[in] bn ciphertext encrypted by paillier public key
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber& bn);
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const BigNumber& bn);
 
   /**
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] bn array of ciphertexts encrypted by paillier public key
-   * @param[in] length size of array
+   * @param[in] length size of array(default value is 8)
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const BigNumber bn[8],
-                          size_t length = 8);
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const std::vector<BigNumber>& bn, size_t length = 8);
 
   /**
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] scalar array of integer scalars
-   * @param[in] length size of array
+   * @param[in] length size of array(default value is 8)
    */
-  PaillierEncryptedNumber(PaillierPublicKey* pub_key, const uint32_t scalar[8],
+  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+                          const std::vector<uint32_t>& scalar,
                           size_t length = 8);
 
   /**
@@ -51,7 +56,7 @@ class PaillierEncryptedNumber {
    * Arithmetic addition operator
    * @param[in] other array of augend
    */
-  PaillierEncryptedNumber operator+(const BigNumber other[8]) const;
+  PaillierEncryptedNumber operator+(const std::vector<BigNumber>& other) const;
 
   /**
    * Arithmetic multiply operator
@@ -71,7 +76,7 @@ class PaillierEncryptedNumber {
    */
   void apply_obfuscator() {
     b_isObfuscator = true;
-    BigNumber obfuscator[8];
+    std::vector<BigNumber> obfuscator(8);
     m_pubkey->apply_obfuscator(obfuscator);
 
     BigNumber sq = m_pubkey->getNSQ();
@@ -82,10 +87,11 @@ class PaillierEncryptedNumber {
   /**
    * Return ciphertext
    * @param[in] idx index of ciphertext stored in PaillierEncryptedNumber
+   * @param[in] idx index of output array(default value is 0)
    */
   BigNumber getBN(size_t idx = 0) const {
-    if (m_available == 1 && idx > 0)
-      throw std::out_of_range("PaillierEncryptedNumber only has 1 BigNumber");
+    ERROR_CHECK(m_available != 1 || idx <= 0,
+                "getBN: PaillierEncryptedNumber only has 1 BigNumber");
 
     return m_bn[idx];
   }
@@ -99,13 +105,13 @@ class PaillierEncryptedNumber {
    * Rotate PaillierEncryptedNumber
    * @param[in] shift rotate length
    */
-  PaillierEncryptedNumber rotate(int shift);
+  PaillierEncryptedNumber rotate(int shift) const;
 
   /**
    * Return entire ciphertext array
    * @param[out] bn output array
    */
-  void getArrayBN(BigNumber bn[8]) const { std::copy_n(m_bn, 8, bn); }
+  std::vector<BigNumber> getArrayBN() const { return m_bn; }
 
   /**
    * Check if element in PaillierEncryptedNumber is single
@@ -122,13 +128,15 @@ class PaillierEncryptedNumber {
  private:
   bool b_isObfuscator;
   int m_available;
-  PaillierPublicKey* m_pubkey;
+  const PaillierPublicKey* m_pubkey;
   size_t m_length;
-  BigNumber m_bn[8];
+  std::vector<BigNumber> m_bn;
 
-  BigNumber raw_add(const BigNumber& a, const BigNumber& b);
-  BigNumber raw_mul(const BigNumber& a, const BigNumber& b);
-  void raw_mul(BigNumber res[8], BigNumber a[8], BigNumber b[8]);
+  BigNumber raw_add(const BigNumber& a, const BigNumber& b) const;
+  BigNumber raw_mul(const BigNumber& a, const BigNumber& b) const;
+  std::vector<BigNumber> raw_mul(const std::vector<BigNumber>& a,
+                                 const std::vector<BigNumber>& b) const;
 };
 
+}  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_

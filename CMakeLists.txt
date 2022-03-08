@@ -54,6 +54,10 @@ option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 
+if(IPCL_ENABLE_OMP)
+	add_compile_definitions(IPCL_USE_OMP)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(IPCL_DEBUG ON)
 else()
@@ -102,7 +106,7 @@ include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
 
-if(IPCL_TEST OR IPCL_OMP_TEST)
+if(IPCL_TEST)
   include(cmake/gtest.cmake)
 endif()
 if(IPCL_BENCHMARK)

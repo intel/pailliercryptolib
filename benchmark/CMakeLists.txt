@@ -18,6 +18,5 @@ target_link_libraries(bench_ipcl PRIVATE
 # enable OpenMP benchmarks
 if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
-  add_compile_definitions(IPCL_BENCHMARK_OMP)
   target_link_libraries(bench_ipcl PRIVATE OpenMP::OpenMP_CXX)
 endif()

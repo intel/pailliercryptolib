@@ -4,15 +4,19 @@
 #ifndef IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
 #define IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
 
+#include <vector>
+
 #include "ipcl/bignum.h"
+
+namespace ipcl {
 
 class PaillierPublicKey {
  public:
   /**
    * PaillierPublicKey constructor
    * @param[in] n n of public key in paillier scheme
-   * @param[in] bits bit length of public key
-   * @param[in] enableDJN_ enables DJN scheme
+   * @param[in] bits bit length of public key(default value is 1024)
+   * @param[in] enableDJN_ enables DJN scheme(default value is false)
    */
   explicit PaillierPublicKey(const BigNumber& n, int bits = 1024,
                              bool enableDJN_ = false);
@@ -20,8 +24,8 @@ class PaillierPublicKey {
   /**
    * PaillierPublicKey constructor
    * @param[in] n n of public key in paillier scheme
-   * @param[in] bits bit length of public key
-   * @param[in] enableDJN_ enables DJN scheme
+   * @param[in] bits bit length of public key(default value is 1024)
+   * @param[in] enableDJN_ enables DJN scheme(default value is false)
    */
   explicit PaillierPublicKey(const Ipp32u n, int bits = 1024,
                              bool enableDJN_ = false)
@@ -36,43 +40,29 @@ class PaillierPublicKey {
    * Encrypt plaintext
    * @param[out] ciphertext output of the encryption
    * @param[in] value array of plaintext to be encrypted
-   * @param[in] make_secure apply obfuscator
+   * @param[in] make_secure apply obfuscator(default value is true)
    */
-  void encrypt(BigNumber ciphertext[8], const BigNumber value[8],
-               bool make_secure = true);
+  void encrypt(std::vector<BigNumber>& ciphertext,
+               const std::vector<BigNumber>& value,
+               bool make_secure = true) const;
 
   /**
    * Encrypt plaintext
    * @param[out] ciphertext output of the encryption
    * @param[in] value plaintext to be encrypted
    */
-  void encrypt(BigNumber& ciphertext, const BigNumber& value);
+  void encrypt(BigNumber& ciphertext, const BigNumber& value) const;
 
   /**
    * Modular exponentiation
    * @param[in] base base of the exponentiation
    * @param[in] pow pow of the exponentiation
    * @param[in] m modular
+   * @return the modular exponentiation result of type BigNumber
    */
-  BigNumber ippMontExp(const BigNumber& base, const BigNumber& pow,
-                       const BigNumber& m);
-
-  /**
-   * Multi-buffered modular exponentiation
-   * @param[out] res array result of the modular exponentiation
-   * @param[in] base array base of the exponentiation
-   * @param[in] pow arrya pow of the exponentiation
-   * @param[in] m arrayodular
-   */
-  void ippMultiBuffExp(BigNumber res[8], BigNumber base[8],
-                       const BigNumber pow[8], BigNumber m[8]);
-
-  /**
-   * Invert function needed by encoder(float to integer)
-   * @param[in] a input of a
-   * @param[in] b input of b
-   */
-  BigNumber IPP_invert(BigNumber a, BigNumber b);
+  std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
+                                   const std::vector<BigNumber>& pow,
+                                   const std::vector<BigNumber>& m) const;
 
   /**
    * Get N of public key in paillier scheme
@@ -103,17 +93,14 @@ class PaillierPublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  void apply_obfuscator(BigNumber obfuscator[8]);
+  void apply_obfuscator(std::vector<BigNumber>& obfuscator) const;
 
   /**
    * @brief Set the Random object for ISO/IEC 18033-6 compliance check
    *
    * @param r
    */
-  void setRandom(BigNumber r[8]) {
-    for (int i = 0; i < 8; i++) m_r[i] = r[i];
-    m_testv = true;
-  }
+  void setRandom(const std::vector<BigNumber>& r);
 
   const void* addr = static_cast<const void*>(this);
 
@@ -127,30 +114,42 @@ class PaillierPublicKey {
   int m_dwords;
   unsigned int m_init_seed;
   bool m_enable_DJN;
-  BigNumber m_r[8];
+  std::vector<BigNumber> m_r;
   bool m_testv;
 
   /**
    * Get random value
-   * @param[in] addr addr of random
    * @param[in] size size of random
+   * @return addr of random of type Ipp32u vector
    */
-  Ipp32u* randIpp32u(Ipp32u* addr, int size);
+  std::vector<Ipp32u> randIpp32u(int size) const;
 
   /**
    * Raw encrypt function
    * @param[out] ciphertext array output of the encryption
    * @param[in] plaintext plaintext array to be encrypted
-   * @param[in] make_secure apply obfuscator
+   * @param[in] make_secure apply obfuscator(default value is true)
    */
-  void raw_encrypt(BigNumber ciphertext[8], const BigNumber plaintext[8],
-                   bool make_secure = true);
-
+  void raw_encrypt(std::vector<BigNumber>& ciphertext,
+                   const std::vector<BigNumber>& plaintext,
+                   bool make_secure = true) const;
+  //   /**
+  //    * Raw Multi-buffered modular exponentiation
+  //    * @param[in] base array base of the exponentiation
+  //    * @param[in] pow arrya pow of the exponentiation
+  //    * @param[in] m arrayodular
+  //    * @return result of the modular exponentiation of type BigNumber vector
+  //    */
+  //   std::vector<BigNumber> raw_ippMultiBuffExp(
+  //       const std::vector<BigNumber>& base, const std::vector<BigNumber>&
+  //       pow, const std::vector<BigNumber>& m) const;
   /**
    * Get random value
    * @param[in] length bit length
+   * @return the random value of type BigNumber
    */
-  BigNumber getRandom(int length);
+  BigNumber getRandom(int length) const;
 };
 
+}  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_

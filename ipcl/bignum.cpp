@@ -25,6 +25,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+namespace ipcl {
+
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
 bool BigNumber::create(const Ipp32u* pData, int length, IppsBigNumSGN sgn) {
@@ -498,3 +500,16 @@ std::ostream& operator<<(std::ostream& os, const BigNumber& a) {
   os << s;
   return os;
 }
+
+void BigNumber::num2char(std::vector<Ipp8u>& dest) const {
+  int bnBitLen;
+  unsigned char* bnData;
+  ippsRef_BN(nullptr, &bnBitLen, reinterpret_cast<Ipp32u**>(&bnData), *this);
+  int len = (bnBitLen + 7) >> 3;
+  dest.assign(bnData, bnData + len);
+}
+
+int BITSIZE_WORD(int n) { return (((n) + 31) >> 5); }
+int BITSIZE_DWORD(int n) { return (((n) + 63) >> 6); }
+
+}  // namespace ipcl

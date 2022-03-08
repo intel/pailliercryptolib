@@ -22,6 +22,8 @@
 #include <ostream>
 #include <vector>
 
+namespace ipcl {
+
 class BigNumber {
  public:
   BigNumber(Ipp32u value = 0);
@@ -118,6 +120,7 @@ class BigNumber {
   void num2hex(std::string& s) const;          // convert to hex string
   void num2vec(std::vector<Ipp32u>& v) const;  // convert to 32-bit word vector
   friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
+  void num2char(std::vector<Ipp8u>& dest) const;
 
  protected:
   bool create(const Ipp32u* pData, int length,
@@ -125,10 +128,8 @@ class BigNumber {
   IppsBigNumState* m_pBN;
 };
 
-// convert bit size into 32-bit words
-#define BITSIZE_WORD(n) ((((n) + 31) >> 5))
+int BITSIZE_WORD(int n);
+int BITSIZE_DWORD(int n);
 
-// Bin: convert bit size into 64-bit words
-#define BITSIZE_DWORD(n) ((((n) + 63) >> 6))
-
+}  // namespace ipcl
 #endif  // _BIGNUM_H_
