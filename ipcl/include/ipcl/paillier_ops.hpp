@@ -87,7 +87,7 @@ class PaillierEncryptedNumber {
   /**
    * Return ciphertext
    * @param[in] idx index of ciphertext stored in PaillierEncryptedNumber
-   * @param[in] idx index of output array(default value is 0)
+   * (default = 0)
    */
   BigNumber getBN(size_t idx = 0) const {
     ERROR_CHECK(m_available != 1 || idx <= 0,
