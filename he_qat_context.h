@@ -25,7 +25,7 @@ HE_QAT_STATUS acquire_qat_devices();
 HE_QAT_STATUS release_qat_devices();
 
 #ifdef __cplusplus
-} //extern "C" {
+}  // extern "C" {
 #endif
 
 #endif

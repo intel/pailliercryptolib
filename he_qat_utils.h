@@ -18,14 +18,15 @@ extern "C" {
 
 BIGNUM* generateTestBNData(int nbits);
 unsigned char* paddingZeros(BIGNUM* bn, int nbits);
-void showHexBN(BIGNUM* bn, int nbits); 
+void showHexBN(BIGNUM* bn, int nbits);
 void showHexBin(unsigned char* bin, int len);
 
 #ifdef __cplusplus
 /// @brief
 /// @function binToBigNumber
-/// Converts/encapsulates QAT's raw large number data to/into a BigNumber object.
-/// data will be changed to little endian format in this function, therefore the
+/// Converts/encapsulates QAT's raw large number data to/into a BigNumber
+/// object. data will be changed to little endian format in this function,
+/// therefore the
 HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
                              int nbits);
 /// @brief
@@ -38,7 +39,7 @@ HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
 /// represented in nbits.
 HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
                              const BigNumber& bn);
-} // extern "C" {
+}  // extern "C" {
 #endif
 
-#endif // HE_QAT_UTILS_H_
+#endif  // HE_QAT_UTILS_H_

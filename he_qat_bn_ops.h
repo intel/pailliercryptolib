@@ -81,7 +81,8 @@ void getBnModExpRequest(unsigned int num_requests);
 
 /// @brief
 /// @function
-/// Generic big number modular exponentiation for input data in primitive type format (unsigned char *).
+/// Generic big number modular exponentiation for input data in primitive type
+/// format (unsigned char *).
 /// @details
 /// Create private buffer for code section. Create QAT contiguous memory space.
 /// Copy data and package into a request and call producer function to submit
@@ -91,10 +92,11 @@ void getBnModExpRequest(unsigned int num_requests);
 /// @param[in] e Exponent number of the modular exponentiation operation.
 /// @param[in] m Modulus number of the modular exponentiation operation.
 /// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
-HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char* e, unsigned char* m, int nbits);
+HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
+                              unsigned char* e, unsigned char* m, int nbits);
 
 #ifdef __cplusplus
-} //extern "C" {
+}  // extern "C" {
 #endif
 
 #endif

@@ -514,10 +514,11 @@ task->op_data; if (op_data) { PHYS_CONTIG_FREE(op_data->base.pData);
 /// @function
 /// Callback function for lnIppModExpPerformOp. It performs any data processing
 /// required after the modular exponentiation.
-static void HE_QAT_bnModExpCallback(void* pCallbackTag,  // This type can be variable
-                             CpaStatus status,
-                             void* pOpData,  // This is fixed -- please swap it
-                             CpaFlatBuffer* pOut) {
+static void HE_QAT_bnModExpCallback(
+    void* pCallbackTag,  // This type can be variable
+    CpaStatus status,
+    void* pOpData,  // This is fixed -- please swap it
+    CpaFlatBuffer* pOut) {
     HE_QAT_TaskRequest* request = NULL;
 
     // Check if input data for the op is available and do something
@@ -532,8 +533,9 @@ static void HE_QAT_bnModExpCallback(void* pCallbackTag,  // This type can be var
                 //	      printf("pOpData is same as input\n");
                 // Mark request as complete or ready to be used
                 request->request_status = HE_QAT_STATUS_READY;
-		// Copy compute results to output destination
-                memcpy(request->op_output, request->op_result.pData, request->op_result.dataLenInBytes);                
+                // Copy compute results to output destination
+                memcpy(request->op_output, request->op_result.pData,
+                       request->op_result.dataLenInBytes);
             } else {
                 //	      printf("pOpData is NOT same as input\n");
                 request->request_status = HE_QAT_STATUS_FAIL;
@@ -547,7 +549,8 @@ static void HE_QAT_bnModExpCallback(void* pCallbackTag,  // This type can be var
     return;
 }
 
-HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char* e, unsigned char* m, int nbits) {
+HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
+                              unsigned char* e, unsigned char* m, int nbits) {
     // Unpack data and copy to QAT friendly memory space
     int len = nbits / 8;
 
@@ -559,7 +562,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char*
     Cpa8U* pBase = NULL;
     Cpa8U* pModulus = NULL;
     Cpa8U* pExponent = NULL;
-
 
     // TODO(fdiasmor): Try it with 8-byte alignment.
     CpaStatus status = CPA_STATUS_FAIL;
@@ -587,7 +589,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char*
         return HE_QAT_STATUS_FAIL;
     }
 
-    // HE_QAT_TaskRequest request = 
+    // HE_QAT_TaskRequest request =
     //           HE_QAT_PACK_MODEXP_REQUEST(pBase, pExponent, pModulus, r)
     // Pack it as a QAT Task Request
     HE_QAT_TaskRequest* request =
@@ -598,7 +600,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char*
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
     }
-    
+
     CpaCyLnModExpOpData* op_data =
         (CpaCyLnModExpOpData*)calloc(1, sizeof(CpaCyLnModExpOpData));
     if (NULL == op_data) {
@@ -638,4 +640,3 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b, unsigned char*
 
     return HE_QAT_STATUS_SUCCESS;
 }
-

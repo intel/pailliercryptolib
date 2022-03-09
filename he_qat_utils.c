@@ -103,7 +103,7 @@ HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
     return HE_QAT_STATUS_SUCCESS;
 }
 
-} // extern "C" {
+}  // extern "C" {
 #endif
 
-#endif // HE_QAT_UTILS_H_
+#endif  // HE_QAT_UTILS_H_

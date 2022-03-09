@@ -53,7 +53,7 @@ typedef struct {
 } HE_QAT_InstConfig;
 
 #ifdef __cplusplus
-} // close the extern "C" {
+}  // close the extern "C" {
 #endif
 
-#endif // _HE_QAT_TYPES_H_
+#endif  // _HE_QAT_TYPES_H_
