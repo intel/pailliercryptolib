@@ -13,7 +13,7 @@ namespace ipcl {
 
 #define N_BIT_SIZE_MAX 2048
 
-static inline void rand32u(std::vector<Ipp32u>& addr) {
+static void rand32u(std::vector<Ipp32u>& addr) {
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -23,18 +23,18 @@ static inline void rand32u(std::vector<Ipp32u>& addr) {
 BigNumber getPrimeBN(int maxBitSize) {
   int PrimeSize;
   ippsPrimeGetSize(maxBitSize, &PrimeSize);
-  auto primeGen = std::vector<Ipp8u>(PrimeSize);
+  auto&& primeGen = std::vector<Ipp8u>(PrimeSize);
   ippsPrimeInit(maxBitSize, reinterpret_cast<IppsPrimeState*>(primeGen.data()));
 
   // define Pseudo Random Generator (default settings)
-  int seedBitSize = 160;
-  int seedSize = BITSIZE_WORD(seedBitSize);
+  int&& seedBitSize = 160;
+  int&& seedSize = BITSIZE_WORD(seedBitSize);
 
   ippsPRNGGetSize(&PrimeSize);
-  auto rand = std::vector<Ipp8u>(PrimeSize);
+  auto&& rand = std::vector<Ipp8u>(PrimeSize);
   ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rand.data()));
 
-  auto seed = std::vector<Ipp32u>(seedSize);
+  auto&& seed = std::vector<Ipp32u>(seedSize);
   rand32u(seed);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
@@ -52,8 +52,8 @@ BigNumber getPrimeBN(int maxBitSize) {
   return pBN;
 }
 
-static inline void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                               BigNumber& n) {
+static void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
+                        BigNumber& n) {
   for (int64_t len = 0; len != n_length; len = n.BitSize()) {
     p = getPrimeBN(n_length / 2);
     q = p;
@@ -64,8 +64,8 @@ static inline void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
   }
 }
 
-static inline void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                            BigNumber& n) {
+static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
+                     BigNumber& n) {
   BigNumber gcd;
   do {
     do {
@@ -76,8 +76,8 @@ static inline void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
       q = getPrimeBN(n_length / 2);
     } while (q == p || !p.TestBit(1));  // get q: q!=p and q mod 4 = 3
 
-    BigNumber pminusone = p - 1;
-    BigNumber qminusone = q - 1;
+    BigNumber&& pminusone = p - 1;
+    BigNumber&& qminusone = q - 1;
     gcd = pminusone.gcd(qminusone);
   } while (gcd.compare(2));  // gcd(p-1,q-1)=2
 

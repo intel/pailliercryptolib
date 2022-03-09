@@ -47,7 +47,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
   PaillierEncryptedNumber b = other;
 
   if (m_available == 1) {
-    BigNumber sum = a.raw_add(a.m_bn[0], b.m_bn[0]);
+    BigNumber&& sum = a.raw_add(a.m_bn[0], b.m_bn[0]);
     return PaillierEncryptedNumber(m_pubkey, sum);
   } else {
     std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
@@ -64,7 +64,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
   BigNumber b;
   a.m_pubkey->encrypt(b, other);
 
-  BigNumber sum = a.raw_add(a.m_bn[0], b);
+  BigNumber&& sum = a.raw_add(a.m_bn[0], b);
   return PaillierEncryptedNumber(m_pubkey, sum);
 }
 
@@ -94,10 +94,10 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
   PaillierEncryptedNumber b = other;
 
   if (m_available == 1) {
-    BigNumber product = a.raw_mul(a.m_bn[0], b.m_bn[0]);
+    BigNumber&& product = a.raw_mul(a.m_bn[0], b.m_bn[0]);
     return PaillierEncryptedNumber(m_pubkey, product);
   } else {
-    std::vector<BigNumber> product = a.raw_mul(a.m_bn, b.m_bn);
+    std::vector<BigNumber>&& product = a.raw_mul(a.m_bn, b.m_bn);
     return PaillierEncryptedNumber(m_pubkey, product);
   }
 }
@@ -108,14 +108,14 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
   PaillierEncryptedNumber a = *this;
 
   BigNumber b = other;
-  BigNumber product = a.raw_mul(a.m_bn[0], b);
+  BigNumber&& product = a.raw_mul(a.m_bn[0], b);
   return PaillierEncryptedNumber(m_pubkey, product);
 }
 
 BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
                                            const BigNumber& b) const {
   // Hold a copy of nsquare for multi-threaded
-  BigNumber sq = m_pubkey->getNSQ();
+  BigNumber&& sq = m_pubkey->getNSQ();
   return a * b % sq;
 }
 
@@ -127,7 +127,7 @@ std::vector<BigNumber> PaillierEncryptedNumber::raw_mul(
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
                                            const BigNumber& b) const {
-  BigNumber sq = m_pubkey->getNSQ();
+  BigNumber&& sq = m_pubkey->getNSQ();
   return ipcl::ippModExp(a, b, sq);
 }
 
@@ -145,7 +145,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {
   else
     shift = -shift;
 
-  std::vector<BigNumber> new_bn = getArrayBN();
+  std::vector<BigNumber>&& new_bn = getArrayBN();
 
   std::rotate(std::begin(new_bn), std::begin(new_bn) + shift, std::end(new_bn));
   return PaillierEncryptedNumber(m_pubkey, new_bn);

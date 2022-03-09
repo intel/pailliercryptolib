@@ -65,7 +65,7 @@ BigNumber PaillierPublicKey::getRandom(int length) const {
       ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(pRand.data()));
   ERROR_CHECK(stat == ippStsNoErr, "getRandom: init rand context error.");
 
-  auto seed = randIpp32u(seedSize);
+  auto&& seed = randIpp32u(seedSize);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
   stat = ippsPRNGSetSeed(BN(bseed),
@@ -97,14 +97,14 @@ void PaillierPublicKey::enableDJN() {
   BigNumber rmod;
   do {
     int rand_bit = m_n.BitSize();
-    BigNumber rand = getRandom(rand_bit + 128);
+    BigNumber&& rand = getRandom(rand_bit + 128);
     rmod = rand % m_n;
     gcd = rand.gcd(m_n);
   } while (gcd.compare(1));
 
-  BigNumber rmod_sq = rmod * rmod;
-  BigNumber rmod_neg = rmod_sq * -1;
-  BigNumber h = rmod_neg % m_n;
+  BigNumber&& rmod_sq = rmod * rmod;
+  BigNumber&& rmod_neg = rmod_sq * -1;
+  BigNumber&& h = rmod_neg % m_n;
   m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 

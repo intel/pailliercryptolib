@@ -18,14 +18,14 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
 
   mbx_status st = MBX_STATUS_OK;
 
-  int bits = m[0].BitSize();
-  int dwords = BITSIZE_DWORD(bits);
-  int bufferLen = mbx_exp_BufferSize(bits);
-  auto pBuffer = std::vector<Ipp8u>(bufferLen);
+  int&& bits = m[0].BitSize();
+  int&& dwords = BITSIZE_DWORD(bits);
+  int&& bufferLen = mbx_exp_BufferSize(bits);
+  auto&& pBuffer = std::vector<Ipp8u>(bufferLen);
 
   std::vector<int64u*> out_x(IPCL_CRYPTO_MB_SIZE), b_array(IPCL_CRYPTO_MB_SIZE),
       p_array(IPCL_CRYPTO_MB_SIZE);
-  int length = dwords * sizeof(int64u);
+  int&& length = dwords * sizeof(int64u);
 
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     out_x[i] = reinterpret_cast<int64u*>(alloca(length));
@@ -103,7 +103,7 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
   int bnBitLen;
   Ipp32u* pow_m;
   ippsRef_BN(nullptr, &bnBitLen, &pow_m, BN(m));
-  int nlen = BITSIZE_WORD(bnBitLen);
+  int&& nlen = BITSIZE_WORD(bnBitLen);
 
   int size;
   // define and initialize Montgomery Engine over Modulus N
@@ -111,7 +111,7 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
   ERROR_CHECK(stat == ippStsNoErr,
               "ippMontExp: get the size of IppsMontState context error.");
 
-  auto pMont = std::vector<Ipp8u>(size);
+  auto&& pMont = std::vector<Ipp8u>(size);
 
   stat = ippsMontInit(IppsBinaryMethod, nlen,
                       reinterpret_cast<IppsMontState*>(pMont.data()));
