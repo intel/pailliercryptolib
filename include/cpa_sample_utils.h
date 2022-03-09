@@ -583,7 +583,11 @@ static __inline CpaStatus sampleThreadCreate(sampleThread *thread,
                                              void *args)
 {
 #ifdef USER_SPACE
+#ifdef __cplusplus
+    if (pthread_create(thread, NULL, (void* (*)(void*)) funct, args) != 0)
+#else
     if (pthread_create(thread, NULL, funct, args) != 0)
+#endif
     {
         PRINT_ERR("Failed create thread\n");
         return CPA_STATUS_FAIL;

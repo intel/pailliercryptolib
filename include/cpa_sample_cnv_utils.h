@@ -80,6 +80,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+#include <cstring>
 #endif
 
 /* Common macro definitions */
@@ -171,7 +172,12 @@ static const char *getSampleCnVModeStr(void)
 
 static void getCnvFlagInternal(CpaBoolean *cnv, CpaBoolean *cnvnr)
 {
+#ifdef __cplusplus
+    CpaDcInstanceCapabilities cap;
+    memset(&cap, 0, sizeof(CpaDcInstanceCapabilities));
+#else
     CpaDcInstanceCapabilities cap = {0};
+#endif
     if (getSampleDcCapabilities(&cap) != CPA_STATUS_SUCCESS)
     {
         return EvaluateSampleCnVFlag(NULL, cnv, cnvnr);
