@@ -23,10 +23,11 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   int bufferLen = mbx_exp_BufferSize(bits);
   auto pBuffer = std::vector<Ipp8u>(bufferLen);
 
-  std::vector<int64u*> out_x(8), b_array(8), p_array(8);
+  std::vector<int64u*> out_x(IPCL_CRYPTO_MB_SIZE), b_array(IPCL_CRYPTO_MB_SIZE),
+      p_array(IPCL_CRYPTO_MB_SIZE);
   int length = dwords * sizeof(int64u);
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     out_x[i] = reinterpret_cast<int64u*>(alloca(length));
     b_array[i] = reinterpret_cast<int64u*>(alloca(length));
     p_array[i] = reinterpret_cast<int64u*>(alloca(length));
@@ -46,11 +47,12 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
    * will be inconsistent with the length allocated by b_array/p_array,
    * resulting in data errors.
    */
-  std::vector<Ipp32u*> pow_b(8), pow_p(8), pow_nsquare(8);
+  std::vector<Ipp32u*> pow_b(IPCL_CRYPTO_MB_SIZE), pow_p(IPCL_CRYPTO_MB_SIZE),
+      pow_nsquare(IPCL_CRYPTO_MB_SIZE);
   int bBitLen, pBitLen, nsqBitLen;
   int expBitLen = 0;
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     ippsRef_BN(nullptr, &bBitLen, reinterpret_cast<Ipp32u**>(&pow_b[i]),
                base[i]);
     ippsRef_BN(nullptr, &pBitLen, reinterpret_cast<Ipp32u**>(&pow_p[i]),
@@ -72,7 +74,7 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
                    reinterpret_cast<Ipp64u**>(pow_nsquare.data()), nsqBitLen,
                    reinterpret_cast<Ipp8u*>(pBuffer.data()), bufferLen);
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     ERROR_CHECK(MBX_STATUS_OK == MBX_GET_STS(st, i),
                 std::string("ippMultiBuffExp: error multi buffered exp "
                             "modules, error code = ") +
@@ -82,8 +84,8 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   // It is important to hold a copy of nsquare for thread-safe purpose
   BigNumber bn_c(m[0]);
 
-  std::vector<BigNumber> res(8, 0);
-  for (int i = 0; i < 8; i++) {
+  std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE, 0);
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
              IppsBigNumPOS);
     res[i] = bn_c;
@@ -149,11 +151,11 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #ifdef IPCL_CRYPTO_MB_MOD_EXP
   return ippMBModExp(base, pow, m);
 #else
-  std::vector<BigNumber> res(8);
+  std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE);
 #ifdef IPCL_USE_OMP
 #pragma omp parallel for
 #endif
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     res[i] = ippSBModExp(base[i], pow[i], m[i]);
   }
   return res;

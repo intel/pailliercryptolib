@@ -63,7 +63,7 @@ void PaillierPrivateKey::decryptRAW(
   BigNumber nn = m_n;
   BigNumber xx = m_x;
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     BigNumber m = (res[i] - 1) / nn;
     m = m * xx;
     plaintext[i] = m % nn;
@@ -101,11 +101,13 @@ void PaillierPrivateKey::decrypt(
 void PaillierPrivateKey::decryptCRT(
     std::vector<BigNumber>& plaintext,
     const std::vector<BigNumber>& ciphertext) const {
-  std::vector<BigNumber> basep(8), baseq(8);
-  std::vector<BigNumber> pm1(8, m_pminusone), qm1(8, m_qminusone);
-  std::vector<BigNumber> psq(8, m_psquare), qsq(8, m_qsquare);
+  std::vector<BigNumber> basep(IPCL_CRYPTO_MB_SIZE), baseq(IPCL_CRYPTO_MB_SIZE);
+  std::vector<BigNumber> pm1(IPCL_CRYPTO_MB_SIZE, m_pminusone),
+      qm1(IPCL_CRYPTO_MB_SIZE, m_qminusone);
+  std::vector<BigNumber> psq(IPCL_CRYPTO_MB_SIZE, m_psquare),
+      qsq(IPCL_CRYPTO_MB_SIZE, m_qsquare);
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     basep[i] = ciphertext[i] % psq[i];
     baseq[i] = ciphertext[i] % qsq[i];
   }
@@ -114,7 +116,7 @@ void PaillierPrivateKey::decryptCRT(
   std::vector<BigNumber> resp = ipcl::ippModExp(basep, pm1, psq);
   std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
     BigNumber dq = computeLfun(resq[i], m_q) * m_hq % m_q;
     plaintext[i] = computeCRT(dp, dq);

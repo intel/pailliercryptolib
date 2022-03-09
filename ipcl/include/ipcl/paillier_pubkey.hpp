@@ -54,17 +54,6 @@ class PaillierPublicKey {
   void encrypt(BigNumber& ciphertext, const BigNumber& value) const;
 
   /**
-   * Modular exponentiation
-   * @param[in] base base of the exponentiation
-   * @param[in] pow pow of the exponentiation
-   * @param[in] m modular
-   * @return the modular exponentiation result of type BigNumber
-   */
-  std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
-                                   const std::vector<BigNumber>& pow,
-                                   const std::vector<BigNumber>& m) const;
-
-  /**
    * Get N of public key in paillier scheme
    */
   BigNumber getN() const { return m_n; }

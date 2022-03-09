@@ -25,20 +25,21 @@ class PaillierEncryptedNumber {
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] bn array of ciphertexts encrypted by paillier public key
-   * @param[in] length size of array(default value is 8)
+   * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
   PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const std::vector<BigNumber>& bn, size_t length = 8);
+                          const std::vector<BigNumber>& bn,
+                          size_t length = IPCL_CRYPTO_MB_SIZE);
 
   /**
    * PaillierEncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] scalar array of integer scalars
-   * @param[in] length size of array(default value is 8)
+   * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
   PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
                           const std::vector<uint32_t>& scalar,
-                          size_t length = 8);
+                          size_t length = IPCL_CRYPTO_MB_SIZE);
 
   /**
    * Arithmetic addition operator
@@ -76,7 +77,7 @@ class PaillierEncryptedNumber {
    */
   void apply_obfuscator() {
     b_isObfuscator = true;
-    std::vector<BigNumber> obfuscator(8);
+    std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
     m_pubkey->apply_obfuscator(obfuscator);
 
     BigNumber sq = m_pubkey->getNSQ();

@@ -6,7 +6,6 @@
 #include <algorithm>
 
 #include "ipcl/mod_exp.hpp"
-#include "ipcl/util.hpp"
 
 namespace ipcl {
 // constructors
@@ -24,7 +23,7 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
     size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
-      m_available(8),
+      m_available(IPCL_CRYPTO_MB_SIZE),
       m_length(length),
       m_bn{bn[0], bn[1], bn[2], bn[3], bn[4], bn[5], bn[6], bn[7]} {}
 
@@ -33,7 +32,7 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
     size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
-      m_available(8),
+      m_available(IPCL_CRYPTO_MB_SIZE),
       m_length(length),
       m_bn{scalar[0], scalar[1], scalar[2], scalar[3],
            scalar[4], scalar[5], scalar[6], scalar[7]} {}
@@ -51,7 +50,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     BigNumber sum = a.raw_add(a.m_bn[0], b.m_bn[0]);
     return PaillierEncryptedNumber(m_pubkey, sum);
   } else {
-    std::vector<BigNumber> sum(8);
+    std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
     for (int i = 0; i < m_available; i++)
       sum[i] = a.raw_add(a.m_bn[i], b.m_bn[i]);
     return PaillierEncryptedNumber(m_pubkey, sum);
@@ -76,10 +75,11 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
 
   PaillierEncryptedNumber a = *this;
 
-  std::vector<BigNumber> b(8);
-  std::vector<BigNumber> sum(8);
+  std::vector<BigNumber> b(IPCL_CRYPTO_MB_SIZE);
+  std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
   a.m_pubkey->encrypt(b, other, false);
-  for (int i = 0; i < 8; i++) sum[i] = a.raw_add(a.m_bn[i], b[i]);
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
+    sum[i] = a.raw_add(a.m_bn[i], b[i]);
   return PaillierEncryptedNumber(m_pubkey, sum);
 }
 
@@ -121,7 +121,7 @@ BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
 
 std::vector<BigNumber> PaillierEncryptedNumber::raw_mul(
     const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
-  std::vector<BigNumber> sq(8, m_pubkey->getNSQ());
+  std::vector<BigNumber> sq(IPCL_CRYPTO_MB_SIZE, m_pubkey->getNSQ());
   return ipcl::ippModExp(a, b, sq);
 }
 

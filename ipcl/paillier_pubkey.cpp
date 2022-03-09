@@ -113,10 +113,10 @@ void PaillierPublicKey::enableDJN() {
 
 void PaillierPublicKey::apply_obfuscator(
     std::vector<BigNumber>& obfuscator) const {
-  std::vector<BigNumber> r(8);
-  std::vector<BigNumber> pown(8, m_n);
-  std::vector<BigNumber> base(8, m_hs);
-  std::vector<BigNumber> sq(8, m_nsquare);
+  std::vector<BigNumber> r(IPCL_CRYPTO_MB_SIZE);
+  std::vector<BigNumber> pown(IPCL_CRYPTO_MB_SIZE, m_n);
+  std::vector<BigNumber> base(IPCL_CRYPTO_MB_SIZE, m_hs);
+  std::vector<BigNumber> sq(IPCL_CRYPTO_MB_SIZE, m_nsquare);
 
   VEC_SIZE_CHECK(obfuscator);
 
@@ -126,7 +126,7 @@ void PaillierPublicKey::apply_obfuscator(
     }
     obfuscator = ipcl::ippModExp(base, r, sq);
   } else {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
       if (m_testv) {
         r[i] = m_r[i];
       } else {
@@ -152,16 +152,16 @@ void PaillierPublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
                                     bool make_secure) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
   BigNumber sq = m_nsquare;
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     BigNumber bn(plaintext[i]);
     ciphertext[i] = (m_n * bn + 1) % sq;
   }
 
   if (make_secure) {
-    std::vector<BigNumber> obfuscator(8);
+    std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
     apply_obfuscator(obfuscator);
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
       ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
   }
 }
