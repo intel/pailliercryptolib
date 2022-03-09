@@ -26,7 +26,7 @@
 
 using namespace std;
 
-//int gDebugParam = 1;
+// int gDebugParam = 1;
 
 BIGNUM* generateTestBNData(int nbits) {
     if (!RAND_status()) return NULL;
@@ -90,74 +90,108 @@ void showHexBin(unsigned char* bin, int len) {
     return;
 }
 
-// data will be changed to little endian format in this function, therefore the abscence of const in front
-HE_QAT_STATUS binToBigNumber(BigNumber &bn, unsigned char *data, int nbits)
-{
+/// @brief
+/// @function binToBigNumber
+//
+/// data will be changed to little endian format in this function, therefore the
+/// abscence of const in front
+HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
+                             int nbits) {
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
     if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
 
-    BIGNUM *bn_ = BN_new();
+    BIGNUM* bn_ = BN_new();
     if (ERR_get_error()) return status;
-    
-    // Convert raw data to BIGNUM representation to be used as a proxy to convert it to little endian format
-    int len_ = nbits/8;
+
+    // Convert raw data to BIGNUM representation to be used as a proxy to
+    // convert it to little endian format
+    int len_ = (nbits + 7) >> 3;  // nbits/8;
     BN_bin2bn(data, len_, bn_);
     if (ERR_get_error()) {
         BN_free(bn_);
-	return status;
+        return status;
     }
- 
-    // Convert big number from Big Endian (QAT's format) to Little Endian (BigNumber's format)
-    BN_bn2lebinpad(bn_, data, len_);
+
+    //Ipp8u* data_ = new Ipp8u[len_]; 
+    unsigned char *data_ = (unsigned char *) calloc(len_, sizeof(unsigned char)); 
+    if (NULL == data_) return HE_QAT_STATUS_FAIL;
+
+    // Convert big number from Big Endian (QAT's format) to Little Endian
+    // (BigNumber's format)
+    BN_bn2lebinpad(bn_, data_, len_);
     if (ERR_get_error()) {
         BN_free(bn_);
-	return status;
+        return status;
     }
+//    char* bn_str = BN_bn2hex(bn_);
+//    printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
+//           BN_num_bytes(bn_), BN_num_bits(bn_));
 
     // Uncomment this line if C++ compiler
-    bn = BigNumber(reinterpret_cast<Ipp32u *>(data), BITSIZE_WORD(nbits));
-    // Comment this line if C++ compiler
-//    bn = BigNumber((Ipp32u *)(data), BITSIZE_WORD(nbits)); 
+    bn = BigNumber(reinterpret_cast<Ipp32u*>(data_), BITSIZE_WORD(nbits));
+    // Comment this line for C-style casting with C compiler other than C++
+    // compiler
+    //    bn = BigNumber((Ipp32u *)(data), BITSIZE_WORD(nbits));
+//    std::string str;
+//    bn.num2hex(str);
+//    printf("--- BigNumber: %s\n",str.c_str());
 
-    // Set status of operation 
+    // Set status of operation
     status = HE_QAT_STATUS_SUCCESS;
 
     // Free up temporary allocated memory space
     BN_free(bn_);
 
+    // Do we have to deallocate data_ or is it being reused in BigNumber? Need
+    // to check.
+
     return status;
 }
 
-HE_QAT_STATUS bigNumberToBin(unsigned char *data, int nbits, BigNumber &bn)
-{
+/// @brief
+/// @function bigNumberToBin
+/// Converts/encapsulates big number data to/into an object of BigNumber's
+/// type/class.
+/// @param[out] data  BigNumber object's raw data in big endian format.
+/// @param[in]  nbits Number of bits. Has to be power of 2, e.g. 1024, 2048,
+/// 4096, etc.
+/// @param[in]  bn    BigNumber object holding a multi-precision that can be
+/// represented in nbits.
+HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
+                             const BigNumber& bn) {
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-    
+
     if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
-    
-    int len_ = nbits/8;
-    int bit_size_ = 0; // could use that instead of nbits
-    Ipp32u *ref_bn_ = NULL; 
+    if (nbits % 2) return HE_QAT_STATUS_INVALID_PARAM;
+
+    int len_ = (nbits + 7) >> 3;  // nbits/8;
+    int bit_size_ = 0;            // could use that instead of nbits
+    Ipp32u* ref_bn_ = NULL;
     ippsRef_BN(NULL, &bit_size_, &ref_bn_, BN(bn));
-    unsigned char *data_ = reinterpret_cast<unsigned char *>(ref_bn_);
-//  unsigned char *data = (unsigned char *) ref_bn_;
-    
-    BIGNUM *bn_ = BN_new();
+
+    // Can be optimized to a
+    // unsigned char *data_ = (unsigned char *) calloc(len_, sizeof(unsigned
+    // char)); if (NULL == data_) return HE_QAT_STATUS_FAIL;
+
+    // memcpy(data_, reinterpret_cast<unsigned char *>(ref_bn_), len_);
+
+    BIGNUM* bn_ = BN_new();
     if (ERR_get_error()) return status;
-    
-    BN_lebin2bn(data_, len_, bn_);
+
+    BN_lebin2bn(reinterpret_cast<unsigned char*>(ref_bn_), len_, bn_);
     if (ERR_get_error()) {
         BN_free(bn_);
-	return status;
+        return status;
     }
 
     BN_bn2binpad(bn_, data, len_);
     if (ERR_get_error()) {
         BN_free(bn_);
-	return status;
+        return status;
     }
 
-    // Set status of operation 
+    // Set status of operation
     status = HE_QAT_STATUS_SUCCESS;
 
     // Free up temporary allocated memory space
@@ -187,62 +221,69 @@ int main(int argc, const char** argv) {
     BN_CTX* ctx = BN_CTX_new();
     BN_CTX_start(ctx);
 
-    for (unsigned int mod = 4094; mod < 4096; mod++) {
-        //BIGNUM* bn_mod = BN_new(); 
-	BIGNUM* bn_mod = generateTestBNData(bit_length);
+    for (unsigned int mod = 0; mod < num_trials; mod++) {
+        // BIGNUM* bn_mod = BN_new();
+        BIGNUM* bn_mod = generateTestBNData(bit_length);
 
         if (!bn_mod) continue;
 
-	//BN_set_word(bn_mod, mod);
+        // BN_set_word(bn_mod, mod);
 
         char* bn_str = BN_bn2hex(bn_mod);
-        printf("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
+        printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
-//        OPENSSL_free(bn_str);
-       	
-//	
-//	// Pack BIGNUM (in base 2^8) into BigNumber (in base 2^32)
-	unsigned char* mpi_base = NULL;
-	mpi_base = (unsigned char *) calloc(bit_length/8, sizeof(unsigned char));
-	if (NULL == mpi_base) {
-            BN_free(bn_mod);
-	    continue;
-	}
-	BN_bn2lebinpad(bn_mod, mpi_base, bit_length/8);
-//        // revert it
-//	for (int k = 0; k < bit_length/8; k++)
-//            be_mpi_base[k] = mpi_base[bit_length/8-k-1];
-//
+        OPENSSL_free(bn_str);
 
-	printf("Try convert to BigNumber len=%lu\n",bit_length/(8*sizeof(unsigned char)));
-//	// Convert from base 2^8 to base 2^32
-	Ipp32u *ipp_mpi_base = reinterpret_cast<Ipp32u *>(mpi_base);// + (rep_len - bit_length/8)); 
-//	//Ipp32u *ipp_mpi_base = (Ipp32u *) (mpi_base); //(rep_len_2-128); 
-        BigNumber BigNum_base((Ipp32u)0);
-	BigNum_base = BigNumber((Ipp32u *) ipp_mpi_base, BITSIZE_WORD(bit_length));
-	printf("BigNumber has been created.\n");
-        // End of packing (this overhead does not exist in practice)
+        int len_ = (bit_length + 7) >> 3;
 
-	std::string str;
-	BigNum_base.num2hex(str);
-	printf("BigNum_base num2hex output:  %s %d\n",str.c_str(),bit_length/8); 
-
-//	// Extract raw data from BigNumber 2^32 and convert it to base 2^8
-	int bitSize = 0;
-	Ipp32u *pBigNum_base = NULL; //BN(BigNum_base);
-	ippsRef_BN(NULL, &bitSize, &pBigNum_base, BN(BigNum_base));
-	unsigned char *ippbn = reinterpret_cast<unsigned char *>(pBigNum_base);
-//	unsigned char *ippbn = (unsigned char *) pBigNum_base;
-	BIGNUM *ipp_ref_bn = BN_new();
-	BN_lebin2bn(ippbn, bit_length/8, ipp_ref_bn);
-	char *ipp_ref_bn_str = BN_bn2hex(ipp_ref_bn);
-        printf(">>>> PRINT IPP ref bn: %s bitSize(%d)\n", ipp_ref_bn_str, BN_num_bits(ipp_ref_bn));
-	//BIGNUM *ipp_ref_bn = BN_new();
-	//BN_lebin2bn(ippbn, bit_length/8, ipp_ref_bn);
+        unsigned char* bn_mod_data_ =
+            (unsigned char*)calloc(len_, sizeof(unsigned char));
+        if (NULL == bn_mod_data_) exit(1);
+        BN_bn2binpad(bn_mod, bn_mod_data_, len_);
 
         BN_free(bn_mod);
-//        BN_free(bn_base);
-//        BN_free(bn_exponent);
+
+        BigNumber big_num((Ipp32u)0);
+	
+	start = clock();
+        status = binToBigNumber(big_num, bn_mod_data_, bit_length);
+        if (HE_QAT_STATUS_SUCCESS != status) {
+            printf("Failed at binToBigNumber()\n");
+            exit(1);
+        }
+	ssl_elapsed = clock() - start;
+        printf("Conversion to BigNumber has completed in %.1lfus.\n",(ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+
+        int bit_len = 0;
+        ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
+        std::string str;
+        big_num.num2hex(str);
+        printf("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
+               bit_len);
+
+	start = clock();
+        unsigned char* ref_bn_data_ =
+            (unsigned char*)calloc(len_, sizeof(unsigned char));
+        if (NULL == ref_bn_data_) exit(1);
+        status = bigNumberToBin(ref_bn_data_, bit_length, big_num);
+        if (HE_QAT_STATUS_SUCCESS != status) {
+            printf("Failed at bigNumberToBin()\n");
+            exit(1);
+        }
+	qat_elapsed = clock() - start;
+        printf("Conversion from BigNumber has completed %.1lfus.\n",(qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+
+        BIGNUM* ref_bin_ = BN_new();
+        BN_bin2bn(ref_bn_data_, len_, ref_bin_);
+        bn_str = BN_bn2hex(ref_bin_);
+        printf("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
+               BN_num_bytes(ref_bin_), BN_num_bits(ref_bin_));
+        printf("-----------------------\n");
+
+        OPENSSL_free(bn_str);
+        free(bn_mod_data_);
+        free(ref_bn_data_);
+        BN_free(ref_bin_);
     }
 
     // Tear down OpenSSL context
