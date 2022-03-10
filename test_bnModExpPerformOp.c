@@ -17,7 +17,7 @@
 #define ODD_RND_NUM 1
 #define BATCH_SIZE 1
 
-//int gDebugParam = 1;
+// int gDebugParam = 1;
 
 BIGNUM* generateTestBNData(int nbits) {
     if (!RAND_status()) return NULL;
@@ -82,7 +82,7 @@ void showHexBin(unsigned char* bin, int len) {
 }
 
 int main(int argc, const char** argv) {
-    const int bit_length = 4096; //1024;
+    const int bit_length = 4096;  // 1024;
     const size_t num_trials = 100;
 
     double avg_speed_up = 0.0;
@@ -122,7 +122,7 @@ int main(int argc, const char** argv) {
 
         BIGNUM* bn_base = generateTestBNData(bit_length);
 
-	// Perform OpenSSL ModExp Op
+        // Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
         start = clock();
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
@@ -147,12 +147,12 @@ int main(int argc, const char** argv) {
         //        printf("OpenSSL: %.1lfus\t", ssl_elapsed / (CLOCKS_PER_SEC /
         //        1000000.0));
 
-	// Perform QAT ModExp Op
+        // Perform QAT ModExp Op
         BIGNUM* qat_res = BN_new();
         start = clock();
         for (unsigned int j = 0; j < BATCH_SIZE; j++)
-            status = bnModExpPerformOp(qat_res, bn_base, bn_exponent,
-                                              bn_mod, bit_length);
+            status = bnModExpPerformOp(qat_res, bn_base, bn_exponent, bn_mod,
+                                       bit_length);
         getBnModExpRequest(BATCH_SIZE);
         qat_elapsed = clock() - start;
 
@@ -169,8 +169,9 @@ int main(int argc, const char** argv) {
                  ((qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)) / BATCH_SIZE)) /
             (mod + 1);
 
-        printf("Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
-               (mod+1), ssl_avg_time, qat_avg_time, avg_speed_up);
+        printf(
+            "Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
+            (mod + 1), ssl_avg_time, qat_avg_time, avg_speed_up);
 
         //        printf("QAT: %.1lfus\t", qat_elapsed / (CLOCKS_PER_SEC /
         //        1000000.0)); printf("Speed Up: %.1lfx\t", (ssl_elapsed /

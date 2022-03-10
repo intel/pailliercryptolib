@@ -78,6 +78,16 @@
 #ifndef CPA_SAMPLE_UTILS_H
 #define CPA_SAMPLE_UTILS_H
 
+#ifdef __cplusplus
+#define HE_QAT_RESTRICT __restrict__
+#else
+#define HE_QAT_RESTRICT restrict
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "cpa.h"
 #include "cpa_cy_im.h"
 #include "cpa_dc.h"
@@ -271,8 +281,8 @@ typedef struct task_struct *sampleThread;
  * @post
  *     none
  *****************************************************************************/
-static inline void displayHexArray(const char *restrict pLabel,
-                                   const Cpa8U *restrict pBuff,
+static inline void displayHexArray(const char *HE_QAT_RESTRICT pLabel,
+                                   const Cpa8U *HE_QAT_RESTRICT pBuff,
                                    Cpa32U len)
 {
 
@@ -573,7 +583,11 @@ static __inline CpaStatus sampleThreadCreate(sampleThread *thread,
                                              void *args)
 {
 #ifdef USER_SPACE
+#ifdef __cplusplus
+    if (pthread_create(thread, NULL, (void* (*)(void*)) funct, args) != 0)
+#else
     if (pthread_create(thread, NULL, funct, args) != 0)
+#endif
     {
         PRINT_ERR("Failed create thread\n");
         return CPA_STATUS_FAIL;
@@ -613,7 +627,10 @@ void sampleDcStartPolling(CpaInstanceHandle dcInstHandle);
 
 void sampleDcStopPolling(void);
 
-
+#ifdef __cplusplus
+} //extern "C" {
 #endif
 
+
+#endif
 

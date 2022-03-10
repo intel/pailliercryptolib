@@ -39,29 +39,67 @@ add_compile_options(-fPIC)
 # Common utility functions
 add_subdirectory(common)
 
+set(IPPCP_DIR "/opt/ipp-crypto")
+set(IPPCP_CMAKE_PREFIX_DIR "${IPPCP_DIR}/lib/cmake")
+list(APPEND CMAKE_PREFIX_PATH "${IPPCP_CMAKE_PREFIX_DIR}")
+find_package(ippcp REQUIRED)
+
+set(HE_QAT_MISC_INC_DIR ${COMMON_INC_DIR} ${CMAKE_CURRENT_LIST_DIR})
+set(HE_QAT_MISC_SRC ${CMAKE_CURRENT_LIST_DIR}/he_qat_misc.cpp)
+add_subdirectory(misc)
+
 set(HE_QAT_SRC ${CMAKE_CURRENT_LIST_DIR}/he_qat_bn_ops.c 
                ${CMAKE_CURRENT_LIST_DIR}/he_qat_context.c)
-add_library(he_qat SHARED ${HE_QAT_SRC})
+
+add_library(he_qat SHARED ${HE_QAT_SRC}) # Let BUILD_SHARED_LIBS do the job by removing the qualifier SHARED
 target_include_directories(he_qat PUBLIC ${COMMON_INC_DIR})
+#target_include_directories(he_qat PUBLIC ${HE_QAT_MISC_INC_DIR})
 target_include_directories(he_qat PUBLIC /opt/openssl/include)
 target_link_directories(he_qat PUBLIC ${ICP_BUILDOUTPUT_PATH})
 target_link_directories(he_qat PUBLIC /opt/openssl/lib)
 target_link_libraries(he_qat PRIVATE cpa_sample_utils)
-target_link_libraries(he_qat PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
+#target_link_libraries(he_qat PRIVATE he_qat_utils)
+target_link_libraries(he_qat PUBLIC qat_s usdm_drv_s)
+target_link_libraries(he_qat PUBLIC crypto ssl)
+target_link_libraries(he_qat PUBLIC z pthread)
 
 #add_definitions(-D_DESTINY_DEBUG_VERBOSE)
+if(NOT HE_QAT_DEBUG_VERBOSE)
+    remove_definitions(-D_DESTINY_DEBUG_VERBOSE) 
+endif()
 
 add_executable(test_context test_context.c)
+target_include_directories(test_context PUBLIC ${HE_QAT_MISC_INC_DIR})
 target_link_libraries(test_context PUBLIC he_qat)
-target_link_libraries(test_context PUBLIC cpa_sample_utils)
-target_link_libraries(test_context PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
+#target_link_libraries(test_context PUBLIC cpa_sample_utils)
+target_link_libraries(test_context PUBLIC z pthread ssl crypto qat_s usdm_drv_s)
+
+
+#find_package(IPPCrypto REQUIRED MODULE)
+#if (NOT IPPCRYPTO_FOUND)
+#   message(FATAL_ERROR "No Intel IPP Cryptography library found on the system.")
+#endif()
+#if(NOT TARGET ippcp)
+#    message(FATAL_ERROR "TARGET IPPCP::ippcp not found")
+#else()
+#    message(STATUS "TARGET IPPCP::ippcp found")
+#endif()
+
 
 
 add_executable(test_bnModExpPerformOp test_bnModExpPerformOp.c)
+#target_include_directories(test_bnModExpPerformOp PUBLIC ${HE_QAT_UTILS_INC_DIR})
 target_link_libraries(test_bnModExpPerformOp PUBLIC he_qat)
-target_link_libraries(test_bnModExpPerformOp PUBLIC cpa_sample_utils)
-target_link_libraries(test_bnModExpPerformOp PUBLIC z pthread crypto ssl crypto qat_s usdm_drv_s)
+#target_link_libraries(test_bnModExpPerformOp PUBLIC cpa_sample_utils)
+target_link_libraries(test_bnModExpPerformOp PUBLIC z pthread ssl crypto qat_s usdm_drv_s)
 
-# Compile test case
-#add_subdirectory(ln_mod_exp)
+add_compile_options(-fpermissive)
+add_executable(test_bnConversion test_bnConversion.cpp)
+target_include_directories(test_bnConversion PUBLIC ${HE_QAT_MISC_INC_DIR})
+target_link_libraries(test_bnConversion PUBLIC he_qat)
+target_link_libraries(test_bnConversion PUBLIC he_qat_misc)
+#target_link_libraries(test_bnConversion PUBLIC he_qat_utils)
+#target_link_libraries(test_bnConversion PUBLIC cpa_sample_utils)
+#target_link_libraries(test_bnConversion PUBLIC ippcpmx crypto_mb)
+target_link_libraries(test_bnConversion PUBLIC z pthread ssl crypto qat_s usdm_drv_s)
 

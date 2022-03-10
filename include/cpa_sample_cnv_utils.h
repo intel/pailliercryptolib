@@ -78,6 +78,11 @@
 #ifndef QAT_SAMPLE_CNV_UTILS_H_
 #define QAT_SAMPLE_CNV_UTILS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#include <cstring>
+#endif
+
 /* Common macro definitions */
 #ifndef DC_API_VERSION_AT_LEAST
 #define DC_API_VERSION_AT_LEAST(major, minor)                                  \
@@ -167,7 +172,12 @@ static const char *getSampleCnVModeStr(void)
 
 static void getCnvFlagInternal(CpaBoolean *cnv, CpaBoolean *cnvnr)
 {
+#ifdef __cplusplus
+    CpaDcInstanceCapabilities cap;
+    memset(&cap, 0, sizeof(CpaDcInstanceCapabilities));
+#else
     CpaDcInstanceCapabilities cap = {0};
+#endif
     if (getSampleDcCapabilities(&cap) != CPA_STATUS_SUCCESS)
     {
         return EvaluateSampleCnVFlag(NULL, cnv, cnvnr);
@@ -257,4 +267,9 @@ static CpaStatus getSampleDcCapabilities(
 
     return CPA_STATUS_SUCCESS;
 }
+
+#ifdef __cplusplus
+} // close extern "C" {
+#endif
+
 #endif /* QAT_SAMPLE_CNV_UTILS_H_ */
