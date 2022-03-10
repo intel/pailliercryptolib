@@ -34,11 +34,11 @@ extern "C" {
 //#define ODD_RND_NUM 1
 //#define BATCH_SIZE 1
 
-//using namespace std;
+// using namespace std;
 
 // int gDebugParam = 1;
 
-//BIGNUM* generateTestBNData(int nbits) {
+// BIGNUM* generateTestBNData(int nbits) {
 //    if (!RAND_status()) return NULL;
 //#ifdef _DESTINY_DEBUG_VERBOSE
 //    printf("PRNG properly seeded.\n");
@@ -56,7 +56,7 @@ extern "C" {
 //    return bn;
 //}
 //
-//unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
+// unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
 //    if (!bn) return NULL;
 //
 //    // Returns same address if it fails
@@ -81,7 +81,7 @@ extern "C" {
 //    return bin;
 //}
 //
-//void showHexBN(BIGNUM* bn, int nbits) {
+// void showHexBN(BIGNUM* bn, int nbits) {
 //    int len = nbits / 8;
 //    unsigned char* bin = (unsigned char*)OPENSSL_zalloc(len);
 //    if (!bin) return;
@@ -93,7 +93,7 @@ extern "C" {
 //    return;
 //}
 //
-//void showHexBin(unsigned char* bin, int len) {
+// void showHexBin(unsigned char* bin, int len) {
 //    if (!bin) return;
 //    for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
 //    printf("\n");
@@ -103,17 +103,18 @@ extern "C" {
 ///// @brief
 ///// @function binToBigNumber
 ////
-///// data will be changed to little endian format in this function, therefore the
+///// data will be changed to little endian format in this function, therefore
+///the
 ///// abscence of const in front
-//HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
+// HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
 //                             int nbits) {
 //    if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
 //    int len_ = (nbits + 7) >> 3;  // nbits/8;
 //
 //    // Create BigNumber containg input data passed as argument
-//    bn = BigNumber(reinterpret_cast<const Ipp32u*>(data), BITSIZE_WORD(nbits));
-//    Ipp32u* ref_bn_data_ = NULL;
-//    ippsRef_BN(NULL, NULL, &ref_bn_data_, BN(bn));
+//    bn = BigNumber(reinterpret_cast<const Ipp32u*>(data),
+//    BITSIZE_WORD(nbits)); Ipp32u* ref_bn_data_ = NULL; ippsRef_BN(NULL, NULL,
+//    &ref_bn_data_, BN(bn));
 //
 //    // Convert it to little endian format
 //    unsigned char* data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
@@ -131,7 +132,7 @@ extern "C" {
 ///// 4096, etc.
 ///// @param[in]  bn    BigNumber object holding a multi-precision that can be
 ///// represented in nbits.
-//HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
+// HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
 //                             const BigNumber& bn) {
 //    if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
 //    int len_ = (nbits + 7) >> 3;  // nbits/8;

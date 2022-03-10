@@ -3,7 +3,7 @@
 #define HE_QAT_MISC_H_
 
 //#ifdef __cplusplus
-//extern "C" {
+// extern "C" {
 //#endif
 
 #include "he_qat_types.h"
