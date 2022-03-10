@@ -75,15 +75,7 @@ class PaillierEncryptedNumber {
    * Apply obfuscator for ciphertext, obfuscated needed only when the ciphertext
    * is exposed
    */
-  void apply_obfuscator() {
-    b_isObfuscator = true;
-    std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
-    m_pubkey->apply_obfuscator(obfuscator);
-
-    BigNumber sq = m_pubkey->getNSQ();
-    for (int i = 0; i < m_available; i++)
-      m_bn[i] = sq.ModMul(m_bn[i], obfuscator[i]);
-  }
+  void applyObfuscator();
 
   /**
    * Return ciphertext

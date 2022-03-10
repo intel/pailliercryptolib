@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "ipcl/mod_exp.hpp"
+#include "ipcl/util.hpp"
 
 #include <crypto_mb/exp.h>
 
@@ -18,14 +19,15 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
 
   mbx_status st = MBX_STATUS_OK;
 
-  int&& bits = m[0].BitSize();
-  int&& dwords = BITSIZE_DWORD(bits);
-  int&& bufferLen = mbx_exp_BufferSize(bits);
-  auto&& pBuffer = std::vector<Ipp8u>(bufferLen);
+  int bits = m.front().BitSize();
+  int dwords = BITSIZE_DWORD(bits);
+  int bufferLen = mbx_exp_BufferSize(bits);
+  auto buffer = std::vector<Ipp8u>(bufferLen);
 
-  std::vector<int64u*> out_x(IPCL_CRYPTO_MB_SIZE), b_array(IPCL_CRYPTO_MB_SIZE),
-      p_array(IPCL_CRYPTO_MB_SIZE);
-  int&& length = dwords * sizeof(int64u);
+  std::vector<int64u*> out_x(IPCL_CRYPTO_MB_SIZE);
+  std::vector<int64u*> b_array(IPCL_CRYPTO_MB_SIZE);
+  std::vector<int64u*> p_array(IPCL_CRYPTO_MB_SIZE);
+  int length = dwords * sizeof(int64u);
 
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     out_x[i] = reinterpret_cast<int64u*>(alloca(length));
@@ -47,12 +49,13 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
    * will be inconsistent with the length allocated by b_array/p_array,
    * resulting in data errors.
    */
-  std::vector<Ipp32u*> pow_b(IPCL_CRYPTO_MB_SIZE), pow_p(IPCL_CRYPTO_MB_SIZE),
-      pow_nsquare(IPCL_CRYPTO_MB_SIZE);
-  int bBitLen, pBitLen, nsqBitLen;
+  std::vector<Ipp32u*> pow_b(IPCL_CRYPTO_MB_SIZE);
+  std::vector<Ipp32u*> pow_p(IPCL_CRYPTO_MB_SIZE);
+  std::vector<Ipp32u*> pow_nsquare(IPCL_CRYPTO_MB_SIZE);
+  int nsqBitLen;
   int expBitLen = 0;
 
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (int i = 0, bBitLen, pBitLen; i < IPCL_CRYPTO_MB_SIZE; i++) {
     ippsRef_BN(nullptr, &bBitLen, reinterpret_cast<Ipp32u**>(&pow_b[i]),
                base[i]);
     ippsRef_BN(nullptr, &pBitLen, reinterpret_cast<Ipp32u**>(&pow_p[i]),
@@ -72,7 +75,7 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
    */
   st = mbx_exp_mb8(out_x.data(), b_array.data(), p_array.data(), expBitLen,
                    reinterpret_cast<Ipp64u**>(pow_nsquare.data()), nsqBitLen,
-                   reinterpret_cast<Ipp8u*>(pBuffer.data()), bufferLen);
+                   reinterpret_cast<Ipp8u*>(buffer.data()), bufferLen);
 
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     ERROR_CHECK(MBX_STATUS_OK == MBX_GET_STS(st, i),
@@ -82,7 +85,7 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   }
 
   // It is important to hold a copy of nsquare for thread-safe purpose
-  BigNumber bn_c(m[0]);
+  BigNumber bn_c(m.front());
 
   std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE, 0);
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
@@ -96,14 +99,14 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
 static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
                              const BigNumber& m) {
   IppStatus stat = ippStsNoErr;
-  // It is important to declear res * bform bit length refer to ipp-crypto spec:
+  // It is important to declare res * bform bit length refer to ipp-crypto spec:
   // R should not be less than the data length of the modulus m
   BigNumber res(m);
 
   int bnBitLen;
   Ipp32u* pow_m;
   ippsRef_BN(nullptr, &bnBitLen, &pow_m, BN(m));
-  int&& nlen = BITSIZE_WORD(bnBitLen);
+  int nlen = BITSIZE_WORD(bnBitLen);
 
   int size;
   // define and initialize Montgomery Engine over Modulus N
@@ -111,7 +114,7 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
   ERROR_CHECK(stat == ippStsNoErr,
               "ippMontExp: get the size of IppsMontState context error.");
 
-  auto&& pMont = std::vector<Ipp8u>(size);
+  auto pMont = std::vector<Ipp8u>(size);
 
   stat = ippsMontInit(IppsBinaryMethod, nlen,
                       reinterpret_cast<IppsMontState*>(pMont.data()));

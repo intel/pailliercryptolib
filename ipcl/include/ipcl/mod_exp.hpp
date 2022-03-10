@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "ipcl/bignum.h"
-#include "ipcl/util.hpp"
 
 namespace ipcl {
 /**

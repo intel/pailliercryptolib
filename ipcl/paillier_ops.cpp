@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "ipcl/paillier_ops.hpp"
+#include "ipcl/mod_exp.hpp"
 
 #include <algorithm>
-
-#include "ipcl/mod_exp.hpp"
 
 namespace ipcl {
 // constructors
@@ -43,28 +42,28 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
   ERROR_CHECK(m_pubkey->getN() == other.m_pubkey->getN(),
               "operator+: two different public keys detected!!");
 
-  PaillierEncryptedNumber a = *this;
-  PaillierEncryptedNumber b = other;
+  const auto& a = *this;
+  const auto& b = other;
 
   if (m_available == 1) {
-    BigNumber&& sum = a.raw_add(a.m_bn[0], b.m_bn[0]);
-    return PaillierEncryptedNumber(m_pubkey, sum);
-  } else {
-    std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
-    for (int i = 0; i < m_available; i++)
-      sum[i] = a.raw_add(a.m_bn[i], b.m_bn[i]);
+    BigNumber sum = a.raw_add(a.m_bn.front(), b.m_bn.front());
     return PaillierEncryptedNumber(m_pubkey, sum);
   }
+
+  std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
+  for (int i = 0; i < m_available; i++)
+    sum[i] = a.raw_add(a.m_bn[i], b.m_bn[i]);
+  return PaillierEncryptedNumber(m_pubkey, sum);
 }
 
 // CT+PT
 PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     const BigNumber& other) const {
-  PaillierEncryptedNumber a = *this;
+  const auto& a = *this;
   BigNumber b;
   a.m_pubkey->encrypt(b, other);
 
-  BigNumber&& sum = a.raw_add(a.m_bn[0], b);
+  BigNumber sum = a.raw_add(a.m_bn.front(), b);
   return PaillierEncryptedNumber(m_pubkey, sum);
 }
 
@@ -73,7 +72,7 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator+(
     const std::vector<BigNumber>& other) const {
   VEC_SIZE_CHECK(other);
 
-  PaillierEncryptedNumber a = *this;
+  const auto& a = *this;
 
   std::vector<BigNumber> b(IPCL_CRYPTO_MB_SIZE);
   std::vector<BigNumber> sum(IPCL_CRYPTO_MB_SIZE);
@@ -90,32 +89,31 @@ PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
   ERROR_CHECK(m_pubkey->getN() == other.m_pubkey->getN(),
               "operator*: two different public keys detected!!");
 
-  PaillierEncryptedNumber a = *this;
-  PaillierEncryptedNumber b = other;
+  const auto& a = *this;
+  const auto& b = other;
 
   if (m_available == 1) {
-    BigNumber&& product = a.raw_mul(a.m_bn[0], b.m_bn[0]);
-    return PaillierEncryptedNumber(m_pubkey, product);
-  } else {
-    std::vector<BigNumber>&& product = a.raw_mul(a.m_bn, b.m_bn);
+    BigNumber product = a.raw_mul(a.m_bn.front(), b.m_bn.front());
     return PaillierEncryptedNumber(m_pubkey, product);
   }
+
+  std::vector<BigNumber> product = a.raw_mul(a.m_bn, b.m_bn);
+  return PaillierEncryptedNumber(m_pubkey, product);
 }
 
 // CT*PT
 PaillierEncryptedNumber PaillierEncryptedNumber::operator*(
     const BigNumber& other) const {
-  PaillierEncryptedNumber a = *this;
+  const auto& a = *this;
 
-  BigNumber b = other;
-  BigNumber&& product = a.raw_mul(a.m_bn[0], b);
+  BigNumber product = a.raw_mul(a.m_bn.front(), other);
   return PaillierEncryptedNumber(m_pubkey, product);
 }
 
 BigNumber PaillierEncryptedNumber::raw_add(const BigNumber& a,
                                            const BigNumber& b) const {
   // Hold a copy of nsquare for multi-threaded
-  BigNumber&& sq = m_pubkey->getNSQ();
+  const BigNumber& sq = m_pubkey->getNSQ();
   return a * b % sq;
 }
 
@@ -127,7 +125,7 @@ std::vector<BigNumber> PaillierEncryptedNumber::raw_mul(
 
 BigNumber PaillierEncryptedNumber::raw_mul(const BigNumber& a,
                                            const BigNumber& b) const {
-  BigNumber&& sq = m_pubkey->getNSQ();
+  const BigNumber& sq = m_pubkey->getNSQ();
   return ipcl::ippModExp(a, b, sq);
 }
 
@@ -145,10 +143,20 @@ PaillierEncryptedNumber PaillierEncryptedNumber::rotate(int shift) const {
   else
     shift = -shift;
 
-  std::vector<BigNumber>&& new_bn = getArrayBN();
+  std::vector<BigNumber> new_bn = getArrayBN();
 
   std::rotate(std::begin(new_bn), std::begin(new_bn) + shift, std::end(new_bn));
   return PaillierEncryptedNumber(m_pubkey, new_bn);
+}
+
+void PaillierEncryptedNumber::applyObfuscator() {
+  b_isObfuscator = true;
+  std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
+  m_pubkey->applyObfuscator(obfuscator);
+
+  const BigNumber& sq = m_pubkey->getNSQ();
+  for (int i = 0; i < m_available; i++)
+    m_bn[i] = sq.ModMul(m_bn[i], obfuscator[i]);
 }
 
 }  // namespace ipcl

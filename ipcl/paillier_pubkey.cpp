@@ -48,28 +48,28 @@ std::vector<Ipp32u> PaillierPublicKey::randIpp32u(int size) const {
   return addr;
 }
 
-// length is Arbitery
+// length is arbitrary
 BigNumber PaillierPublicKey::getRandom(int length) const {
   IppStatus stat;
   int size;
-  int seedBitSize = 160;
-  int seedSize = BITSIZE_WORD(seedBitSize);
+  constexpr int seedBitSize = 160;
+  constexpr int seedSize = BITSIZE_WORD(seedBitSize);
 
   stat = ippsPRNGGetSize(&size);
   ERROR_CHECK(stat == ippStsNoErr,
               "getRandom: get IppsPRNGState context error.");
 
-  auto pRand = std::vector<Ipp8u>(size);
+  auto rands = std::vector<Ipp8u>(size);
 
   stat =
-      ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(pRand.data()));
+      ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rands.data()));
   ERROR_CHECK(stat == ippStsNoErr, "getRandom: init rand context error.");
 
-  auto&& seed = randIpp32u(seedSize);
+  auto seed = randIpp32u(seedSize);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
   stat = ippsPRNGSetSeed(BN(bseed),
-                         reinterpret_cast<IppsPRNGState*>(pRand.data()));
+                         reinterpret_cast<IppsPRNGState*>(rands.data()));
   ERROR_CHECK(stat == ippStsNoErr, "getRandom: set up seed value error.");
 
   // define length Big Numbers
@@ -86,10 +86,9 @@ BigNumber PaillierPublicKey::getRandom(int length) const {
 
   int bnBitSize = length;
   ippsPRNGenRDRAND_BN(pBN, bnBitSize,
-                      reinterpret_cast<IppsPRNGState*>(pRand.data()));
-  BigNumber rand(pBN);
+                      reinterpret_cast<IppsPRNGState*>(rands.data()));
 
-  return rand;
+  return BigNumber{pBN};
 }
 
 void PaillierPublicKey::enableDJN() {
@@ -97,22 +96,23 @@ void PaillierPublicKey::enableDJN() {
   BigNumber rmod;
   do {
     int rand_bit = m_n.BitSize();
-    BigNumber&& rand = getRandom(rand_bit + 128);
+    BigNumber rand = getRandom(rand_bit + 128);
     rmod = rand % m_n;
     gcd = rand.gcd(m_n);
   } while (gcd.compare(1));
 
-  BigNumber&& rmod_sq = rmod * rmod;
-  BigNumber&& rmod_neg = rmod_sq * -1;
-  BigNumber&& h = rmod_neg % m_n;
+  BigNumber rmod_sq = rmod * rmod;
+  BigNumber rmod_neg = rmod_sq * -1;
+  BigNumber h = rmod_neg % m_n;
   m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
 }
 
-void PaillierPublicKey::apply_obfuscator(
+void PaillierPublicKey::applyObfuscator(
     std::vector<BigNumber>& obfuscator) const {
+
   std::vector<BigNumber> r(IPCL_CRYPTO_MB_SIZE);
   std::vector<BigNumber> pown(IPCL_CRYPTO_MB_SIZE, m_n);
   std::vector<BigNumber> base(IPCL_CRYPTO_MB_SIZE, m_hs);
@@ -159,7 +159,7 @@ void PaillierPublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
 
   if (make_secure) {
     std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
-    apply_obfuscator(obfuscator);
+    applyObfuscator(obfuscator);
 
     for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
       ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
@@ -179,9 +179,7 @@ void PaillierPublicKey::encrypt(std::vector<BigNumber>& ciphertext,
 void PaillierPublicKey::encrypt(BigNumber& ciphertext,
                                 const BigNumber& value) const {
   // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
-  BigNumber bn = value;
-  BigNumber sq = m_nsquare;
-  ciphertext = (m_n * bn + 1) % sq;
+  ciphertext = (m_n * value + 1) % m_nsquare;
 
   /*----- Path to caculate (n+1)^plaintext mod n^2 ------------
   BigNumber bn(value);
