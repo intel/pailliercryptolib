@@ -66,7 +66,7 @@ unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
     // Returns same address if it fails
     unsigned char* bin = NULL;
     int len = bytes_left + num_bytes;
-    if (!(bin = (unsigned char *) OPENSSL_zalloc(len))) return NULL;
+    if (!(bin = (unsigned char*)OPENSSL_zalloc(len))) return NULL;
 
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Padding bn with %d bytes to total %d bytes\n", bytes_left, len);
@@ -82,7 +82,7 @@ unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
 
 void showHexBN(BIGNUM* bn, int nbits) {
     int len = nbits / 8;
-    unsigned char* bin = (unsigned char *) OPENSSL_zalloc(len);
+    unsigned char* bin = (unsigned char*)OPENSSL_zalloc(len);
     if (!bin) return;
     if (BN_bn2binpad(bn, bin, len)) {
         for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
