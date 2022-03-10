@@ -104,7 +104,7 @@ extern "C" {
 ///// @function binToBigNumber
 ////
 ///// data will be changed to little endian format in this function, therefore
-///the
+/// the
 ///// abscence of const in front
 // HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
 //                             int nbits) {
