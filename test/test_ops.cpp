@@ -11,8 +11,8 @@
 #endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
-#include "ipcl/paillier_keygen.hpp"
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/keygen.hpp"
+#include "ipcl/ops.hpp"
 
 void CtPlusCt(std::vector<ipcl::BigNumber>& res,
               const std::vector<ipcl::BigNumber>& ct1,

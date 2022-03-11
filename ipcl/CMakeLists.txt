@@ -1,10 +1,10 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-set(IPCL_SRCS paillier_prikey.cpp
-							paillier_pubkey.cpp
-							paillier_ops.cpp
-							paillier_keygen.cpp
+set(IPCL_SRCS pri_key.cpp
+							pub_key.cpp
+							ops.cpp
+							keygen.cpp
 							bignum.cpp
 							mod_exp.cpp
 )

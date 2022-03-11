@@ -9,8 +9,8 @@
 #endif  // IPCL_USE_OMP
 #include <iostream>
 
-#include "ipcl/paillier_keygen.hpp"
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/keygen.hpp"
+#include "ipcl/ops.hpp"
 
 static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);

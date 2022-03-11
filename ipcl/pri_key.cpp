@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/paillier_prikey.hpp"
+#include "ipcl/pri_key.hpp"
 
 #include <crypto_mb/exp.h>
 
@@ -23,8 +23,8 @@ static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
   return p * q / gcd;
 }
 
-PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
-                                       const BigNumber& p, const BigNumber& q)
+PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
+                       const BigNumber& q)
     : m_pubkey(public_key),
       m_n(m_pubkey->getN()),
       m_nsquare(m_pubkey->getNSQ()),
@@ -49,13 +49,12 @@ PaillierPrivateKey::PaillierPrivateKey(const PaillierPublicKey* public_key,
       m_dwords(m_pubkey->getDwords()),
       m_enable_crt(true) {
   ERROR_CHECK(p * q == m_n,
-              "PaillierPrivateKey ctor: Public key does not match p * q.");
-  ERROR_CHECK(p != q, "PaillierPrivateKey ctor: p and q are same");
+              "PrivateKey ctor: Public key does not match p * q.");
+  ERROR_CHECK(p != q, "PrivateKey ctor: p and q are same");
 }
 
-void PaillierPrivateKey::decryptRAW(
-    std::vector<BigNumber>& plaintext,
-    const std::vector<BigNumber>& ciphertext) const {
+void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
+                            const std::vector<BigNumber>& ciphertext) const {
   std::vector<BigNumber> pow_lambda(IPCL_CRYPTO_MB_SIZE, m_lambda);
   std::vector<BigNumber> modulo(IPCL_CRYPTO_MB_SIZE, m_nsquare);
   std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
@@ -70,9 +69,8 @@ void PaillierPrivateKey::decryptRAW(
   }
 }
 
-void PaillierPrivateKey::decrypt(
-    std::vector<BigNumber>& plaintext,
-    const std::vector<BigNumber>& ciphertext) const {
+void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
+                         const std::vector<BigNumber>& ciphertext) const {
   VEC_SIZE_CHECK(plaintext);
   VEC_SIZE_CHECK(ciphertext);
 
@@ -82,9 +80,8 @@ void PaillierPrivateKey::decrypt(
     decryptRAW(plaintext, ciphertext);
 }
 
-void PaillierPrivateKey::decrypt(
-    std::vector<BigNumber>& plaintext,
-    const PaillierEncryptedNumber ciphertext) const {
+void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
+                         const PaillierEncryptedNumber ciphertext) const {
   VEC_SIZE_CHECK(plaintext);
   // check key match
   ERROR_CHECK(ciphertext.getPK().getN() == m_pubkey->getN(),
@@ -98,9 +95,8 @@ void PaillierPrivateKey::decrypt(
 }
 
 // CRT to calculate base^exp mod n^2
-void PaillierPrivateKey::decryptCRT(
-    std::vector<BigNumber>& plaintext,
-    const std::vector<BigNumber>& ciphertext) const {
+void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
+                            const std::vector<BigNumber>& ciphertext) const {
   std::vector<BigNumber> basep(IPCL_CRYPTO_MB_SIZE), baseq(IPCL_CRYPTO_MB_SIZE);
   std::vector<BigNumber> pm1(IPCL_CRYPTO_MB_SIZE, m_pminusone),
       qm1(IPCL_CRYPTO_MB_SIZE, m_qminusone);
@@ -123,19 +119,19 @@ void PaillierPrivateKey::decryptCRT(
   }
 }
 
-BigNumber PaillierPrivateKey::computeCRT(const BigNumber& mp,
-                                         const BigNumber& mq) const {
+BigNumber PrivateKey::computeCRT(const BigNumber& mp,
+                                 const BigNumber& mq) const {
   BigNumber&& u = (mq - mp) * m_pinverse % m_q;
   return mp + (u * m_p);
 }
 
-BigNumber PaillierPrivateKey::computeLfun(const BigNumber& a,
-                                          const BigNumber& b) const {
+BigNumber PrivateKey::computeLfun(const BigNumber& a,
+                                  const BigNumber& b) const {
   return (a - 1) / b;
 }
 
-BigNumber PaillierPrivateKey::computeHfun(const BigNumber& a,
-                                          const BigNumber& b) const {
+BigNumber PrivateKey::computeHfun(const BigNumber& a,
+                                  const BigNumber& b) const {
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber&& xm = a - 1;
   BigNumber&& base = m_g % b;

@@ -1,10 +1,10 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PAILLIER_KEYGEN_HPP_
-#define IPCL_INCLUDE_IPCL_PAILLIER_KEYGEN_HPP_
+#ifndef IPCL_INCLUDE_IPCL_KEYGEN_HPP_
+#define IPCL_INCLUDE_IPCL_KEYGEN_HPP_
 
-#include "ipcl/paillier_prikey.hpp"
+#include "ipcl/pri_key.hpp"
 
 namespace ipcl {
 
@@ -14,8 +14,8 @@ namespace ipcl {
  * priv_key: paillier private key
  */
 struct keyPair {
-  PaillierPublicKey* pub_key;
-  PaillierPrivateKey* priv_key;
+  PublicKey* pub_key;
+  PrivateKey* priv_key;
 };
 
 /**
@@ -34,4 +34,4 @@ BigNumber getPrimeBN(int maxBitSize);
 keyPair generateKeypair(int64_t n_length, bool enable_DJN = true);
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_PAILLIER_KEYGEN_HPP_
+#endif  // IPCL_INCLUDE_IPCL_KEYGEN_HPP_

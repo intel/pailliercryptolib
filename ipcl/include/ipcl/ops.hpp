@@ -1,12 +1,12 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
-#define IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
+#ifndef IPCL_INCLUDE_IPCL_OPS_HPP_
+#define IPCL_INCLUDE_IPCL_OPS_HPP_
 
 #include <vector>
 
-#include "ipcl/paillier_pubkey.hpp"
+#include "ipcl/pub_key.hpp"
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -18,8 +18,7 @@ class PaillierEncryptedNumber {
    * @param[in] pub_key paillier public key
    * @param[in] bn ciphertext encrypted by paillier public key
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const BigNumber& bn);
+  PaillierEncryptedNumber(const PublicKey* pub_key, const BigNumber& bn);
 
   /**
    * PaillierEncryptedNumber constructor
@@ -27,7 +26,7 @@ class PaillierEncryptedNumber {
    * @param[in] bn array of ciphertexts encrypted by paillier public key
    * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+  PaillierEncryptedNumber(const PublicKey* pub_key,
                           const std::vector<BigNumber>& bn,
                           size_t length = IPCL_CRYPTO_MB_SIZE);
 
@@ -37,7 +36,7 @@ class PaillierEncryptedNumber {
    * @param[in] scalar array of integer scalars
    * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
+  PaillierEncryptedNumber(const PublicKey* pub_key,
                           const std::vector<uint32_t>& scalar,
                           size_t length = IPCL_CRYPTO_MB_SIZE);
 
@@ -100,7 +99,7 @@ class PaillierEncryptedNumber {
   /**
    * Get public key
    */
-  PaillierPublicKey getPK() const { return *m_pubkey; }
+  PublicKey getPK() const { return *m_pubkey; }
 
   /**
    * Rotate PaillierEncryptedNumber
@@ -129,7 +128,7 @@ class PaillierEncryptedNumber {
  private:
   bool b_isObfuscator;
   int m_available;
-  const PaillierPublicKey* m_pubkey;
+  const PublicKey* m_pubkey;
   size_t m_length;
   std::vector<BigNumber> m_bn;
 
@@ -140,4 +139,4 @@ class PaillierEncryptedNumber {
 };
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
+#endif  // IPCL_INCLUDE_IPCL_OPS_HPP_

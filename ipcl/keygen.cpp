@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/paillier_keygen.hpp"
+#include "ipcl/keygen.hpp"
 
 #include <climits>
 #include <random>
@@ -101,9 +101,8 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
   else
     getNormalBN(n_length, p, q, n);
 
-  PaillierPublicKey* public_key =
-      new PaillierPublicKey(n, n_length, enable_DJN);
-  PaillierPrivateKey* private_key = new PaillierPrivateKey(public_key, p, q);
+  PublicKey* public_key = new PublicKey(n, n_length, enable_DJN);
+  PrivateKey* private_key = new PrivateKey(public_key, p, q);
 
   return keyPair{public_key, private_key};
 }

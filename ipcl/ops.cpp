@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/ops.hpp"
 
 #include <algorithm>
 
@@ -10,8 +10,8 @@
 namespace ipcl {
 // constructors
 //
-PaillierEncryptedNumber::PaillierEncryptedNumber(
-    const PaillierPublicKey* pub_key, const BigNumber& bn)
+PaillierEncryptedNumber::PaillierEncryptedNumber(const PublicKey* pub_key,
+                                                 const BigNumber& bn)
     : b_isObfuscator(false),
       m_available(1),
       m_pubkey(pub_key),
@@ -19,8 +19,7 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
       m_bn{bn} {}
 
 PaillierEncryptedNumber::PaillierEncryptedNumber(
-    const PaillierPublicKey* pub_key, const std::vector<BigNumber>& bn,
-    size_t length)
+    const PublicKey* pub_key, const std::vector<BigNumber>& bn, size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),
       m_available(IPCL_CRYPTO_MB_SIZE),
@@ -28,7 +27,7 @@ PaillierEncryptedNumber::PaillierEncryptedNumber(
       m_bn{bn[0], bn[1], bn[2], bn[3], bn[4], bn[5], bn[6], bn[7]} {}
 
 PaillierEncryptedNumber::PaillierEncryptedNumber(
-    const PaillierPublicKey* pub_key, const std::vector<uint32_t>& scalar,
+    const PublicKey* pub_key, const std::vector<uint32_t>& scalar,
     size_t length)
     : b_isObfuscator(false),
       m_pubkey(pub_key),

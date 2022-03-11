@@ -11,8 +11,8 @@
 #endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
-#include "ipcl/paillier_keygen.hpp"
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/keygen.hpp"
+#include "ipcl/ops.hpp"
 
 TEST(CryptoTest, CryptoTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
@@ -124,10 +124,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   ipcl::BigNumber n = p * q;
   int n_length = n.BitSize();
 
-  ipcl::PaillierPublicKey* public_key =
-      new ipcl::PaillierPublicKey(n, n_length);
-  ipcl::PaillierPrivateKey* private_key =
-      new ipcl::PaillierPrivateKey(public_key, p, q);
+  ipcl::PublicKey* public_key = new ipcl::PublicKey(n, n_length);
+  ipcl::PrivateKey* private_key = new ipcl::PrivateKey(public_key, p, q);
 
   ipcl::keyPair key = {public_key, private_key};
 
