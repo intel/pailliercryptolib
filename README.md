@@ -31,8 +31,19 @@ This library is underconstruction and currently only offers acceleration of modu
 
 ```
 export ICP_ROOT=$HOME/QAT
-cmake -S . -B build
+cmake -S . -B build -DHE_QAT_MISC=OFF
 cmake --build build
+cmake --install build
+```
+
+`HE_QAT_MISC` enables IPP Crypto. If you want to enable that, follow the build instructions below:
+
+```
+git clone https://github.com/intel/ipp-crypto.git
+cd ipp-crypto
+CC=gcc CXX=g++ cmake CMakeLists.txt -B_build -DARCH=intel64 -DMERGED_BLD:BOOL=on -DCMAKE_INSTALL_PREFIX=/opt/ipp-crypto -DOPENSSL_INCLUDE_DIR=/opt/openssl/include -DOPENSSL_LIBRARIES=/opt/openssl/lib -DOPENSSL_ROOT_DIR=/opt/openssl -DCMAKE_ASM_NASM_COMPILER=/opt/nasm-2.15/bin/nasm
+cmake --build _build -j
+sudo cmake --install _build
 ```
 
 ### Running Examples
@@ -65,5 +76,6 @@ git
 pthread
 gcc >= 9.1
 qatlib
+ippcrypto
 ```
 
