@@ -38,10 +38,10 @@ class PrivateKey {
   /**
    * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
-   * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
+   * @param[in] ciphertext EncryptedNumber to be decrypted
    */
   void decrypt(std::vector<BigNumber>& plaintext,
-               const PaillierEncryptedNumber ciphertext) const;
+               const EncryptedNumber ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
 

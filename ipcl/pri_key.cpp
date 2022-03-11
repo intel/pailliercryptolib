@@ -59,13 +59,10 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> modulo(IPCL_CRYPTO_MB_SIZE, m_nsquare);
   std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
 
-  BigNumber nn = m_n;
-  BigNumber xx = m_x;
-
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    BigNumber m = (res[i] - 1) / nn;
-    m = m * xx;
-    plaintext[i] = m % nn;
+    BigNumber m = (res[i] - 1) / m_n;
+    m *= m_x;
+    plaintext[i] = m % m_n;
   }
 }
 
@@ -81,13 +78,13 @@ void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
 }
 
 void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
-                         const PaillierEncryptedNumber ciphertext) const {
+                         const EncryptedNumber ciphertext) const {
   VEC_SIZE_CHECK(plaintext);
   // check key match
   ERROR_CHECK(ciphertext.getPK().getN() == m_pubkey->getN(),
               "decrypt: public key mismatch error.");
 
-  std::vector<BigNumber>&& res = ciphertext.getArrayBN();
+  const std::vector<BigNumber>& res = ciphertext.getArrayBN();
   if (m_enable_crt)
     decryptCRT(plaintext, res);
   else
@@ -109,19 +106,19 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   }
 
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  std::vector<BigNumber>&& resp = ipcl::ippModExp(basep, pm1, psq);
-  std::vector<BigNumber>&& resq = ipcl::ippModExp(baseq, qm1, qsq);
+  std::vector<BigNumber> resp = ipcl::ippModExp(basep, pm1, psq);
+  std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    BigNumber&& dp = computeLfun(resp[i], m_p) * m_hp % m_p;
-    BigNumber&& dq = computeLfun(resq[i], m_q) * m_hq % m_q;
+    BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
+    BigNumber dq = computeLfun(resq[i], m_q) * m_hq % m_q;
     plaintext[i] = computeCRT(dp, dq);
   }
 }
 
 BigNumber PrivateKey::computeCRT(const BigNumber& mp,
                                  const BigNumber& mq) const {
-  BigNumber&& u = (mq - mp) * m_pinverse % m_q;
+  BigNumber u = (mq - mp) * m_pinverse % m_q;
   return mp + (u * m_p);
 }
 
@@ -133,10 +130,10 @@ BigNumber PrivateKey::computeLfun(const BigNumber& a,
 BigNumber PrivateKey::computeHfun(const BigNumber& a,
                                   const BigNumber& b) const {
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  BigNumber&& xm = a - 1;
-  BigNumber&& base = m_g % b;
-  BigNumber&& pm = ipcl::ippModExp(base, xm, b);
-  BigNumber&& lcrt = computeLfun(pm, a);
+  BigNumber xm = a - 1;
+  BigNumber base = m_g % b;
+  BigNumber pm = ipcl::ippModExp(base, xm, b);
+  BigNumber lcrt = computeLfun(pm, a);
   return a.InverseMul(lcrt);
 }
 

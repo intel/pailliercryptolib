@@ -19,9 +19,9 @@ void CtPlusCt(std::vector<ipcl::BigNumber>& res,
               const std::vector<ipcl::BigNumber>& ct2,
               const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::PaillierEncryptedNumber b(key.pub_key, ct2[i]);
-    ipcl::PaillierEncryptedNumber sum = a + b;
+    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
+    ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
+    ipcl::EncryptedNumber sum = a + b;
     res[i] = sum.getBN();
   }
 }
@@ -30,9 +30,9 @@ void CtPlusCtArray(std::vector<ipcl::BigNumber>& res,
                    const std::vector<ipcl::BigNumber>& ct1,
                    const std::vector<ipcl::BigNumber>& ct2,
                    const ipcl::keyPair key) {
-  ipcl::PaillierEncryptedNumber a(key.pub_key, ct1);
-  ipcl::PaillierEncryptedNumber b(key.pub_key, ct2);
-  ipcl::PaillierEncryptedNumber sum = a + b;
+  ipcl::EncryptedNumber a(key.pub_key, ct1);
+  ipcl::EncryptedNumber b(key.pub_key, ct2);
+  ipcl::EncryptedNumber sum = a + b;
   res = sum.getArrayBN();
 }
 
@@ -40,9 +40,9 @@ void CtPlusPt(std::vector<ipcl::BigNumber>& res,
               const std::vector<ipcl::BigNumber>& ct1,
               const std::vector<uint32_t>& pt2, const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, ct1[i]);
+    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
     ipcl::BigNumber b = pt2[i];
-    ipcl::PaillierEncryptedNumber sum = a + b;
+    ipcl::EncryptedNumber sum = a + b;
     res[i] = sum.getBN();
   }
 }
@@ -51,8 +51,8 @@ void CtPlusPtArray(std::vector<ipcl::BigNumber>& res,
                    const std::vector<ipcl::BigNumber>& ct1,
                    const std::vector<ipcl::BigNumber>& ptbn2,
                    const ipcl::keyPair key) {
-  ipcl::PaillierEncryptedNumber a(key.pub_key, ct1);
-  ipcl::PaillierEncryptedNumber sum = a + ptbn2;
+  ipcl::EncryptedNumber a(key.pub_key, ct1);
+  ipcl::EncryptedNumber sum = a + ptbn2;
   res = sum.getArrayBN();
 }
 
@@ -60,9 +60,9 @@ void CtMultiplyPt(std::vector<ipcl::BigNumber>& res,
                   const std::vector<ipcl::BigNumber>& ct1,
                   const std::vector<uint32_t>& pt2, const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::PaillierEncryptedNumber b(key.pub_key, pt2[i]);
-    ipcl::PaillierEncryptedNumber sum = a * b;
+    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
+    ipcl::EncryptedNumber b(key.pub_key, pt2[i]);
+    ipcl::EncryptedNumber sum = a * b;
     res[i] = sum.getBN();
   }
 }
@@ -71,9 +71,9 @@ void CtMultiplyPtArray(std::vector<ipcl::BigNumber>& res,
                        const std::vector<ipcl::BigNumber>& ct1,
                        const std::vector<uint32_t>& pt2,
                        const ipcl::keyPair key) {
-  ipcl::PaillierEncryptedNumber a(key.pub_key, ct1);
-  ipcl::PaillierEncryptedNumber b(key.pub_key, pt2);
-  ipcl::PaillierEncryptedNumber sum = a * b;
+  ipcl::EncryptedNumber a(key.pub_key, ct1);
+  ipcl::EncryptedNumber b(key.pub_key, pt2);
+  ipcl::EncryptedNumber sum = a * b;
   res = sum.getArrayBN();
 }
 
@@ -81,11 +81,11 @@ void AddSub(std::vector<ipcl::BigNumber>& res,
             const std::vector<ipcl::BigNumber>& ct1,
             const std::vector<ipcl::BigNumber>& ct2, const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::PaillierEncryptedNumber b(key.pub_key, ct2[i]);
+    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
+    ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
     ipcl::BigNumber m1(2);
     a = a + b * m1;
-    ipcl::PaillierEncryptedNumber sum = a + b;
+    ipcl::EncryptedNumber sum = a + b;
     res[i] = sum.getBN();
   }
 }
@@ -418,9 +418,9 @@ void CtPlusCt_OMP(int num_threads,
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
-      ipcl::PaillierEncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      ipcl::PaillierEncryptedNumber b(key.pub_key, v_ct2[i][j]);
-      ipcl::PaillierEncryptedNumber sum = a + b;
+      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
+      ipcl::EncryptedNumber b(key.pub_key, v_ct2[i][j]);
+      ipcl::EncryptedNumber sum = a + b;
       v_sum[i][j] = sum.getBN();
     }
   }
@@ -435,8 +435,8 @@ void CtPlusPt_OMP(int num_threads,
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
       ipcl::BigNumber b = v_pt2[i][j];
-      ipcl::PaillierEncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      ipcl::PaillierEncryptedNumber sum = a + b;
+      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
+      ipcl::EncryptedNumber sum = a + b;
       v_sum[i][j] = sum.getBN();
     }
   }
@@ -449,12 +449,12 @@ void CtPlusPtArray_OMP(int num_threads,
                        const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
+    ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
     std::vector<ipcl::BigNumber> b(8);
     for (int j = 0; j < 8; j++) {
       b[j] = v_pt2[i][j];
     }
-    ipcl::PaillierEncryptedNumber sum = a + b;
+    ipcl::EncryptedNumber sum = a + b;
     v_sum[i] = sum.getArrayBN();
   }
 }
@@ -467,9 +467,9 @@ void CtMultiplyPt_OMP(int num_threads,
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
-      ipcl::PaillierEncryptedNumber a(key.pub_key, v_ct1[i][j]);
+      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
       ipcl::BigNumber b = v_pt2[i][j];
-      ipcl::PaillierEncryptedNumber product = a * b;
+      ipcl::EncryptedNumber product = a * b;
       v_product[i][j] = product.getBN();
     }
   }
@@ -481,9 +481,9 @@ void CtMultiplyPtArray_OMP(
     const std::vector<std::vector<uint32_t>>& v_pt2, const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    ipcl::PaillierEncryptedNumber a(key.pub_key, v_ct1[i]);
-    ipcl::PaillierEncryptedNumber b(key.pub_key, v_pt2[i]);
-    ipcl::PaillierEncryptedNumber product = a * b;
+    ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
+    ipcl::EncryptedNumber b(key.pub_key, v_pt2[i]);
+    ipcl::EncryptedNumber product = a * b;
     v_product[i] = product.getArrayBN();
   }
 }

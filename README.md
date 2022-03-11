@@ -46,7 +46,7 @@ We will keep working on adding more supported operating systems.
 ### Dependencies
 Must have dependencies include:
 ```
-cmake >=3.15.1
+cmake >= 3.15.1
 git
 pthread
 g++ >= 7.0 or clang >= 10.0
@@ -54,8 +54,8 @@ g++ >= 7.0 or clang >= 10.0
 
 The following libraries and tools are also required,
 ```
-nasm>=2.15
-OpenSSL>=1.1.0
+nasm >= 2.15
+OpenSSL >= 1.1.0
 ```
 
 For ```nasm```, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.

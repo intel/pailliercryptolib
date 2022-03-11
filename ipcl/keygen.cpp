@@ -11,7 +11,7 @@
 
 namespace ipcl {
 
-#define N_BIT_SIZE_MAX 2048
+constexpr int N_BIT_SIZE_MAX = 2048;
 
 static void rand32u(std::vector<Ipp32u>& addr) {
   std::random_device dev;
@@ -23,18 +23,18 @@ static void rand32u(std::vector<Ipp32u>& addr) {
 BigNumber getPrimeBN(int maxBitSize) {
   int PrimeSize;
   ippsPrimeGetSize(maxBitSize, &PrimeSize);
-  auto&& primeGen = std::vector<Ipp8u>(PrimeSize);
+  auto primeGen = std::vector<Ipp8u>(PrimeSize);
   ippsPrimeInit(maxBitSize, reinterpret_cast<IppsPrimeState*>(primeGen.data()));
 
   // define Pseudo Random Generator (default settings)
-  int&& seedBitSize = 160;
-  int&& seedSize = BITSIZE_WORD(seedBitSize);
+  constexpr int seedBitSize = 160;
+  constexpr int seedSize = BITSIZE_WORD(seedBitSize);
 
   ippsPRNGGetSize(&PrimeSize);
-  auto&& rand = std::vector<Ipp8u>(PrimeSize);
+  auto rand = std::vector<Ipp8u>(PrimeSize);
   ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rand.data()));
 
-  auto&& seed = std::vector<Ipp32u>(seedSize);
+  auto seed = std::vector<Ipp32u>(seedSize);
   rand32u(seed);
   BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
 
@@ -76,10 +76,8 @@ static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
       q = getPrimeBN(n_length / 2);
     } while (q == p || !p.TestBit(1));  // get q: q!=p and q mod 4 = 3
 
-    BigNumber&& pminusone = p - 1;
-    BigNumber&& qminusone = q - 1;
-    gcd = pminusone.gcd(qminusone);
-  } while (gcd.compare(2));  // gcd(p-1,q-1)=2
+    gcd = (p - 1).gcd(q - 1);  // (p - 1) is a BigNumber
+  } while (gcd.compare(2));    // gcd(p-1,q-1)=2
 
   n = p * q;
 }

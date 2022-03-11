@@ -217,9 +217,9 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   key.pub_key->encrypt(ct, ptbn);
 
-  ipcl::PaillierEncryptedNumber a(key.pub_key, ct[0]);
-  ipcl::PaillierEncryptedNumber b(key.pub_key, ct[1]);
-  ipcl::PaillierEncryptedNumber sum = a + b;
+  ipcl::EncryptedNumber a(key.pub_key, ct[0]);
+  ipcl::EncryptedNumber b(key.pub_key, ct[1]);
+  ipcl::EncryptedNumber sum = a + b;
   ipcl::BigNumber res = sum.getBN();
 
   std::vector<ipcl::BigNumber> ct12(8);

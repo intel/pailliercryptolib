@@ -5,6 +5,7 @@
 #define IPCL_INCLUDE_IPCL_UTIL_HPP_
 
 #include <exception>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -12,14 +13,11 @@
 
 namespace ipcl {
 
-static inline std::string build_log(const char* file, int line,
-                                    std::string msg) {
-  std::string log;
-  log = "\nFile: " + std::string(file);
-  log += "\nLine: " + std::to_string(line);
-  log += "\nError: " + msg;
-
-  return log;
+inline std::string build_log(const char* file, int line,
+                             const std::string& msg) {
+  std::ostringstream log;
+  log << "\nFile: " << file << "\nLine: " << line << "\nError: " << msg;
+  return log.str();
 }
 
 #define ERROR_CHECK(e, ...)                                                 \

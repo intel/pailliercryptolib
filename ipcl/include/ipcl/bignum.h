@@ -128,8 +128,8 @@ class BigNumber {
   IppsBigNumState* m_pBN;
 };
 
-int BITSIZE_WORD(int n);
-int BITSIZE_DWORD(int n);
+constexpr int BITSIZE_WORD(int n) { return (((n) + 31) >> 5); }
+constexpr int BITSIZE_DWORD(int n) { return (((n) + 63) >> 6); }
 
 }  // namespace ipcl
 #endif  // _BIGNUM_H_

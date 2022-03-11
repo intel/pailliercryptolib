@@ -6,7 +6,7 @@
 
 namespace ipcl {
 
-#define IPCL_CRYPTO_MB_SIZE 8
+constexpr int IPCL_CRYPTO_MB_SIZE = 8;
 
 }  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_COMMON_HPP_
