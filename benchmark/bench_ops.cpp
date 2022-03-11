@@ -9,8 +9,8 @@
 #endif  // IPCL_USE_OMP
 #include <iostream>
 
-#include "ipcl/paillier_keygen.hpp"
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/keygen.hpp"
+#include "ipcl/ops.hpp"
 
 static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);
@@ -35,9 +35,9 @@ static void BM_Add_CTCT(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
+      ipcl::EncryptedNumber sum = pen_a + pen_b;
     }
   }
 }
@@ -69,9 +69,9 @@ static void BM_Add_CTCT_buff8(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
+      ipcl::EncryptedNumber sum = pen_a + pen_b;
     }
   }
 }
@@ -100,8 +100,8 @@ static void BM_Add_CTPT(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + b[i];
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber sum = pen_a + b[i];
     }
   }
 }
@@ -130,8 +130,8 @@ static void BM_Add_CTPT_buff8(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + b[i];
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber sum = pen_a + b[i];
     }
   }
 }
@@ -160,9 +160,9 @@ static void BM_Mul_CTPT(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a * pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
+      ipcl::EncryptedNumber sum = pen_a * pen_b;
     }
   }
 }
@@ -191,9 +191,9 @@ static void BM_Mul_CTPT_buff8(benchmark::State& state) {
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a * pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
+      ipcl::EncryptedNumber sum = pen_a * pen_b;
     }
   }
 }
@@ -228,9 +228,9 @@ static void BM_Add_CTCT_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
+      ipcl::EncryptedNumber sum = pen_a + pen_b;
     }
   }
 }
@@ -266,9 +266,9 @@ static void BM_Add_CTCT_buff8_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
+      ipcl::EncryptedNumber sum = pen_a + pen_b;
     }
   }
 }
@@ -298,8 +298,8 @@ static void BM_Add_CTPT_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + b[i];
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber sum = pen_a + b[i];
     }
   }
 }
@@ -332,8 +332,8 @@ static void BM_Add_CTPT_buff8_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a + b[i];
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber sum = pen_a + b[i];
     }
   }
 }
@@ -363,9 +363,9 @@ static void BM_Mul_CTPT_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a * pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
+      ipcl::EncryptedNumber sum = pen_a * pen_b;
     }
   }
 }
@@ -398,9 +398,9 @@ static void BM_Mul_CTPT_buff8_OMP(benchmark::State& state) {
   for (auto _ : state) {
 #pragma omp parallel for
     for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::PaillierEncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::PaillierEncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::PaillierEncryptedNumber sum = pen_a * pen_b;
+      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
+      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
+      ipcl::EncryptedNumber sum = pen_a * pen_b;
     }
   }
 }

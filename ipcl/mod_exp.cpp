@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "ipcl/mod_exp.hpp"
-#include "ipcl/util.hpp"
 
 #include <crypto_mb/exp.h>
 
 #include <cstring>
+
+#include "ipcl/util.hpp"
 
 namespace ipcl {
 

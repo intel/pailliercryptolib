@@ -5,8 +5,8 @@
 #define IPCL_INCLUDE_IPCL_UTIL_HPP_
 
 #include <exception>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "ipcl/common.hpp"
@@ -14,11 +14,9 @@
 namespace ipcl {
 
 inline std::string build_log(const char* file, int line,
-                                    const std::string& msg) {
+                             const std::string& msg) {
   std::ostringstream log;
-  log << "\nFile: " << file
-      << "\nLine: " << line
-      << "\nError: " << msg;
+  log << "\nFile: " << file << "\nLine: " << line << "\nError: " << msg;
   return log.str();
 }
 

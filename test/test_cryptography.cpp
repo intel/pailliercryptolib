@@ -11,8 +11,8 @@
 #endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
-#include "ipcl/paillier_keygen.hpp"
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/keygen.hpp"
+#include "ipcl/ops.hpp"
 
 TEST(CryptoTest, CryptoTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
@@ -124,10 +124,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   ipcl::BigNumber n = p * q;
   int n_length = n.BitSize();
 
-  ipcl::PaillierPublicKey* public_key =
-      new ipcl::PaillierPublicKey(n, n_length);
-  ipcl::PaillierPrivateKey* private_key =
-      new ipcl::PaillierPrivateKey(public_key, p, q);
+  ipcl::PublicKey* public_key = new ipcl::PublicKey(n, n_length);
+  ipcl::PrivateKey* private_key = new ipcl::PrivateKey(public_key, p, q);
 
   ipcl::keyPair key = {public_key, private_key};
 
@@ -219,9 +217,9 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   key.pub_key->encrypt(ct, ptbn);
 
-  ipcl::PaillierEncryptedNumber a(key.pub_key, ct[0]);
-  ipcl::PaillierEncryptedNumber b(key.pub_key, ct[1]);
-  ipcl::PaillierEncryptedNumber sum = a + b;
+  ipcl::EncryptedNumber a(key.pub_key, ct[0]);
+  ipcl::EncryptedNumber b(key.pub_key, ct[1]);
+  ipcl::EncryptedNumber sum = a + b;
   ipcl::BigNumber res = sum.getBN();
 
   std::vector<ipcl::BigNumber> ct12(8);
