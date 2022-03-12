@@ -5,22 +5,22 @@
 #include "he_qat_context.h"
 #include "cpa_sample_utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 #include <time.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #include <string>
 
-#include "ippcp.h"
+//#include "ippcp.h"
 #include <iomanip>
 
 int main(int argc, const char** argv) {
