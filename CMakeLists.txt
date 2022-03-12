@@ -58,7 +58,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 option(HE_QAT_MISC "Enable miscellaneous features" ON)
 option(HE_QAT_TEST "Enable testing" OFF)
-option(HE_QAT_EXAMPLES "Enable examples" ON)
+option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
 option(HE_QAT_DOCS "Enable document building" OFF)
 option(HE_QAT_SHARED "Build shared library" ON)
@@ -76,6 +76,19 @@ set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/he_qat) 
 set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/he_qat/include)
 
+set(HE_QAT_FORWARD_CMAKE_ARGS
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
+    -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
+    -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=${CMAKE_EXPORT_COMPILE_COMMANDS}
+    -DCMAKE_POSITION_INDEPENDENT_CODE=${CMAKE_POSITION_INDEPENDENT_CODE}
+    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+)
+
+
 #OpenSSL installation
 find_package(OpenSSL REQUIRED)
 
@@ -85,6 +98,8 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 #set(OPENSSL_INC_DIR /opt/openssl/include) 
 #set(OPENSSL_LIB_DIR /opt/openssl/lib)
+
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
 
 set(COMMON_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 if(NOT CMAKE_INSTALL_PREFIX)
@@ -124,8 +139,8 @@ if(HE_QAT_BENCHMARK)
 endif()
 
 #Validation test examples
-if(HE_QAT_EXAMPLES)
-   add_subdirectory(examples)
+if(HE_QAT_SAMPLES)
+   add_subdirectory(samples)
 endif()
 
 if(HE_QAT_TEST)
