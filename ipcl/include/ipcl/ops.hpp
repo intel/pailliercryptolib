@@ -1,98 +1,87 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
-#define IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
+#ifndef IPCL_INCLUDE_IPCL_OPS_HPP_
+#define IPCL_INCLUDE_IPCL_OPS_HPP_
 
 #include <vector>
 
-#include "ipcl/paillier_pubkey.hpp"
+#include "ipcl/pub_key.hpp"
 #include "ipcl/util.hpp"
 
 namespace ipcl {
 
-class PaillierEncryptedNumber {
+class EncryptedNumber {
  public:
   /**
-   * PaillierEncryptedNumber constructor
+   * EncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] bn ciphertext encrypted by paillier public key
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const BigNumber& bn);
+  EncryptedNumber(const PublicKey* pub_key, const BigNumber& bn);
 
   /**
-   * PaillierEncryptedNumber constructor
+   * EncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] bn array of ciphertexts encrypted by paillier public key
    * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const std::vector<BigNumber>& bn,
-                          size_t length = IPCL_CRYPTO_MB_SIZE);
+  EncryptedNumber(const PublicKey* pub_key, const std::vector<BigNumber>& bn,
+                  size_t length = IPCL_CRYPTO_MB_SIZE);
 
   /**
-   * PaillierEncryptedNumber constructor
+   * EncryptedNumber constructor
    * @param[in] pub_key paillier public key
    * @param[in] scalar array of integer scalars
    * @param[in] length size of array(default value is IPCL_CRYPTO_MB_SIZE)
    */
-  PaillierEncryptedNumber(const PaillierPublicKey* pub_key,
-                          const std::vector<uint32_t>& scalar,
-                          size_t length = IPCL_CRYPTO_MB_SIZE);
+  EncryptedNumber(const PublicKey* pub_key, const std::vector<uint32_t>& scalar,
+                  size_t length = IPCL_CRYPTO_MB_SIZE);
 
   /**
    * Arithmetic addition operator
    * @param[in] bn augend
    */
-  PaillierEncryptedNumber operator+(const PaillierEncryptedNumber& bn) const;
+  EncryptedNumber operator+(const EncryptedNumber& bn) const;
 
   /**
    * Arithmetic addition operator
    * @param[in] other augend
    */
-  PaillierEncryptedNumber operator+(const BigNumber& other) const;
+  EncryptedNumber operator+(const BigNumber& other) const;
 
   /**
    * Arithmetic addition operator
    * @param[in] other array of augend
    */
-  PaillierEncryptedNumber operator+(const std::vector<BigNumber>& other) const;
+  EncryptedNumber operator+(const std::vector<BigNumber>& other) const;
 
   /**
    * Arithmetic multiply operator
    * @param[in] bn multiplicand
    */
-  PaillierEncryptedNumber operator*(const PaillierEncryptedNumber& bn) const;
+  EncryptedNumber operator*(const EncryptedNumber& bn) const;
 
   /**
    * Arithmetic multiply operator
    * @param[in] other multiplicand
    */
-  PaillierEncryptedNumber operator*(const BigNumber& other) const;
+  EncryptedNumber operator*(const BigNumber& other) const;
 
   /**
    * Apply obfuscator for ciphertext, obfuscated needed only when the ciphertext
    * is exposed
    */
-  void apply_obfuscator() {
-    b_isObfuscator = true;
-    std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
-    m_pubkey->apply_obfuscator(obfuscator);
-
-    BigNumber sq = m_pubkey->getNSQ();
-    for (int i = 0; i < m_available; i++)
-      m_bn[i] = sq.ModMul(m_bn[i], obfuscator[i]);
-  }
+  void apply_obfuscator();
 
   /**
    * Return ciphertext
-   * @param[in] idx index of ciphertext stored in PaillierEncryptedNumber
+   * @param[in] idx index of ciphertext stored in EncryptedNumber
    * (default = 0)
    */
   BigNumber getBN(size_t idx = 0) const {
     ERROR_CHECK(m_available != 1 || idx <= 0,
-                "getBN: PaillierEncryptedNumber only has 1 BigNumber");
+                "getBN: EncryptedNumber only has 1 BigNumber");
 
     return m_bn[idx];
   }
@@ -100,13 +89,13 @@ class PaillierEncryptedNumber {
   /**
    * Get public key
    */
-  PaillierPublicKey getPK() const { return *m_pubkey; }
+  PublicKey getPK() const { return *m_pubkey; }
 
   /**
-   * Rotate PaillierEncryptedNumber
+   * Rotate EncryptedNumber
    * @param[in] shift rotate length
    */
-  PaillierEncryptedNumber rotate(int shift) const;
+  EncryptedNumber rotate(int shift) const;
 
   /**
    * Return entire ciphertext array
@@ -115,12 +104,12 @@ class PaillierEncryptedNumber {
   std::vector<BigNumber> getArrayBN() const { return m_bn; }
 
   /**
-   * Check if element in PaillierEncryptedNumber is single
+   * Check if element in EncryptedNumber is single
    */
   bool isSingle() const { return m_available == 1; }
 
   /**
-   * Get size of array in PaillierEncryptedNumber
+   * Get size of array in EncryptedNumber
    */
   size_t getLength() const { return m_length; }
 
@@ -129,7 +118,7 @@ class PaillierEncryptedNumber {
  private:
   bool b_isObfuscator;
   int m_available;
-  const PaillierPublicKey* m_pubkey;
+  const PublicKey* m_pubkey;
   size_t m_length;
   std::vector<BigNumber> m_bn;
 
@@ -140,4 +129,4 @@ class PaillierEncryptedNumber {
 };
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_PAILLIER_OPS_HPP_
+#endif  // IPCL_INCLUDE_IPCL_OPS_HPP_

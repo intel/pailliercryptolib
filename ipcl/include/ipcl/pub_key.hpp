@@ -1,8 +1,8 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
-#define IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
+#ifndef IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
+#define IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
 
 #include <vector>
 
@@ -10,26 +10,25 @@
 
 namespace ipcl {
 
-class PaillierPublicKey {
+class PublicKey {
  public:
   /**
-   * PaillierPublicKey constructor
+   * PublicKey constructor
    * @param[in] n n of public key in paillier scheme
    * @param[in] bits bit length of public key(default value is 1024)
    * @param[in] enableDJN_ enables DJN scheme(default value is false)
    */
-  explicit PaillierPublicKey(const BigNumber& n, int bits = 1024,
-                             bool enableDJN_ = false);
+  explicit PublicKey(const BigNumber& n, int bits = 1024,
+                     bool enableDJN_ = false);
 
   /**
-   * PaillierPublicKey constructor
+   * PublicKey constructor
    * @param[in] n n of public key in paillier scheme
    * @param[in] bits bit length of public key(default value is 1024)
    * @param[in] enableDJN_ enables DJN scheme(default value is false)
    */
-  explicit PaillierPublicKey(const Ipp32u n, int bits = 1024,
-                             bool enableDJN_ = false)
-      : PaillierPublicKey(BigNumber(n), bits, enableDJN_) {}
+  explicit PublicKey(const Ipp32u n, int bits = 1024, bool enableDJN_ = false)
+      : PublicKey(BigNumber(n), bits, enableDJN_) {}
 
   /**
    * DJN enabling function
@@ -82,7 +81,7 @@ class PaillierPublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  void apply_obfuscator(std::vector<BigNumber>& obfuscator) const;
+  void applyObfuscator(std::vector<BigNumber>& obfuscator) const;
 
   /**
    * @brief Set the Random object for ISO/IEC 18033-6 compliance check
@@ -141,4 +140,4 @@ class PaillierPublicKey {
 };
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_PAILLIER_PUBKEY_HPP_
+#endif  // IPCL_INCLUDE_IPCL_PUB_KEY_HPP_

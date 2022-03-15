@@ -1,25 +1,25 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
-#define IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
+#ifndef IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
+#define IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
 
 #include <vector>
 
-#include "ipcl/paillier_ops.hpp"
+#include "ipcl/ops.hpp"
 
 namespace ipcl {
 
-class PaillierPrivateKey {
+class PrivateKey {
  public:
   /**
-   * PaillierPrivateKey constructor
+   * PrivateKey constructor
    * @param[in] public_key paillier public key
    * @param[in] p p of private key in paillier scheme
    * @param[in] q q of private key in paillier scheme
    */
-  PaillierPrivateKey(const PaillierPublicKey* public_key, const BigNumber& p,
-                     const BigNumber& q);
+  PrivateKey(const PublicKey* public_key, const BigNumber& p,
+             const BigNumber& q);
 
   /**
    * Enable Chinese Remainder Theorem
@@ -38,10 +38,10 @@ class PaillierPrivateKey {
   /**
    * Decrypt ciphertext
    * @param[out] plaintext output of the decryption
-   * @param[in] ciphertext PaillierEncryptedNumber to be decrypted
+   * @param[in] ciphertext EncryptedNumber to be decrypted
    */
   void decrypt(std::vector<BigNumber>& plaintext,
-               const PaillierEncryptedNumber ciphertext) const;
+               const EncryptedNumber ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
 
@@ -68,7 +68,7 @@ class PaillierPrivateKey {
   /**
    * Get public key
    */
-  const PaillierPublicKey* getPubKey() const { return m_pubkey; }
+  const PublicKey* getPubKey() const { return m_pubkey; }
 
   /**
    * @brief Support function for ISO/IEC 18033-6 compliance check
@@ -78,7 +78,7 @@ class PaillierPrivateKey {
   BigNumber getLambda() const { return m_lambda; }
 
  private:
-  const PaillierPublicKey* m_pubkey;
+  const PublicKey* m_pubkey;
   BigNumber m_n;
   BigNumber m_nsquare;
   BigNumber m_g;
@@ -139,4 +139,4 @@ class PaillierPrivateKey {
 };
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_PAILLIER_PRIKEY_HPP_
+#endif  // IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
