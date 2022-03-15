@@ -1,0 +1,21 @@
+# Copyright (C) 2021 Intel Corporation
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+include(${CMAKE_CURRENT_LIST_DIR}/he_qatTargets.cmake)
+
+if(TARGET HE_QAT::he_qat)
+  set(HE_QAT_FOUND TRUE)
+  message(STATUS "Intel Homomorphic Encryption Acceleration Library for QAT found")
+else()
+  message(STATUS "Intel Homomorphic Encryption Acceleraiton Library for QAT not found")
+endif()
+
+set(HE_QAT_VERSION "@HE_QAT_VERSION")
+set(HE_QAT_VERSION_MAJOR "@HE_QAT_VERSION_MAJOR")
+set(HE_QAT_VERSION_MINOR "@HE_QAT_VERSION")
+set(HE_QAT_VERSION_PATCH "@HE_QAT_VERSION")
+
+set(HE_QAT_DEBUG "@HE_QAT_DEBUG")
