@@ -27,9 +27,8 @@ static void BM_Encrypt(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> ct(dsize,
                                                std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize; ++i) {
-    pt[i][0] = ipcl::BigNumber((unsigned int)i);
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize; ++i) key.pub_key->encrypt(ct[i], pt[i]);
@@ -47,10 +46,8 @@ static void BM_Encrypt_buff8(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> ct(dsize / 8,
                                                std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i / 8][i & 7] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (auto _ : state) {
     for (size_t i = 0; i < dsize / 8; ++i) key.pub_key->encrypt(ct[i], pt[i]);
@@ -73,9 +70,8 @@ static void BM_Decrypt(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> de_ct(
       dsize, std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize; ++i) {
-    pt[i][0] = ipcl::BigNumber((unsigned int)i);
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (size_t i = 0; i < dsize; ++i) key.pub_key->encrypt(ct[i], pt[i]);
 
@@ -99,10 +95,8 @@ static void BM_Decrypt_buff8(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> de_ct(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i / 8][i & 7] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (size_t i = 0; i < dsize / 8; ++i) key.pub_key->encrypt(ct[i], pt[i]);
 
@@ -127,9 +121,8 @@ static void BM_Encrypt_OMP(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> ct(dsize,
                                                std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize; ++i) {
-    pt[i][0] = ipcl::BigNumber((unsigned int)i);
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (auto _ : state) {
 #pragma omp parallel for
@@ -150,10 +143,8 @@ static void BM_Encrypt_buff8_OMP(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> ct(dsize / 8,
                                                std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i / 8][i & 7] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (auto _ : state) {
 #pragma omp parallel for
@@ -176,9 +167,9 @@ static void BM_Decrypt_OMP(benchmark::State& state) {
                                                std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<ipcl::BigNumber>> de_ct(
       dsize, std::vector<ipcl::BigNumber>(8));
-  for (size_t i = 0; i < dsize; ++i) {
-    pt[i][0] = ipcl::BigNumber((unsigned int)i);
-  }
+
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (size_t i = 0; i < dsize; ++i) key.pub_key->encrypt(ct[i], pt[i]);
 
@@ -206,10 +197,8 @@ static void BM_Decrypt_buff8_OMP(benchmark::State& state) {
   std::vector<std::vector<ipcl::BigNumber>> de_ct(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j)
-      pt[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j));
-  }
+  for (size_t i = 0; i < dsize; ++i)
+    pt[i / 8][i & 7] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
 
   for (size_t i = 0; i < dsize / 8; ++i) key.pub_key->encrypt(ct[i], pt[i]);
 
