@@ -34,6 +34,7 @@ install(TARGETS test_bnModExpPerformOp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDI
 if(HE_QAT_MISC)
   add_compile_options(-fpermissive)
   
+  # Sample showing how to convert from/to BigNumber to/from CpaFlatBuffer
   add_executable(test_bnConversion test_bnConversion.cpp)
   
   target_include_directories(test_bnConversion PUBLIC ${COMMON_INC_DIR})
@@ -46,4 +47,18 @@ if(HE_QAT_MISC)
   target_link_libraries(test_bnConversion PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
   
   install(TARGETS test_bnConversion RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+ 
+  # Sample demonstrating how to use bnModExp with BigNumber type 
+  add_executable(test_bnModExp test_bnModExp.cpp)
+  
+  target_include_directories(test_bnModExp PUBLIC ${COMMON_INC_DIR})
+  target_include_directories(test_bnModExp PUBLIC ${ICP_INC_DIR})
+  target_include_directories(test_bnModExp PUBLIC ${HE_QAT_MISC_INC_DIR})
+  
+  target_link_libraries(test_bnModExp PUBLIC he_qat)
+  target_link_libraries(test_bnModExp PUBLIC he_qat_misc)
+  target_link_libraries(test_bnModExp PUBLIC IPPCP::ippcp) # IPPCP::crypto_mb)
+  target_link_libraries(test_bnModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
+  
+  install(TARGETS test_bnModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
