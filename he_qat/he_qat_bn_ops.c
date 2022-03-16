@@ -75,12 +75,6 @@ static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
     _buffer->next_free_slot %= HE_QAT_BUFFER_SIZE;
     _buffer->count++;
 
-    /* now: either b->occupied < BSIZE and b->nextin is the index
-       of the next empty slot in the buffer, or
-       b->occupied == BSIZE and b->nextin is the index of the
-       next (occupied) slot that will be emptied by a consumer
-       (such as b->nextin == b->nextout) */
-
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
 }
@@ -104,12 +98,6 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
 
     _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
     _buffer->count--;
-
-    /* now: either b->occupied > 0 and b->nextout is the index
-       of the next occupied slot in the buffer, or
-       b->occupied == 0 and b->nextout is the index of the next
-       (empty) slot that will be filled by a producer (such as
-       b->nextout == b->nextin) */
 
     pthread_cond_signal(&_buffer->any_free_slot);
     pthread_mutex_unlock(&_buffer->mutex);
@@ -220,7 +208,8 @@ void* start_perform_op(void* _inst_config) {
             switch (request->op_type) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
-                status = cpaCyLnModExp(config->inst_handle, lnModExpCallback,
+                status = cpaCyLnModExp(config->inst_handle, 
+				       (CpaCyGenFlatBufCbFunc)request->callback_func, //lnModExpCallback,
                                        (void*)request,
                                        (CpaCyLnModExpOpData*)request->op_data,
                                        &request->op_result);
@@ -423,6 +412,7 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
     }
 
     request->op_type = HE_QAT_OP_MODEXP;
+    request->callback_func = (void*)lnModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
 
@@ -626,6 +616,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     }
 
     request->op_type = HE_QAT_OP_MODEXP;
+    request->callback_func = (void*)HE_QAT_bnModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
 
