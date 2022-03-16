@@ -25,7 +25,7 @@ target_include_directories(test_bnModExpPerformOp PUBLIC ${ICP_INC_DIR})
 
 target_link_libraries(test_bnModExpPerformOp PUBLIC he_qat)
 target_link_libraries(test_bnModExpPerformOp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-target_link_libraries(test_bnModExpPerformOp PUBLIC IPPCP::ippcp)
+#target_link_libraries(test_bnModExpPerformOp PUBLIC IPPCP::ippcp)
 
 install(TARGETS test_bnModExpPerformOp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
