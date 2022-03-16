@@ -43,9 +43,9 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 # Why?
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
 
-#if(NOT CMAKE_INSTALL_PREFIX)
-	set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR}/install)
-	#endif()
+if(NOT CMAKE_INSTALL_PREFIX)
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR}/install)
+endif()
 message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 
 # Which features or functions does it bring?
@@ -75,6 +75,17 @@ set(HE_QAT_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/he_qat")
 set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}) 
 set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/he_qat) 
 set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/he_qat/include)
+
+if(HE_QAT_MISC)
+  # IPP Crypto installation
+  if(IPPCP_PREFIX_PATH)
+    #set(IPPCP_DIR "/opt/ipp-crypto")
+    #set(IPPCP_CMAKE_PREFIX_PATH "${IPPCP_DIR}/lib/cmake")
+    list(APPEND CMAKE_PREFIX_PATH "${IPPCP_PREFIX_PATH}")
+  endif()
+  find_package(IPPCP REQUIRED)
+  message(STATUS "IPPCP_LIBRARIES ${IPPCP_LIBRARIES}")
+endif()
 
 set(HE_QAT_FORWARD_CMAKE_ARGS
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -112,19 +123,8 @@ include(icp/CMakeLists.txt)
 #Common utility functions
 add_subdirectory(common)
 
+# Helper functions for BigNumber
 if(HE_QAT_MISC)
-  # IPP Crypto installation
-  if(NOT IPPCP_CMAKE_PREFIX_PATH)
-    set(IPPCP_DIR "/opt/ipp-crypto")
-    set(IPPCP_CMAKE_PREFIX_PATH "${IPPCP_DIR}/lib/cmake")
-    list(APPEND CMAKE_PREFIX_PATH "${IPPCP_CMAKE_PREFIX_PATH}")
-  endif()
-
-  find_package(IPPCP REQUIRED)
- 
-  message(STATUS "IPPCP_LIBRARIES ${IPPCP_LIBRARIES}")
-  
-  # Helper functions
   add_subdirectory(misc)
 endif()
 
