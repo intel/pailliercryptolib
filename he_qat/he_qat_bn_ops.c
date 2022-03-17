@@ -456,11 +456,15 @@ void getBnModExpRequest(unsigned int batch_size) {
         if (task->op_result.pData) {
             PHYS_CONTIG_FREE(task->op_result.pData);
         }
-        free(he_qat_buffer.data[block_at_index]);
-        he_qat_buffer.data[block_at_index] = NULL;
+
         // Move forward to wait for the next request that will be offloaded
         pthread_mutex_unlock(&task->mutex);
-        block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
+        
+	// Fix segmentation fault?
+	free(he_qat_buffer.data[block_at_index]);
+        he_qat_buffer.data[block_at_index] = NULL;
+        
+	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
     } while (++j < batch_size);
     return;
 }
