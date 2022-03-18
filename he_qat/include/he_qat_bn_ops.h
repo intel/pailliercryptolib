@@ -34,7 +34,7 @@ typedef struct {
     void* op_data;
     void* op_output;
     void* callback_func; 
-    HE_QAT_STATUS request_status;
+    volatile HE_QAT_STATUS request_status;
     pthread_mutex_t mutex;
     pthread_cond_t ready;
 } HE_QAT_TaskRequest;
