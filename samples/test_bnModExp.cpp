@@ -5,6 +5,7 @@
 #include "he_qat_context.h"
 #include "cpa_sample_utils.h"
 
+#include <chrono>
 #include <time.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
@@ -17,19 +18,21 @@
 int gDebugParam = 1;
 #endif
 
-const unsigned int BATCH_SIZE = 1;
+const unsigned int BATCH_SIZE = 8;
+
+using namespace std::chrono;
 
 int main(int argc, const char** argv) {
     const int bit_length = 2048;
-    const size_t num_trials = 4;
+    const size_t num_trials = 100;
 
     double avg_speed_up = 0.0;
     double ssl_avg_time = 0.0;
     double qat_avg_time = 0.0;
 
-    clock_t start = CLOCKS_PER_SEC;
-    clock_t ssl_elapsed = CLOCKS_PER_SEC;
-    clock_t qat_elapsed = CLOCKS_PER_SEC;
+//    clock_t start = CLOCKS_PER_SEC;
+//    clock_t ssl_elapsed = CLOCKS_PER_SEC;
+//    clock_t qat_elapsed = CLOCKS_PER_SEC;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
@@ -47,9 +50,11 @@ int main(int argc, const char** argv) {
         if (!bn_mod) continue;
 
         char* bn_str = BN_bn2hex(bn_mod);
-        printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
+#ifdef _DESTINY_DEBUG_VERBOSE
+	printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
-        OPENSSL_free(bn_str);
+#endif
+	OPENSSL_free(bn_str);
         
 	// Generate exponent in [0..bn_mod]
         BIGNUM* bn_exponent = BN_new();
@@ -63,15 +68,18 @@ int main(int argc, const char** argv) {
 
         // Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
-        start = clock();
+        auto start = high_resolution_clock::now();
+	//start = clock();
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
-        ssl_elapsed = clock() - start;
+        auto stop = high_resolution_clock::now();
+	auto ssl_duration = duration_cast<microseconds>(stop-start);
+        //ssl_elapsed = clock() - start;
 
         int len_ = (bit_length + 7) >> 3;
 
 	// Start QAT timer (including data conversion overhead)
-        start = clock();
-        
+//        start = clock();
+        start = high_resolution_clock::now();
 	unsigned char* bn_base_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
         if (NULL == bn_base_data_) exit(1);
@@ -87,8 +95,9 @@ int main(int argc, const char** argv) {
         unsigned char* bn_remainder_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
         if (NULL == bn_remainder_data_) exit(1);
-        
-	clock_t cvt_elapsed = clock() - start;
+        stop = high_resolution_clock::now();
+	auto cvt_duration = duration_cast<microseconds>(stop-start);
+//	clock_t cvt_elapsed = clock() - start;
 
 	// Simulate input number in BigNumber representation
         BigNumber big_num_base((Ipp32u)0);
@@ -121,7 +130,8 @@ int main(int argc, const char** argv) {
 	    exit(1);
 	}
 
-        start = clock();
+        //start = clock();
+        start = high_resolution_clock::now();
 	status = bigNumberToBin(bn_base_data_, bit_length, big_num_base);
         if (HE_QAT_STATUS_SUCCESS != status) {
             printf("bn_base_data_: failed at bignumbertobin()\n");
@@ -137,20 +147,48 @@ int main(int argc, const char** argv) {
             printf("bn_base_data_: failed at bignumbertobin()\n");
             exit(1);
         }
-        cvt_elapsed += (clock() - start);
+        //cvt_elapsed += (clock() - start);
+        cvt_duration += duration_cast<microseconds>(high_resolution_clock::now()-start);
 
 	// Perform BigNumber modular exponentiation on QAT
-        start = clock();
-        status = HE_QAT_bnModExp(bn_remainder_data_, bn_base_data_, 
+        //start = clock(); 
+
+        start = high_resolution_clock::now();
+	for (unsigned int b = 0; b < BATCH_SIZE; b++)
+	status = HE_QAT_bnModExp(bn_remainder_data_, bn_base_data_, 
 			bn_exponent_data_, bn_mod_data_, bit_length);
 	getBnModExpRequest(BATCH_SIZE);
-        qat_elapsed = clock() - start;
+        stop = high_resolution_clock::now();
+	auto qat_duration = duration_cast<microseconds>(stop-start);
 
-        printf("BigNumber data conversion overhead: %.1lfus.\n",
-               (cvt_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
-        printf("BigNumber modular exponentiation on QAT: %.1lfus.\n",
-               (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
-	qat_elapsed += cvt_elapsed;
+        ssl_avg_time = (mod * ssl_avg_time +
+                        ((double)(ssl_duration.count()))) /
+                       (mod + 1);
+        qat_avg_time =
+            (mod * qat_avg_time +
+            ((double) (qat_duration.count()))/ BATCH_SIZE) /
+            (mod + 1);
+        avg_speed_up =
+            (mod * avg_speed_up + 
+	     (ssl_duration.count()/(double)(qat_duration.count()/BATCH_SIZE)))/(mod + 1);
+        //qat_elapsed = clock() - start;
+
+        //printf("BigNumber data conversion overhead: %.1lfus.\n",
+        //       (cvt_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+        //printf("BigNumber modular exponentiation on QAT: %.1lfus.\n",
+        //       (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+	//qat_elapsed += cvt_elapsed;
+        printf("Overhead: %.1luus",
+               cvt_duration.count());
+        printf("\tOpenSSL: %.1lfus",
+               ssl_avg_time);
+        printf("\tQAT: %.1lfus",
+               qat_avg_time);
+        printf("\tSpeed-up: %.1lfx",
+               avg_speed_up);
+	//qat_elapsed += cvt_elapsed;
+	
+
         
 	BIGNUM* qat_res = BN_new();
         BN_bin2bn(bn_remainder_data_, len_, qat_res);
@@ -164,16 +202,16 @@ int main(int argc, const char** argv) {
         }
 #endif
 
-        start = clock();
+        //start = clock();
         BigNumber big_num((Ipp32u)0);
 	status = binToBigNumber(big_num, bn_remainder_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
             printf("bn_remainder_data_: Failed at bigNumberToBin()\n");
             exit(1);
         }
-        qat_elapsed += (clock() - start);
-        printf("BigNumber ModExp total time: %.1lfus.\n",
-               (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+        //qat_elapsed += (clock() - start);
+        //printf("BigNumber ModExp total time: %.1lfus.\n",
+        //       (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
 
 #ifdef _DESTINY_DEBUG_VERBOSE
 	bn_str = BN_bn2hex(qat_res);
