@@ -125,7 +125,7 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
       ippsMontSet(pow_m, nlen, reinterpret_cast<IppsMontState*>(pMont.data()));
   ERROR_CHECK(stat == ippStsNoErr, "ippMontExp: set Mont input error.");
 
-  // encode base into Montfomery form
+  // encode base into Montgomery form
   BigNumber bform(m);
   stat = ippsMontForm(BN(base), reinterpret_cast<IppsMontState*>(pMont.data()),
                       BN(bform));
