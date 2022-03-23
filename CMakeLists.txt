@@ -57,6 +57,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 # -------------------------------------------------------------------
 
 option(HE_QAT_MISC "Enable miscellaneous features" ON)
+option(HE_QAT_SYNC "Enable synchronous mode execution" OFF)
+option(HE_QAT_PERF "Show request performance" OFF)
 option(HE_QAT_TEST "Enable testing" OFF)
 option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
@@ -79,12 +81,23 @@ set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/he_qat/include)
 if(HE_QAT_MISC)
   # IPP Crypto installation
   if(IPPCP_PREFIX_PATH)
-    #set(IPPCP_DIR "/opt/ipp-crypto")
-    #set(IPPCP_CMAKE_PREFIX_PATH "${IPPCP_DIR}/lib/cmake")
+    list(APPEND CMAKE_PREFIX_PATH "${IPPCP_PREFIX_PATH}")
+  else()
+    # Default to this
+    set(IPPCP_DIR "/opt/ipp-crypto")
+    set(IPPCP_PREFIX_PATH "${IPPCP_DIR}/lib/cmake")
     list(APPEND CMAKE_PREFIX_PATH "${IPPCP_PREFIX_PATH}")
   endif()
   find_package(IPPCP REQUIRED)
   message(STATUS "IPPCP_LIBRARIES ${IPPCP_LIBRARIES}")
+endif()
+
+if(HE_QAT_SYNC)
+  add_definitions(-DHE_QAT_SYNC_MODE)
+endif()
+
+if(HE_QAT_PERF)
+	add_definitions(-DHE_QAT_PERF)
 endif()
 
 set(HE_QAT_FORWARD_CMAKE_ARGS

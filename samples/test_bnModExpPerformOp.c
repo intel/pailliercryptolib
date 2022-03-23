@@ -1,6 +1,6 @@
 
 #include "cpa_sample_utils.h"
-
+#include "he_qat_utils.h"
 #include "he_qat_bn_ops.h"
 #include "he_qat_context.h"
 
@@ -9,77 +9,8 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-#define LEN_OF_1024_BITS 128
-#define LEN_OF_2048_BITS 256
-#define msb_CAN_BE_ZERO -1
-#define msb_IS_ONE 0
-#define EVEN_RND_NUM 0
-#define ODD_RND_NUM 1
-#define BATCH_SIZE 1
-
-// int gDebugParam = 1;
-
-BIGNUM* generateTestBNData(int nbits) {
-    if (!RAND_status()) return NULL;
-#ifdef _DESTINY_DEBUG_VERBOSE
-    printf("PRNG properly seeded.\n");
-#endif
-
-    BIGNUM* bn = BN_new();
-
-    if (!BN_rand(bn, nbits, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY)) {
-        BN_free(bn);
-        printf("Error while generating BN random number: %lu\n",
-               ERR_get_error());
-        return NULL;
-    }
-
-    return bn;
-}
-
-unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
-    if (!bn) return NULL;
-
-    // Returns same address if it fails
-    int num_bytes = BN_num_bytes(bn);
-    int bytes_left = nbits / 8 - num_bytes;
-    if (bytes_left <= 0) return NULL;
-
-    // Returns same address if it fails
-    unsigned char* bin = NULL;
-    int len = bytes_left + num_bytes;
-    if (!(bin = OPENSSL_zalloc(len))) return NULL;
-
-#ifdef _DESTINY_DEBUG_VERBOSE
-    printf("Padding bn with %d bytes to total %d bytes\n", bytes_left, len);
-#endif
-    BN_bn2binpad(bn, bin, len);
-    if (ERR_get_error()) {
-        OPENSSL_free(bin);
-        return NULL;
-    }
-
-    return bin;
-}
-
-void showHexBN(BIGNUM* bn, int nbits) {
-    int len = nbits / 8;
-    unsigned char* bin = OPENSSL_zalloc(len);
-    if (!bin) return;
-    if (BN_bn2binpad(bn, bin, len)) {
-        for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
-        printf("\n");
-    }
-    OPENSSL_free(bin);
-    return;
-}
-
-void showHexBin(unsigned char* bin, int len) {
-    if (!bin) return;
-    for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
-    printf("\n");
-    return;
-}
+int gDebugParam = 1; // Active in Debug mode
+const unsigned int BATCH_SIZE = 1;
 
 int main(int argc, const char** argv) {
     const int bit_length = 4096;  // 1024;
