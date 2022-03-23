@@ -23,7 +23,7 @@ const unsigned int BATCH_SIZE = 8;
 using namespace std::chrono;
 
 int main(int argc, const char** argv) {
-    const int bit_length = 2048;
+    const int bit_length = 4096;
     const size_t num_trials = 100;
 
     double avg_speed_up = 0.0;
