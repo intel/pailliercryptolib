@@ -9,6 +9,12 @@
 #include "he_qat_types.h"
 #include "he_qat_bn_ops.h"
 
+#ifdef HE_QAT_PERF
+#include <sys/time.h>
+struct timeval start_time, end_time;
+double time_taken = 0.0;
+#endif 
+
 #include <pthread.h>
 #include <assert.h>
 
@@ -40,7 +46,6 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
             if (pOpData == request->op_data) {
-                //	      printf("pOpData is same as input\n");
                 // Mark request as complete or ready to be used
                 request->request_status = HE_QAT_STATUS_READY;
 
@@ -48,7 +53,6 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
                                       request->op_result.dataLenInBytes,
                                       (BIGNUM*)request->op_output);
             } else {
-                //	      printf("pOpData is NOT same as input\n");
                 request->request_status = HE_QAT_STATUS_FAIL;
             }
         }
@@ -204,7 +208,10 @@ void* start_perform_op(void* _inst_config) {
             switch (request->op_type) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
-                status = cpaCyLnModExp(config->inst_handle, 
+#ifdef HE_QAT_PERF
+		gettimeofday(&request->start,NULL);
+#endif
+		status = cpaCyLnModExp(config->inst_handle, 
 				       (CpaCyGenFlatBufCbFunc)request->callback_func, //lnModExpCallback,
                                        (void*)request,
                                        (CpaCyLnModExpOpData*)request->op_data,
@@ -216,11 +223,11 @@ void* start_perform_op(void* _inst_config) {
                 retry = HE_QAT_MAX_RETRY;
                 break;
             }
-
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
         // Ensure every call to perform operation is blocking for each endpoint
         if (CPA_STATUS_SUCCESS == status) {
+//		printf("retry_count = %d\n",retry_count);
 #ifdef HE_QAT_SYNC_MODE
 	    // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
@@ -418,46 +425,93 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
     return HE_QAT_STATUS_SUCCESS;
 }
 
+
 // Maybe it will be useful to pass the number of requests to retrieve
 // Pass post-processing function as argument to bring output to expected type
 void getBnModExpRequest(unsigned int batch_size) {
     static unsigned long block_at_index = 0;
     unsigned int j = 0;
     
+#ifdef HE_QAT_PERF
+    gettimeofday(&start_time,NULL);
+#endif
     do { 
     	  // Buffer read may be safe for single-threaded blocking calls only.
           // Note: Not tested on multithreaded environment.
           HE_QAT_TaskRequest* task =
               (HE_QAT_TaskRequest*)he_qat_buffer.data[block_at_index];
-          	
-	// Block and synchronize: Wait for the most recently offloaded request
-        // to complete processing
-        pthread_mutex_lock(
-            &task->mutex);  // mutex only needed for the conditional variable
-        while (HE_QAT_STATUS_READY != task->request_status)
-            pthread_cond_wait(&task->ready, &task->mutex);
-        // Free up QAT temporary memory
-        CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
-        if (op_data) {
-            PHYS_CONTIG_FREE(op_data->base.pData);
-            PHYS_CONTIG_FREE(op_data->exponent.pData);
-            PHYS_CONTIG_FREE(op_data->modulus.pData);
-        }
-        free(task->op_data);
-        task->op_data = NULL;
-        if (task->op_result.pData) {
-            PHYS_CONTIG_FREE(task->op_result.pData);
-        }
+        
+          if (NULL == task)
+             continue;
+          
+	  if (HE_QAT_STATUS_READY == task->request_status) j++;
+          else continue;
 
-        // Move forward to wait for the next request that will be offloaded
-        pthread_mutex_unlock(&task->mutex);
-        
-	// Fix segmentation fault?
-	free(he_qat_buffer.data[block_at_index]);
-        he_qat_buffer.data[block_at_index] = NULL;
-        
-	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
-    } while (++j < batch_size);
+#ifdef HE_QAT_PERF
+  	  time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
+  	  time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
+  	  printf("Request %u\tElapsed Time: %.1lfus\n",j,time_taken);
+#endif
+        // Free up QAT temporary memory
+          CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
+          if (op_data) {
+              PHYS_CONTIG_FREE(op_data->base.pData);
+              PHYS_CONTIG_FREE(op_data->exponent.pData);
+              PHYS_CONTIG_FREE(op_data->modulus.pData);
+          }
+          free(task->op_data);
+          task->op_data = NULL;
+          if (task->op_result.pData) {
+              PHYS_CONTIG_FREE(task->op_result.pData);
+          }
+ 
+	  // Fix segmentation fault?
+	  free(he_qat_buffer.data[block_at_index]);
+          he_qat_buffer.data[block_at_index] = NULL;
+          
+	  block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
+    } while(j < batch_size);	  
+
+//        // Block and synchronize: Wait for the most recently offloaded request
+//        // to complete processing
+//        pthread_mutex_lock(
+//            &task->mutex);  // mutex only needed for the conditional variable
+//        while (HE_QAT_STATUS_READY != task->request_status)
+//            pthread_cond_wait(&task->ready, &task->mutex);
+//
+//	time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
+//	time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
+//	printf("%u time: %.1lfus\n",j,time_taken);
+//
+//        // Free up QAT temporary memory
+//        CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
+//        if (op_data) {
+//            PHYS_CONTIG_FREE(op_data->base.pData);
+//            PHYS_CONTIG_FREE(op_data->exponent.pData);
+//            PHYS_CONTIG_FREE(op_data->modulus.pData);
+//        }
+//        free(task->op_data);
+//        task->op_data = NULL;
+//        if (task->op_result.pData) {
+//            PHYS_CONTIG_FREE(task->op_result.pData);
+//        }
+//
+//        // Move forward to wait for the next request that will be offloaded
+//        pthread_mutex_unlock(&task->mutex);
+//        
+//	// Fix segmentation fault?
+//	free(he_qat_buffer.data[block_at_index]);
+//        he_qat_buffer.data[block_at_index] = NULL;
+//        
+//	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
+//    } while (++j < batch_size);
+
+#ifdef HE_QAT_PERF
+    gettimeofday(&end_time,NULL);
+    time_taken = (end_time.tv_sec - start_time.tv_sec)*1e6;
+    time_taken = (time_taken + (end_time.tv_usec - start_time.tv_usec));//*1e-6;
+    printf("Batch Wall Time: %.1lfus\n",time_taken);
+#endif
 
     return;
 }
@@ -477,19 +531,20 @@ static void HE_QAT_bnModExpCallback(
     if (NULL != pCallbackTag) {
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
-
+     
         // Collect the device output in pOut
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
             if (pOpData == request->op_data) {
-        //        	      printf("pOpData is same as input\n");
                 // Mark request as complete or ready to be used
                 request->request_status = HE_QAT_STATUS_READY;
                 // Copy compute results to output destination
                 memcpy(request->op_output, request->op_result.pData,
                        request->op_result.dataLenInBytes);
-            } else {
-          //      	      printf("pOpData is NOT same as input\n");
+#ifdef HE_QAT_PERF
+		gettimeofday(&request->end,NULL); 
+#endif
+	    } else {
                 request->request_status = HE_QAT_STATUS_FAIL;
             }
         }
@@ -519,7 +574,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
 
     // TODO(fdiasmor): Try it with 8-byte alignment.
     CpaStatus status = CPA_STATUS_FAIL;
-    status = PHYS_CONTIG_ALLOC(&pBase, len);
+    //status = PHYS_CONTIG_ALLOC(&pBase, len);
+    status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
         memcpy(pBase, b, len);
     } else {
@@ -527,7 +583,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    status = PHYS_CONTIG_ALLOC(&pExponent, len);
+    //status = PHYS_CONTIG_ALLOC(&pExponent, len);
+    status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
     } else {
@@ -535,7 +592,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    status = PHYS_CONTIG_ALLOC(&pModulus, len);
+    //status = PHYS_CONTIG_ALLOC(&pModulus, len);
+    status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
     } else {
@@ -569,7 +627,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
+    //status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
+    status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {

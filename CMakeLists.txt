@@ -58,6 +58,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 option(HE_QAT_MISC "Enable miscellaneous features" ON)
 option(HE_QAT_SYNC "Enable synchronous mode execution" OFF)
+option(HE_QAT_PERF "Show request performance" OFF)
 option(HE_QAT_TEST "Enable testing" OFF)
 option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
@@ -93,6 +94,10 @@ endif()
 
 if(HE_QAT_SYNC)
   add_definitions(-DHE_QAT_SYNC_MODE)
+endif()
+
+if(HE_QAT_PERF)
+	add_definitions(-DHE_QAT_PERF)
 endif()
 
 set(HE_QAT_FORWARD_CMAKE_ARGS
