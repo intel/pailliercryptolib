@@ -67,6 +67,7 @@ option(HE_QAT_SHARED "Build shared library" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(HE_QAT_DEBUG ON)
+  add_definitions(-DHE_QAT_DEBUG)
 else()
   set(HE_QAT_DEBUG OFF)
 endif()
@@ -97,7 +98,7 @@ if(HE_QAT_SYNC)
 endif()
 
 if(HE_QAT_PERF)
-	add_definitions(-DHE_QAT_PERF)
+  add_definitions(-DHE_QAT_PERF)
 endif()
 
 set(HE_QAT_FORWARD_CMAKE_ARGS
