@@ -18,6 +18,14 @@
 #include "icp_sal_user.h"
 #include "icp_sal_poll.h"
 
+#ifdef USER_SPACE
+#define MAX_INSTANCES 1024
+#else
+#define MAX_INSTANCES 1
+#endif
+
+#define NUM_ACTIVE_INSTANCES 1
+
 // Global variable declarations
 HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
 pthread_attr_t he_qat_inst_attr[HE_QAT_MAX_NUM_INST];
@@ -29,6 +37,49 @@ extern void* start_perform_op(void* _inst_config);
 extern void stop_perform_op(void* _inst_config, unsigned num_inst);
 
 CpaInstanceHandle handle = NULL;
+
+static CpaInstanceHandle get_qat_instance()
+{
+    static CpaInstanceHandle cyInstHandles[MAX_INSTANCES];
+    static Cpa16U numInstances = 0;
+    static Cpa16U nextInstance = 0;
+    CpaStatus status = CPA_STATUS_SUCCESS;
+
+    if (0 == numInstances) {
+        //*pCyInstHandle = NULL;
+        status = cpaCyGetNumInstances(&numInstances);
+        if (numInstances >= MAX_INSTANCES) {
+            numInstances = MAX_INSTANCES;
+        }
+	if (numInstances >= NUM_ACTIVE_INSTANCES) {
+	    numInstances = NUM_ACTIVE_INSTANCES;
+	}
+
+        printf("Found %d CyInstances.\n",numInstances);
+        printf("Next Instance: %d.\n",nextInstance);
+
+        if ((status == CPA_STATUS_SUCCESS) && (numInstances > 0)) {
+            status = cpaCyGetInstances(numInstances, cyInstHandles);
+            if (status == CPA_STATUS_SUCCESS)
+		return cyInstHandles[nextInstance];
+                //*pCyInstHandle = cyInstHandles[0];
+        }
+    
+        if (0 == numInstances) {
+            PRINT_ERR("No instances found for 'SSL'\n");
+            PRINT_ERR("Please check your section names");
+            PRINT_ERR(" in the config file.\n");
+            PRINT_ERR("Also make sure to use config file version 2.\n");
+        }
+
+	return NULL;
+    } 
+
+    nextInstance = ((nextInstance + 1) % numInstances);
+    printf("Next Instance: %d.\n",nextInstance);
+    return cyInstHandles[nextInstance];
+
+}
 
 /// @brief
 /// @function acquire_qat_devices
@@ -59,12 +110,15 @@ HE_QAT_STATUS acquire_qat_devices() {
 #endif
 
     // Potential out-of-scope hazard for segmentation fault
-    CpaInstanceHandle _inst_handle = NULL;
+    CpaInstanceHandle _inst_handle[NUM_ACTIVE_INSTANCES];// = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
-    sampleCyGetInstance(&_inst_handle);
-    if (_inst_handle == NULL) {
-        printf("Failed to find QAT endpoints.\n");
-        return HE_QAT_STATUS_FAIL;
+    //sampleCyGetInstance(&_inst_handle);
+    for (unsigned int i = 0; i < NUM_ACTIVE_INSTANCES; i++) {
+      _inst_handle[i] = get_qat_instance();
+      if (_inst_handle[i] == NULL) {
+          printf("Failed to find QAT endpoints.\n");
+          return HE_QAT_STATUS_FAIL;
+      }
     }
 
     // sampleCyGetInstance(&handle);
@@ -89,7 +143,8 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Creating QAT instances (consumer threads) to process op requests
     pthread_attr_t attr;
     cpu_set_t cpus;
-    for (int i = 0; i < HE_QAT_SYNC; i++) {
+    //for (int i = 0; i < HE_QAT_SYNC; i++) {
+    for (int i = 0; i < NUM_ACTIVE_INSTANCES; i++) {
         CPU_ZERO(&cpus);
         CPU_SET(i, &cpus);
         pthread_attr_init(&he_qat_inst_attr[i]);
@@ -108,7 +163,7 @@ HE_QAT_STATUS acquire_qat_devices() {
         pthread_mutex_init(&he_qat_inst_config[i].mutex, NULL);
         //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
         pthread_cond_init(&he_qat_inst_config[i].ready, NULL);
-        he_qat_inst_config[i].inst_handle = _inst_handle;
+        he_qat_inst_config[i].inst_handle = _inst_handle[i];
         he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
         pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr,
                        start_perform_op, (void*)&he_qat_inst_config[i]);
@@ -118,7 +173,8 @@ HE_QAT_STATUS acquire_qat_devices() {
 #endif
 
     // Dispatch the qat instances to run independently in the background
-    for (int i = 0; i < HE_QAT_SYNC; i++) {
+    //for (int i = 0; i < HE_QAT_SYNC; i++) {
+    for (int i = 0; i < NUM_ACTIVE_INSTANCES; i++) {
         pthread_detach(he_qat_instances[i]);
     }
 #ifdef _DESTINY_DEBUG_VERBOSE
