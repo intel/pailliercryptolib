@@ -24,13 +24,16 @@
 #define MAX_INSTANCES 1
 #endif
 
-#define NUM_ACTIVE_INSTANCES 1
+#define NUM_ACTIVE_INSTANCES 16
 
 // Global variable declarations
-HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
-pthread_attr_t he_qat_inst_attr[HE_QAT_MAX_NUM_INST];
-HE_QAT_InstConfig he_qat_inst_config[HE_QAT_MAX_NUM_INST];
+//HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
+//pthread_attr_t he_qat_inst_attr[HE_QAT_MAX_NUM_INST];
+//HE_QAT_InstConfig he_qat_inst_config[HE_QAT_MAX_NUM_INST];
 // HE_QAT_RequestBuffer he_qat_buffer;
+HE_QAT_Inst he_qat_instances[NUM_ACTIVE_INSTANCES];
+pthread_attr_t he_qat_inst_attr[NUM_ACTIVE_INSTANCES];
+HE_QAT_InstConfig he_qat_inst_config[NUM_ACTIVE_INSTANCES];
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern void* start_perform_op(void* _inst_config);
@@ -164,6 +167,7 @@ HE_QAT_STATUS acquire_qat_devices() {
         //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
         pthread_cond_init(&he_qat_inst_config[i].ready, NULL);
         he_qat_inst_config[i].inst_handle = _inst_handle[i];
+        he_qat_inst_config[i].inst_id = i;
         he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
         pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr,
                        start_perform_op, (void*)&he_qat_inst_config[i]);
@@ -202,7 +206,7 @@ HE_QAT_STATUS release_qat_devices() {
     //	}
     //    }
 
-    stop_perform_op(he_qat_inst_config, HE_QAT_SYNC);
+    stop_perform_op(he_qat_inst_config, NUM_ACTIVE_INSTANCES);
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Stopped polling and processing threads.\n");
 #endif
