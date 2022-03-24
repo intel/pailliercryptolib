@@ -121,7 +121,6 @@ class PublicKey {
   void raw_encrypt(std::vector<BigNumber>& ciphertext,
                    const std::vector<BigNumber>& plaintext,
                    bool make_secure = true) const;
-
   /**
    * Get random value
    * @param[in] length bit length
