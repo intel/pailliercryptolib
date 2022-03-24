@@ -12,7 +12,7 @@ target_include_directories(bench_ipcl PRIVATE
 )
 
 target_link_libraries(bench_ipcl PRIVATE
-  ipcl libgbenchmark Threads::Threads
+  ipcl -pthread libgbenchmark
 )
 
 # enable OpenMP benchmarks

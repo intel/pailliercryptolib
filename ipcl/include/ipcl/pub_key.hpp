@@ -121,16 +121,7 @@ class PublicKey {
   void raw_encrypt(std::vector<BigNumber>& ciphertext,
                    const std::vector<BigNumber>& plaintext,
                    bool make_secure = true) const;
-  //   /**
-  //    * Raw Multi-buffered modular exponentiation
-  //    * @param[in] base array base of the exponentiation
-  //    * @param[in] pow arrya pow of the exponentiation
-  //    * @param[in] m arrayodular
-  //    * @return result of the modular exponentiation of type BigNumber vector
-  //    */
-  //   std::vector<BigNumber> raw_ippMultiBuffExp(
-  //       const std::vector<BigNumber>& base, const std::vector<BigNumber>&
-  //       pow, const std::vector<BigNumber>& m) const;
+
   /**
    * Get random value
    * @param[in] length bit length
