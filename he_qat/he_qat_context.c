@@ -24,7 +24,7 @@
 #define MAX_INSTANCES 1
 #endif
 
-#define NUM_ACTIVE_INSTANCES 16
+#define NUM_ACTIVE_INSTANCES 8
 
 // Global variable declarations
 //HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
