@@ -156,12 +156,8 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   return ippMBModExp(base, pow, m);
 #else
   std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE);
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
     res[i] = ippSBModExp(base[i], pow[i], m[i]);
-  }
   return res;
 #endif
 }

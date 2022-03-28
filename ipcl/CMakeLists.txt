@@ -54,16 +54,6 @@ else()
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 endif()
 
-# check whether cpu support avx512 flag
-set(CPU_AVX512_FLAG "avx512ifma")
-execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
-if("${CPU_ENABLE_AVX512}" STREQUAL "")
-	message(STATUS "Support AVX512IFMA: False")
-else()
-	message(STATUS "Support AVX512IFMA: True")
-	add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
-endif()
-
 set_target_properties(ipcl PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(ipcl PROPERTIES VERSION ${IPCL_VERSION})
 if(IPCL_DEBUG)

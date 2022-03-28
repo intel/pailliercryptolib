@@ -53,7 +53,7 @@ option(IPCL_BENCHMARK "Enable benchmark" ON)
 option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
-
+option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
 endif()
@@ -91,6 +91,20 @@ set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
+
+# check whether cpu support avx512 flag
+if(IPCL_DEBUG_DISABLE_AVX512IFMA)
+  message(STATUS "Support AVX512IFMA: False")
+else()
+  set(CPU_AVX512_FLAG "avx512ifma")
+  execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
+  if("${CPU_ENABLE_AVX512}" STREQUAL "")
+    message(STATUS "Support AVX512IFMA: False")
+  else()
+    message(STATUS "Support AVX512IFMA: True")
+    add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+  endif()
+endif()
 
 # find package for OpenSSL and Threads
 set(OPENSSL_USE_STATIC_LIBS TRUE)

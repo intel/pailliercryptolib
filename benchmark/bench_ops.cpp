@@ -16,10 +16,10 @@ static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<ipcl::BigNumber>> ct_b(
@@ -48,10 +48,10 @@ static void BM_Add_CTCT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<ipcl::BigNumber>> ct_b(
@@ -85,10 +85,10 @@ static void BM_Add_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
 
@@ -112,10 +112,10 @@ static void BM_Add_CTPT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
@@ -145,10 +145,10 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
 
@@ -173,10 +173,10 @@ static void BM_Mul_CTPT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
@@ -208,10 +208,10 @@ static void BM_Add_CTCT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<ipcl::BigNumber>> ct_b(
@@ -244,10 +244,10 @@ static void BM_Add_CTCT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<ipcl::BigNumber>> ct_b(
@@ -282,10 +282,10 @@ static void BM_Add_CTPT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
 
@@ -313,10 +313,10 @@ static void BM_Add_CTPT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
@@ -347,10 +347,10 @@ static void BM_Mul_CTPT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize, std::vector<ipcl::BigNumber>(8));
 
@@ -379,10 +379,10 @@ static void BM_Mul_CTPT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> b(dsize / 8,
-                                              std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> a(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
+  std::vector<std::vector<ipcl::BigNumber>> b(
+      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
   std::vector<std::vector<ipcl::BigNumber>> ct_a(
       dsize / 8, std::vector<ipcl::BigNumber>(8));
 
