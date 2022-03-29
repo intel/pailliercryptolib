@@ -18,13 +18,13 @@
 int gDebugParam = 1;
 #endif
 
-const unsigned int BATCH_SIZE = 8;
+const unsigned int BATCH_SIZE = 48;
 
 using namespace std::chrono;
 
 int main(int argc, const char** argv) {
     const int bit_length = 4096;
-    const size_t num_trials = 100;
+    const size_t num_trials = 10000;
 
     double avg_speed_up = 0.0;
     double ssl_avg_time = 0.0;
@@ -178,6 +178,7 @@ int main(int argc, const char** argv) {
         //printf("BigNumber modular exponentiation on QAT: %.1lfus.\n",
         //       (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
 	//qat_elapsed += cvt_elapsed;
+        printf("Request #%u\t",mod+1);
         printf("Overhead: %.1luus",
                cvt_duration.count());
         printf("\tOpenSSL: %.1lfus",
