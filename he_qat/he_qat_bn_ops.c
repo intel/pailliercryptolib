@@ -42,6 +42,7 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
 
+        pthread_mutex_lock(&request->mutex);
         // Collect the device output in pOut
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
@@ -58,6 +59,7 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
         }
         // Make it synchronous and blocking
         pthread_cond_signal(&request->ready);
+        pthread_mutex_unlock(&request->mutex);
 #ifdef HE_QAT_SYNC_MODE
         COMPLETE((struct COMPLETION_STRUCT*)&request->callback);
 #endif
@@ -265,7 +267,7 @@ void* start_perform_op(void* _inst_config) {
         // Wake up any blocked call to stop_perform_op, signaling that now it is
         // safe to terminate running instances. Check if this detereorate
         // performance.
-        pthread_cond_signal(&config->ready);
+        pthread_cond_signal(&config->ready); // Prone to the lost wake-up problem
 #ifdef HE_QAT_DEBUG
                  printf("Offloading completed by instance #%d\n",config->inst_id);
 #endif
@@ -462,72 +464,44 @@ void getBnModExpRequest(unsigned int batch_size) {
           HE_QAT_TaskRequest* task =
               (HE_QAT_TaskRequest*)he_qat_buffer.data[block_at_index];
         
-          if (NULL == task)
-             continue;
+        //if (NULL == task)
+        //   continue;
           
-	  if (HE_QAT_STATUS_READY == task->request_status) j++;
-          else continue;
+        // Block and synchronize: Wait for the most recently offloaded request
+        // to complete processing
+        pthread_mutex_lock(
+            &task->mutex);  // mutex only needed for the conditional variable
+        while (HE_QAT_STATUS_READY != task->request_status)
+            pthread_cond_wait(&task->ready, &task->mutex);
 
 #ifdef HE_QAT_PERF
-  	  time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
-  	  time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
-  	  printf("Request %u\tElapsed Time: %.1lfus\n",j,time_taken);
+	time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
+	time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
+	printf("%u time: %.1lfus\n",j,time_taken);
 #endif
-        // Free up QAT temporary memory
-          CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
-          if (op_data) {
-              PHYS_CONTIG_FREE(op_data->base.pData);
-              PHYS_CONTIG_FREE(op_data->exponent.pData);
-              PHYS_CONTIG_FREE(op_data->modulus.pData);
-          }
-          free(task->op_data);
-          task->op_data = NULL;
-          if (task->op_result.pData) {
-              PHYS_CONTIG_FREE(task->op_result.pData);
-          }
- 
-	  // Fix segmentation fault?
-	  free(he_qat_buffer.data[block_at_index]);
-          he_qat_buffer.data[block_at_index] = NULL;
-          
-	  block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
-    } while(j < batch_size);	  
 
-//        // Block and synchronize: Wait for the most recently offloaded request
-//        // to complete processing
-//        pthread_mutex_lock(
-//            &task->mutex);  // mutex only needed for the conditional variable
-//        while (HE_QAT_STATUS_READY != task->request_status)
-//            pthread_cond_wait(&task->ready, &task->mutex);
-//
-//#ifdef HE_QAT_PERF
-//	time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
-//	time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
-//	printf("%u time: %.1lfus\n",j,time_taken);
-//#endif
-//
-//        // Free up QAT temporary memory
-//        CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
-//        if (op_data) {
-//            PHYS_CONTIG_FREE(op_data->base.pData);
-//            PHYS_CONTIG_FREE(op_data->exponent.pData);
-//            PHYS_CONTIG_FREE(op_data->modulus.pData);
-//        }
-//        free(task->op_data);
-//        task->op_data = NULL;
-//        if (task->op_result.pData) {
-//            PHYS_CONTIG_FREE(task->op_result.pData);
-//        }
-//
-//        // Move forward to wait for the next request that will be offloaded
-//        pthread_mutex_unlock(&task->mutex);
-//        
-//	// Fix segmentation fault?
-//	free(he_qat_buffer.data[block_at_index]);
-//        he_qat_buffer.data[block_at_index] = NULL;
-//        
-//	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
-//    } while (++j < batch_size);
+        // Free up QAT temporary memory
+        CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
+        if (op_data) {
+            PHYS_CONTIG_FREE(op_data->base.pData);
+            PHYS_CONTIG_FREE(op_data->exponent.pData);
+            PHYS_CONTIG_FREE(op_data->modulus.pData);
+        }
+        free(task->op_data);
+        task->op_data = NULL;
+        if (task->op_result.pData) {
+            PHYS_CONTIG_FREE(task->op_result.pData);
+        }
+
+        // Move forward to wait for the next request that will be offloaded
+        pthread_mutex_unlock(&task->mutex);
+        
+	// Fix segmentation fault?
+	free(he_qat_buffer.data[block_at_index]);
+        he_qat_buffer.data[block_at_index] = NULL;
+        
+	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
+    } while (++j < batch_size);
 
 #ifdef HE_QAT_PERF
     gettimeofday(&end_time,NULL);
@@ -555,6 +529,7 @@ static void HE_QAT_bnModExpCallback(
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
      
+        pthread_mutex_lock(&request->mutex);
         // Collect the device output in pOut
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
@@ -573,6 +548,7 @@ static void HE_QAT_bnModExpCallback(
         }
         // Make it synchronous and blocking
         pthread_cond_signal(&request->ready);
+        pthread_mutex_unlock(&request->mutex);
 #ifdef HE_QAT_SYNC_MODE
         COMPLETE((struct COMPLETION_STRUCT*)&request->callback);
 #endif 
