@@ -6,7 +6,7 @@
 #include "cpa_sample_utils.h"
 
 //#ifdef __cplusplus
-//extern "C" {
+// extern "C" {
 //#endif
 
 #include <time.h>

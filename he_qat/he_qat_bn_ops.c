@@ -13,7 +13,7 @@
 #include <sys/time.h>
 struct timeval start_time, end_time;
 double time_taken = 0.0;
-#endif 
+#endif
 
 #include <pthread.h>
 #include <assert.h>
@@ -79,7 +79,7 @@ static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
     pthread_mutex_lock(&_buffer->mutex);
 
 #ifdef HE_QAT_DEBUG
-    printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
+    printf("Wait lock write request. [buffer size: %d]\n", _buffer->count);
 #endif
     while (_buffer->count >= HE_QAT_BUFFER_SIZE)
         pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
@@ -94,7 +94,7 @@ static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
 #ifdef HE_QAT_DEBUG
-    printf("Unlocked write request. [buffer size: %d]\n",_buffer->count);
+    printf("Unlocked write request. [buffer size: %d]\n", _buffer->count);
 #endif
 }
 
@@ -113,7 +113,7 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
 
     item = _buffer->data[_buffer->next_data_slot++];
 
-    // TODO(fdiasmor): for multithreading mode 
+    // TODO(fdiasmor): for multithreading mode
     // Make copy of request so that the buffer can be reused
 
     _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
@@ -203,7 +203,7 @@ void* start_perform_op(void* _inst_config) {
     config->active = 1;
     while (config->running) {
 #ifdef HE_QAT_DEBUG
-                 printf("Try reading request from buffer. Inst #%d\n",config->inst_id);
+        printf("Try reading request from buffer. Inst #%d\n", config->inst_id);
 #endif
         // Try consume data from butter to perform requested operation
         HE_QAT_TaskRequest* request =
@@ -223,22 +223,23 @@ void* start_perform_op(void* _inst_config) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
 #ifdef HE_QAT_DEBUG
-                 printf("Offload request using instance #%d\n",config->inst_id);
+                printf("Offload request using instance #%d\n", config->inst_id);
 #endif
 #ifdef HE_QAT_PERF
-		gettimeofday(&request->start,NULL);
+                gettimeofday(&request->start, NULL);
 #endif
-		status = cpaCyLnModExp(config->inst_handle, 
-				       (CpaCyGenFlatBufCbFunc)request->callback_func, //lnModExpCallback,
-                                       (void*)request,
-                                       (CpaCyLnModExpOpData*)request->op_data,
-                                       &request->op_result);
+                status = cpaCyLnModExp(
+                    config->inst_handle,
+                    (CpaCyGenFlatBufCbFunc)
+                        request->callback_func,  // lnModExpCallback,
+                    (void*)request, (CpaCyLnModExpOpData*)request->op_data,
+                    &request->op_result);
                 retry++;
                 break;
             case HE_QAT_OP_NONE:
             default:
 #ifdef HE_QAT_DEBUG
-                 printf("HE_QAT_OP_NONE to instance #%d\n",config->inst_id);
+                printf("HE_QAT_OP_NONE to instance #%d\n", config->inst_id);
 #endif
                 retry = HE_QAT_MAX_RETRY;
                 break;
@@ -249,7 +250,7 @@ void* start_perform_op(void* _inst_config) {
         if (CPA_STATUS_SUCCESS == status) {
 //		printf("retry_count = %d\n",retry_count);
 #ifdef HE_QAT_SYNC_MODE
-	    // Wait until the callback function has been called
+            // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
                 request->op_status = CPA_STATUS_FAIL;
                 request->request_status = HE_QAT_STATUS_FAIL;  // Review it
@@ -262,14 +263,15 @@ void* start_perform_op(void* _inst_config) {
         } else {
             request->op_status = CPA_STATUS_FAIL;
             request->request_status = HE_QAT_STATUS_FAIL;  // Review it
-	}
+        }
 
         // Wake up any blocked call to stop_perform_op, signaling that now it is
         // safe to terminate running instances. Check if this detereorate
         // performance.
-        pthread_cond_signal(&config->ready); // Prone to the lost wake-up problem
+        pthread_cond_signal(
+            &config->ready);  // Prone to the lost wake-up problem
 #ifdef HE_QAT_DEBUG
-                 printf("Offloading completed by instance #%d\n",config->inst_id);
+        printf("Offloading completed by instance #%d\n", config->inst_id);
 #endif
     }
     pthread_exit(NULL);
@@ -328,7 +330,7 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
 HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
                                 int nbits) {
     // Unpack data and copy to QAT friendly memory space
-    int len = (nbits + 7) >> 3; // nbits / 8;
+    int len = (nbits + 7) >> 3;  // nbits / 8;
 
     Cpa8U* pBase = NULL;
     Cpa8U* pModulus = NULL;
@@ -448,25 +450,24 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
     return HE_QAT_STATUS_SUCCESS;
 }
 
-
 // Maybe it will be useful to pass the number of requests to retrieve
 // Pass post-processing function as argument to bring output to expected type
 void getBnModExpRequest(unsigned int batch_size) {
     static unsigned long block_at_index = 0;
     unsigned int j = 0;
-    
+
 #ifdef HE_QAT_PERF
-    gettimeofday(&start_time,NULL);
+    gettimeofday(&start_time, NULL);
 #endif
-    do { 
-    	  // Buffer read may be safe for single-threaded blocking calls only.
-          // Note: Not tested on multithreaded environment.
-          HE_QAT_TaskRequest* task =
-              (HE_QAT_TaskRequest*)he_qat_buffer.data[block_at_index];
-        
-        //if (NULL == task)
+    do {
+        // Buffer read may be safe for single-threaded blocking calls only.
+        // Note: Not tested on multithreaded environment.
+        HE_QAT_TaskRequest* task =
+            (HE_QAT_TaskRequest*)he_qat_buffer.data[block_at_index];
+
+        // if (NULL == task)
         //   continue;
-          
+
         // Block and synchronize: Wait for the most recently offloaded request
         // to complete processing
         pthread_mutex_lock(
@@ -475,9 +476,10 @@ void getBnModExpRequest(unsigned int batch_size) {
             pthread_cond_wait(&task->ready, &task->mutex);
 
 #ifdef HE_QAT_PERF
-	time_taken = (task->end.tv_sec - task->start.tv_sec)*1e6;
-	time_taken = (time_taken + (task->end.tv_usec - task->start.tv_usec));//*1e-6;
-	printf("%u time: %.1lfus\n",j,time_taken);
+        time_taken = (task->end.tv_sec - task->start.tv_sec) * 1e6;
+        time_taken =
+            (time_taken + (task->end.tv_usec - task->start.tv_usec));  //*1e-6;
+        printf("%u time: %.1lfus\n", j, time_taken);
 #endif
 
         // Free up QAT temporary memory
@@ -495,19 +497,20 @@ void getBnModExpRequest(unsigned int batch_size) {
 
         // Move forward to wait for the next request that will be offloaded
         pthread_mutex_unlock(&task->mutex);
-        
-	// Fix segmentation fault?
-	free(he_qat_buffer.data[block_at_index]);
+
+        // Fix segmentation fault?
+        free(he_qat_buffer.data[block_at_index]);
         he_qat_buffer.data[block_at_index] = NULL;
-        
-	block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
+
+        block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
     } while (++j < batch_size);
 
 #ifdef HE_QAT_PERF
-    gettimeofday(&end_time,NULL);
-    time_taken = (end_time.tv_sec - start_time.tv_sec)*1e6;
-    time_taken = (time_taken + (end_time.tv_usec - start_time.tv_usec));//*1e-6;
-    printf("Batch Wall Time: %.1lfus\n",time_taken);
+    gettimeofday(&end_time, NULL);
+    time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
+    time_taken =
+        (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+    printf("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
     return;
@@ -528,21 +531,21 @@ static void HE_QAT_bnModExpCallback(
     if (NULL != pCallbackTag) {
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
-     
+
         pthread_mutex_lock(&request->mutex);
         // Collect the device output in pOut
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
             if (pOpData == request->op_data) {
-		// Mark request as complete or ready to be used
+                // Mark request as complete or ready to be used
                 request->request_status = HE_QAT_STATUS_READY;
                 // Copy compute results to output destination
                 memcpy(request->op_output, request->op_result.pData,
                        request->op_result.dataLenInBytes);
 #ifdef HE_QAT_PERF
-		gettimeofday(&request->end,NULL); 
+                gettimeofday(&request->end, NULL);
 #endif
-	    } else {
+            } else {
                 request->request_status = HE_QAT_STATUS_FAIL;
             }
         }
@@ -551,7 +554,7 @@ static void HE_QAT_bnModExpCallback(
         pthread_mutex_unlock(&request->mutex);
 #ifdef HE_QAT_SYNC_MODE
         COMPLETE((struct COMPLETION_STRUCT*)&request->callback);
-#endif 
+#endif
     }
 
     return;
@@ -561,7 +564,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits) {
 #ifdef HE_QAT_DEBUG
     static unsigned long long req_count = 0;
-    //printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
+    // printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
 #endif
     // Unpack data and copy to QAT friendly memory space
     int len = nbits / 8;
@@ -577,7 +580,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
 
     // TODO(fdiasmor): Try it with 8-byte alignment.
     CpaStatus status = CPA_STATUS_FAIL;
-    //status = PHYS_CONTIG_ALLOC(&pBase, len);
+    // status = PHYS_CONTIG_ALLOC(&pBase, len);
     status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
         memcpy(pBase, b, len);
@@ -586,7 +589,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    //status = PHYS_CONTIG_ALLOC(&pExponent, len);
+    // status = PHYS_CONTIG_ALLOC(&pExponent, len);
     status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
@@ -595,7 +598,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    //status = PHYS_CONTIG_ALLOC(&pModulus, len);
+    // status = PHYS_CONTIG_ALLOC(&pModulus, len);
     status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
@@ -630,7 +633,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    //status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
+    // status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
     status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
     if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
@@ -651,7 +654,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     pthread_cond_init(&request->ready, NULL);
 
 #ifdef HE_QAT_DEBUG
-    printf("BN ModExp interface call for request #%llu\n",++req_count);
+    printf("BN ModExp interface call for request #%llu\n", ++req_count);
 #endif
 
     // Submit request using producer function

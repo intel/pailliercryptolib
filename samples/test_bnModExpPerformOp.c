@@ -9,7 +9,7 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-int gDebugParam = 1; // Active in Debug mode
+int gDebugParam = 1;  // Active in Debug mode
 const unsigned int BATCH_SIZE = 1;
 
 int main(int argc, const char** argv) {
