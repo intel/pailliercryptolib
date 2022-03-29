@@ -71,8 +71,14 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
 /// Thread-safe producer implementation for the shared request buffer.
 /// Stores requests in a buffer that will be offload to QAT devices.
 static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
+#ifdef HE_QAT_DEBUG
+    printf("Lock write request\n");
+#endif
     pthread_mutex_lock(&_buffer->mutex);
 
+#ifdef HE_QAT_DEBUG
+    printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
+#endif
     while (_buffer->count >= HE_QAT_BUFFER_SIZE)
         pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
 
@@ -85,6 +91,9 @@ static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
+#ifdef HE_QAT_DEBUG
+    printf("Unlocked write request. [buffer size: %d]\n",_buffer->count);
+#endif
 }
 
 /// @brief
@@ -191,6 +200,9 @@ void* start_perform_op(void* _inst_config) {
     config->running = 1;
     config->active = 1;
     while (config->running) {
+#ifdef HE_QAT_DEBUG
+                 printf("Try reading request from buffer. Inst #%d\n",config->inst_id);
+#endif
         // Try consume data from butter to perform requested operation
         HE_QAT_TaskRequest* request =
             (HE_QAT_TaskRequest*)read_request(&he_qat_buffer);
@@ -209,7 +221,7 @@ void* start_perform_op(void* _inst_config) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
 #ifdef HE_QAT_DEBUG
-                 printf("Enqueue request to instance #%d\n",config->inst_id);
+                 printf("Offload request using instance #%d\n",config->inst_id);
 #endif
 #ifdef HE_QAT_PERF
 		gettimeofday(&request->start,NULL);
@@ -254,6 +266,9 @@ void* start_perform_op(void* _inst_config) {
         // safe to terminate running instances. Check if this detereorate
         // performance.
         pthread_cond_signal(&config->ready);
+#ifdef HE_QAT_DEBUG
+                 printf("Offloading completed by instance #%d\n",config->inst_id);
+#endif
     }
     pthread_exit(NULL);
 }
@@ -544,7 +559,7 @@ static void HE_QAT_bnModExpCallback(
         request->op_status = status;
         if (CPA_STATUS_SUCCESS == status) {
             if (pOpData == request->op_data) {
-                // Mark request as complete or ready to be used
+		// Mark request as complete or ready to be used
                 request->request_status = HE_QAT_STATUS_READY;
                 // Copy compute results to output destination
                 memcpy(request->op_output, request->op_result.pData,
@@ -568,6 +583,10 @@ static void HE_QAT_bnModExpCallback(
 
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits) {
+#ifdef HE_QAT_DEBUG
+    static unsigned long long req_count = 0;
+    //printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
+#endif
     // Unpack data and copy to QAT friendly memory space
     int len = nbits / 8;
 
@@ -654,6 +673,10 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     // Ensure calls are synchronized at exit (blocking)
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
+
+#ifdef HE_QAT_DEBUG
+    printf("BN ModExp interface call for request #%llu\n",++req_count);
+#endif
 
     // Submit request using producer function
     submit_request(&he_qat_buffer, (void*)request);
