@@ -13,7 +13,7 @@ extern "C" {
 
 #include <pthread.h>
 
-#define HE_QAT_BUFFER_SIZE 128
+#define HE_QAT_BUFFER_SIZE 256
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;

@@ -37,7 +37,7 @@ typedef struct {
     // CpaCyLnModExpOpData op_data;
     void* op_data;
     void* op_output;
-    void* callback_func; 
+    void* callback_func;
     volatile HE_QAT_STATUS request_status;
     pthread_mutex_t mutex;
     pthread_cond_t ready;
