@@ -58,18 +58,18 @@ void CtPlusPtArray(std::vector<ipcl::BigNumber>& res,
 
 void CtMultiplyPt(std::vector<ipcl::BigNumber>& res,
                   const std::vector<ipcl::BigNumber>& ct1,
-                  const std::vector<uint32_t>& pt2, const ipcl::keyPair key) {
+                  const std::vector<ipcl::BigNumber>& pt2,
+                  const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
     ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::EncryptedNumber b(key.pub_key, pt2[i]);
-    ipcl::EncryptedNumber sum = a * b;
+    ipcl::EncryptedNumber sum = a * pt2[i];
     res[i] = sum.getBN();
   }
 }
 
 void CtMultiplyPtArray(std::vector<ipcl::BigNumber>& res,
                        const std::vector<ipcl::BigNumber>& ct1,
-                       const std::vector<uint32_t>& pt2,
+                       const std::vector<ipcl::BigNumber>& pt2,
                        const ipcl::keyPair key) {
   ipcl::EncryptedNumber a(key.pub_key, ct1);
   ipcl::EncryptedNumber b(key.pub_key, pt2);
@@ -258,7 +258,7 @@ TEST(OperationTest, CtMultiplyPtTest) {
   std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -267,11 +267,12 @@ TEST(OperationTest, CtMultiplyPtTest) {
     pt1[i] = dist(rng);
     pt2[i] = dist(rng);
     ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
   }
 
   key.pub_key->encrypt(ct1, ptbn1);
 
-  CtMultiplyPt(res, ct1, pt2, key);
+  CtMultiplyPt(res, ct1, ptbn2, key);
 
   key.priv_key->decrypt(dt, res);
 
@@ -296,21 +297,21 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
   std::vector<ipcl::BigNumber> ct1(8), ct2(8);
   std::vector<ipcl::BigNumber> dt(8), res(8);
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8);
+  std::vector<uint32_t> pt1(8), pt2(8, 0);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
   for (int i = 0; i < 8; i++) {
     pt1[i] = dist(rng);
-    pt2[i] = 0;
     ptbn1[i] = pt1[i];
+    ptbn2[i] = pt2[i];
   }
 
   key.pub_key->encrypt(ct1, ptbn1);
 
-  CtMultiplyPt(res, ct1, pt2, key);
+  CtMultiplyPt(res, ct1, ptbn2, key);
 
   key.priv_key->decrypt(dt, res);
 
@@ -350,7 +351,7 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
 
   key.pub_key->encrypt(ct1, ptbn1);
 
-  CtMultiplyPtArray(res, ct1, pt2, key);
+  CtMultiplyPtArray(res, ct1, ptbn2, key);
 
   key.priv_key->decrypt(dt, res);
 
