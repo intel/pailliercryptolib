@@ -37,7 +37,7 @@ This library is underconstruction and currently only offers acceleration of modu
 ### Requirements
 The hardware requirement to use the library is the following:
  - Intel Sapphire Rapids
- - Intel C62XX acceleration card
+<!-- - Intel C62XX acceleration card -->
 
 As for the operating systems, the library has been tested and confirmed to work on Ubuntu 20.04.
 
@@ -48,7 +48,11 @@ Required dependencies include:
 ```
 cmake >=3.15.1
 git
+yasm
+libboost >= 1.14
+libudev >= 1.47
 pthread
+OpenSSL >=1.1.0
 gcc >= 9.1
 QAT20.L.0.8.0-00071.tar.gz (qatlib and QAT drivers)
 ipp-crypto
@@ -72,6 +76,35 @@ f7:00.0 Co-processor: Intel Corporation Device 4940 (rev 30)
 
 In the example above, the platform is a dual-socket Sapphire Rapids (SPR) and it shows 8 QAT endpoints, 4 on each socket.
 
+#### Installing Dependencies
+
+```
+sudo apt install yasm zlib1g 
+sudo apt update -y 
+sudo apt install -y libsystemd-dev
+sudo apt install -y pciutils (tested with version=3.6.4)
+sudo apt install -y libudev-dev
+sudo apt install -y libreadline-dev
+sudo apt install -y libxml2-dev
+sudo apt install -y libboost-dev
+sudo apt install -y elfutils libelf-dev
+sudo apt install -y libnl-3-dev
+sudo apt install -y linux-headers-$(uname -r)
+sudo apt install -y build-essential
+sudo apt install -y libboost-regex-dev
+```
+
+#### Installing OpenSSL
+
+```
+$ git clone https://github.com/openssl/openssl.git
+$ cd openssl/
+$ git checkout OpenSSL_1_1_1-stable
+$ ./Configure --prefix=/opt/openssl
+$ make
+$ sudo make install
+```
+
 #### Installing QAT Software Stack
 
 ```
@@ -85,7 +118,13 @@ $ sudo make -j
 $ sudo make install
 ```
 
-> _**Note**_: Please contact QAT team listed at [https://01.org/intel-quickassist-technology](https://01.org/intel-quickassist-technology) to obtain the latest `QAT20.L.0.8.0-00071.tar.gz` package.
+Add `$USER` to the `qat` group. Must logout and log back in to take effect. 
+
+```
+$ sudo usermod -aG qat $USER
+```
+
+> _**Note**_: Please contact the QAT team listed at [https://01.org/intel-quickassist-technology](https://01.org/intel-quickassist-technology) to obtain the latest `QAT20.L.0.8.0-00071.tar.gz` package.
 
 Verify the QAT installation by checking the QAT service status:
 
