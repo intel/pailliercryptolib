@@ -14,8 +14,10 @@
 #include "ipcl/keygen.hpp"
 #include "ipcl/ops.hpp"
 
-void CtPlusCt(std::vector<BigNumber>& res, const std::vector<BigNumber>& ct1,
-              const std::vector<BigNumber>& ct2, const ipcl::keyPair key) {
+void CtPlusCt(std::vector<ipcl::BigNumber>& res,
+              const std::vector<ipcl::BigNumber>& ct1,
+              const std::vector<ipcl::BigNumber>& ct2,
+              const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
     ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
     ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
@@ -24,37 +26,40 @@ void CtPlusCt(std::vector<BigNumber>& res, const std::vector<BigNumber>& ct1,
   }
 }
 
-void CtPlusCtArray(std::vector<BigNumber>& res,
-                   const std::vector<BigNumber>& ct1,
-                   const std::vector<BigNumber>& ct2, const ipcl::keyPair key) {
+void CtPlusCtArray(std::vector<ipcl::BigNumber>& res,
+                   const std::vector<ipcl::BigNumber>& ct1,
+                   const std::vector<ipcl::BigNumber>& ct2,
+                   const ipcl::keyPair key) {
   ipcl::EncryptedNumber a(key.pub_key, ct1);
   ipcl::EncryptedNumber b(key.pub_key, ct2);
   ipcl::EncryptedNumber sum = a + b;
   res = sum.getArrayBN();
 }
 
-void CtPlusPt(std::vector<BigNumber>& res, const std::vector<BigNumber>& ct1,
+void CtPlusPt(std::vector<ipcl::BigNumber>& res,
+              const std::vector<ipcl::BigNumber>& ct1,
               const std::vector<uint32_t>& pt2, const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
     ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    BigNumber b = pt2[i];
+    ipcl::BigNumber b = pt2[i];
     ipcl::EncryptedNumber sum = a + b;
     res[i] = sum.getBN();
   }
 }
 
-void CtPlusPtArray(std::vector<BigNumber>& res,
-                   const std::vector<BigNumber>& ct1,
-                   const std::vector<BigNumber>& ptbn2,
+void CtPlusPtArray(std::vector<ipcl::BigNumber>& res,
+                   const std::vector<ipcl::BigNumber>& ct1,
+                   const std::vector<ipcl::BigNumber>& ptbn2,
                    const ipcl::keyPair key) {
   ipcl::EncryptedNumber a(key.pub_key, ct1);
   ipcl::EncryptedNumber sum = a + ptbn2;
   res = sum.getArrayBN();
 }
 
-void CtMultiplyPt(std::vector<BigNumber>& res,
-                  const std::vector<BigNumber>& ct1,
-                  const std::vector<BigNumber>& pt2, const ipcl::keyPair key) {
+void CtMultiplyPt(std::vector<ipcl::BigNumber>& res,
+                  const std::vector<ipcl::BigNumber>& ct1,
+                  const std::vector<ipcl::BigNumber>& pt2,
+                  const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
     ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
     ipcl::EncryptedNumber sum = a * pt2[i];
@@ -62,9 +67,9 @@ void CtMultiplyPt(std::vector<BigNumber>& res,
   }
 }
 
-void CtMultiplyPtArray(std::vector<BigNumber>& res,
-                       const std::vector<BigNumber>& ct1,
-                       const std::vector<BigNumber>& pt2,
+void CtMultiplyPtArray(std::vector<ipcl::BigNumber>& res,
+                       const std::vector<ipcl::BigNumber>& ct1,
+                       const std::vector<ipcl::BigNumber>& pt2,
                        const ipcl::keyPair key) {
   ipcl::EncryptedNumber a(key.pub_key, ct1);
   ipcl::EncryptedNumber b(key.pub_key, pt2);
@@ -72,12 +77,13 @@ void CtMultiplyPtArray(std::vector<BigNumber>& res,
   res = sum.getArrayBN();
 }
 
-void AddSub(std::vector<BigNumber>& res, const std::vector<BigNumber>& ct1,
-            const std::vector<BigNumber>& ct2, const ipcl::keyPair key) {
+void AddSub(std::vector<ipcl::BigNumber>& res,
+            const std::vector<ipcl::BigNumber>& ct1,
+            const std::vector<ipcl::BigNumber>& ct2, const ipcl::keyPair key) {
   for (int i = 0; i < 8; i++) {
     ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
     ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
-    BigNumber m1(2);
+    ipcl::BigNumber m1(2);
     a = a + b * m1;
     ipcl::EncryptedNumber sum = a + b;
     res[i] = sum.getBN();
@@ -87,11 +93,11 @@ void AddSub(std::vector<BigNumber>& res, const std::vector<BigNumber>& ct1,
 TEST(OperationTest, CtPlusCtTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -128,11 +134,11 @@ TEST(OperationTest, CtPlusCtTest) {
 TEST(OperationTest, CtPlusCtArrayTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -169,11 +175,11 @@ TEST(OperationTest, CtPlusCtArrayTest) {
 TEST(OperationTest, CtPlusPtTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8);
+  std::vector<ipcl::BigNumber> ptbn1(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -208,11 +214,11 @@ TEST(OperationTest, CtPlusPtTest) {
 TEST(OperationTest, CtPlusPtArrayTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -248,11 +254,11 @@ TEST(OperationTest, CtPlusPtArrayTest) {
 TEST(OperationTest, CtMultiplyPtTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -288,11 +294,11 @@ TEST(OperationTest, CtMultiplyPtTest) {
 TEST(OperationTest, CtMultiplyZeroPtTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8, 0);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -327,11 +333,11 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
 TEST(OperationTest, CtMultiplyPtArrayTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -367,11 +373,11 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
 TEST(OperationTest, AddSubTest) {
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<BigNumber> ct1(8), ct2(8);
-  std::vector<BigNumber> dt(8), res(8);
+  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
+  std::vector<ipcl::BigNumber> dt(8), res(8);
 
   std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<BigNumber> ptbn1(8), ptbn2(8);
+  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -405,9 +411,10 @@ TEST(OperationTest, AddSubTest) {
 }
 
 #ifdef IPCL_USE_OMP
-void CtPlusCt_OMP(int num_threads, std::vector<std::vector<BigNumber>>& v_sum,
-                  const std::vector<std::vector<BigNumber>>& v_ct1,
-                  const std::vector<std::vector<BigNumber>>& v_ct2,
+void CtPlusCt_OMP(int num_threads,
+                  std::vector<std::vector<ipcl::BigNumber>>& v_sum,
+                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
+                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct2,
                   const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
@@ -420,14 +427,15 @@ void CtPlusCt_OMP(int num_threads, std::vector<std::vector<BigNumber>>& v_sum,
   }
 }
 
-void CtPlusPt_OMP(int num_threads, std::vector<std::vector<BigNumber>>& v_sum,
-                  const std::vector<std::vector<BigNumber>>& v_ct1,
+void CtPlusPt_OMP(int num_threads,
+                  std::vector<std::vector<ipcl::BigNumber>>& v_sum,
+                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
                   const std::vector<std::vector<uint32_t>>& v_pt2,
                   const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
-      BigNumber b = v_pt2[i][j];
+      ipcl::BigNumber b = v_pt2[i][j];
       ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
       ipcl::EncryptedNumber sum = a + b;
       v_sum[i][j] = sum.getBN();
@@ -436,14 +444,14 @@ void CtPlusPt_OMP(int num_threads, std::vector<std::vector<BigNumber>>& v_sum,
 }
 
 void CtPlusPtArray_OMP(int num_threads,
-                       std::vector<std::vector<BigNumber>>& v_sum,
-                       const std::vector<std::vector<BigNumber>>& v_ct1,
+                       std::vector<std::vector<ipcl::BigNumber>>& v_sum,
+                       const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
                        const std::vector<std::vector<uint32_t>>& v_pt2,
                        const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
-    std::vector<BigNumber> b(8);
+    std::vector<ipcl::BigNumber> b(8);
     for (int j = 0; j < 8; j++) {
       b[j] = v_pt2[i][j];
     }
@@ -453,26 +461,25 @@ void CtPlusPtArray_OMP(int num_threads,
 }
 
 void CtMultiplyPt_OMP(int num_threads,
-                      std::vector<std::vector<BigNumber>>& v_product,
-                      const std::vector<std::vector<BigNumber>>& v_ct1,
+                      std::vector<std::vector<ipcl::BigNumber>>& v_product,
+                      const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
                       const std::vector<std::vector<uint32_t>>& v_pt2,
                       const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     for (int j = 0; j < 8; j++) {
       ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      BigNumber b = v_pt2[i][j];
+      ipcl::BigNumber b = v_pt2[i][j];
       ipcl::EncryptedNumber product = a * b;
       v_product[i][j] = product.getBN();
     }
   }
 }
 
-void CtMultiplyPtArray_OMP(int num_threads,
-                           std::vector<std::vector<BigNumber>>& v_product,
-                           const std::vector<std::vector<BigNumber>>& v_ct1,
-                           const std::vector<std::vector<uint32_t>>& v_pt2,
-                           const ipcl::keyPair key) {
+void CtMultiplyPtArray_OMP(
+    int num_threads, std::vector<std::vector<ipcl::BigNumber>>& v_product,
+    const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
+    const std::vector<std::vector<uint32_t>>& v_pt2, const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
     ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
@@ -487,22 +494,22 @@ TEST(OperationTest, CtPlusCtTest_OMP) {
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<BigNumber>> v_ct1(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ct2(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_dt(num_threads,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_sum(num_threads,
-                                            std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_sum(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<uint32_t>> v_pt1(num_threads,
                                            std::vector<uint32_t>(8));
   std::vector<std::vector<uint32_t>> v_pt2(num_threads,
                                            std::vector<uint32_t>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn1(num_threads,
-                                              std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn2(num_threads,
-                                              std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -553,20 +560,20 @@ TEST(OperationTest, CtPlusPtTest_OMP) {
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<BigNumber>> v_ct1(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_dt(num_threads,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_sum(num_threads,
-                                            std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_sum(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<uint32_t>> v_pt1(num_threads,
                                            std::vector<uint32_t>(8));
   std::vector<std::vector<uint32_t>> v_pt2(num_threads,
                                            std::vector<uint32_t>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn1(num_threads,
-                                              std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn2(num_threads,
-                                              std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -616,20 +623,20 @@ TEST(OperationTest, CtPlusPtArrayTest_OMP) {
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<BigNumber>> v_ct1(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_dt(num_threads,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_sum(num_threads,
-                                            std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_sum(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<uint32_t>> v_pt1(num_threads,
                                            std::vector<uint32_t>(8));
   std::vector<std::vector<uint32_t>> v_pt2(num_threads,
                                            std::vector<uint32_t>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn1(num_threads,
-                                              std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn2(num_threads,
-                                              std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
@@ -679,20 +686,20 @@ TEST(OperationTest, CtMultiplyPtTest_OMP) {
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<BigNumber>> v_ct1(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_dt(num_threads,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_product(num_threads,
-                                                std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_product(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<uint32_t>> v_pt1(num_threads,
                                            std::vector<uint32_t>(8));
   std::vector<std::vector<uint32_t>> v_pt2(num_threads,
                                            std::vector<uint32_t>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn1(num_threads,
-                                              std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn2(num_threads,
-                                              std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
 
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -742,20 +749,20 @@ TEST(OperationTest, CtMultiplyPtArrayTest_OMP) {
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<BigNumber>> v_ct1(num_threads,
-                                            std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_dt(num_threads,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_product(num_threads,
-                                                std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_dt(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_product(
+      num_threads, std::vector<ipcl::BigNumber>(8));
   std::vector<std::vector<uint32_t>> v_pt1(num_threads,
                                            std::vector<uint32_t>(8));
   std::vector<std::vector<uint32_t>> v_pt2(num_threads,
                                            std::vector<uint32_t>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn1(num_threads,
-                                              std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> v_ptbn2(num_threads,
-                                              std::vector<BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
+      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
+      num_threads, std::vector<ipcl::BigNumber>(8));
 
   std::random_device dev;
   std::mt19937 rng(dev());
