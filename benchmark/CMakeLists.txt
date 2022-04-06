@@ -20,3 +20,8 @@ if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bench_ipcl PRIVATE OpenMP::OpenMP_CXX)
 endif()
+
+# enable QAT benchmarks
+if(IPCL_ENABLE_QAT)
+  target_link_libraries(bench_ipcl PRIVATE libhe_qat)
+endif()

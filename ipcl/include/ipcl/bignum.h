@@ -14,15 +14,17 @@
  * limitations under the License.
  *******************************************************************************/
 
-#ifndef _BIGNUM_H_
-#define _BIGNUM_H_
+//#ifndef _BIGNUM_H_
+//#define _BIGNUM_H_
+#if !defined _BIGNUMBER_H_
+#define _BIGNUMBER_H_
 
 #include <ippcp.h>
 
 #include <ostream>
 #include <vector>
 
-namespace ipcl {
+// namespace ipcl {
 
 class BigNumber {
  public:
@@ -122,6 +124,10 @@ class BigNumber {
   friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
   void num2char(std::vector<Ipp8u>& dest) const;
 
+  // Support QAT data format
+  static bool fromBin(BigNumber& bn, const unsigned char* data, int len);
+  static bool toBin(unsigned char* data, int len, const BigNumber& bn);
+
  protected:
   bool create(const Ipp32u* pData, int length,
               IppsBigNumSGN sgn = IppsBigNumPOS);
@@ -131,5 +137,5 @@ class BigNumber {
 constexpr int BITSIZE_WORD(int n) { return (((n) + 31) >> 5); }
 constexpr int BITSIZE_DWORD(int n) { return (((n) + 63) >> 6); }
 
-}  // namespace ipcl
+//}  // namespace ipcl
 #endif  // _BIGNUM_H_

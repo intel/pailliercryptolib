@@ -24,7 +24,6 @@ target_include_directories(ipcl
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-
 target_include_directories(ipcl
 	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 	PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}>
@@ -52,6 +51,10 @@ else()
 	ipcl_create_archive(ipcl libippcrypto::ippcp)
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
+endif()
+
+if(IPCL_ENABLE_QAT)
+    target_link_libraries(ipcl PRIVATE libhe_qat)
 endif()
 
 # check whether cpu support avx512 flag
