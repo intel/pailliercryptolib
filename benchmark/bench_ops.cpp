@@ -16,20 +16,18 @@ static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> ct_b(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
+  std::vector<std::vector<BigNumber>> ct_b(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
+    a[i][0] = BigNumber((unsigned int)(i * 1024) + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
 
-    b[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
+    b[i][0] = BigNumber((unsigned int)(i * 1024) + 999);
     key.pub_key->encrypt(ct_b[i], b[i]);
   }
 
@@ -48,19 +46,19 @@ static void BM_Add_CTCT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> ct_b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
+  std::vector<std::vector<BigNumber>> ct_b(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);
@@ -85,16 +83,15 @@ static void BM_Add_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)(i * 1024) + 999);
-    b[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    a[i][0] = BigNumber((unsigned int)(i * 1024) + 999);
+    b[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
   }
 
@@ -112,17 +109,17 @@ static void BM_Add_CTPT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);
@@ -145,16 +142,15 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
-    b[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    a[i][0] = BigNumber((unsigned int)i * 1024 + 999);
+    b[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
   }
 
@@ -173,17 +169,17 @@ static void BM_Mul_CTPT_buff8(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);
@@ -208,20 +204,18 @@ static void BM_Add_CTCT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> ct_b(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
+  std::vector<std::vector<BigNumber>> ct_b(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    a[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
 
-    b[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    b[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_b[i], b[i]);
   }
 
@@ -244,19 +238,19 @@ static void BM_Add_CTCT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> ct_b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
+  std::vector<std::vector<BigNumber>> ct_b(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);
@@ -282,16 +276,15 @@ static void BM_Add_CTPT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
-    b[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    a[i][0] = BigNumber((unsigned int)i * 1024 + 999);
+    b[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
   }
 
@@ -313,17 +306,17 @@ static void BM_Add_CTPT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);
@@ -347,16 +340,15 @@ static void BM_Mul_CTPT_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
-    b[i][0] = ipcl::BigNumber((unsigned int)i * 1024 + 999);
+    a[i][0] = BigNumber((unsigned int)i * 1024 + 999);
+    b[i][0] = BigNumber((unsigned int)i * 1024 + 999);
     key.pub_key->encrypt(ct_a[i], a[i]);
   }
 
@@ -379,17 +371,17 @@ static void BM_Mul_CTPT_buff8_OMP(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<ipcl::BigNumber>> a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> b(
-      dsize / 8, std::vector<ipcl::BigNumber>(8, 65535));
-  std::vector<std::vector<ipcl::BigNumber>> ct_a(
-      dsize / 8, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<BigNumber>> a(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> b(dsize / 8,
+                                        std::vector<BigNumber>(8, 65535));
+  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
+                                           std::vector<BigNumber>(8));
 
   for (size_t i = 0; i < dsize / 8; ++i) {
     for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
-      b[i][j] = ipcl::BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      a[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
+      b[i][j] = BigNumber((unsigned int)(i * 8 + j) * 1024 + 999);
     }
 
     key.pub_key->encrypt(ct_a[i], a[i]);

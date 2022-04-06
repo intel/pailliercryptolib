@@ -81,9 +81,21 @@ It is possible to pass additional options to enable more features. The following
 |-------------------------|-----------|---------|-------------------------------------|
 |`IPCL_TEST`              | ON/OFF    | ON      | unit-test                           |
 |`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                           |
+|`IPCL_ENABLE_QAT`        | ON/OFF    | OFF     | enables QAT functionalities         |
 |`IPCL_ENABLE_OMP`        | ON/OFF    | ON      | enables OpenMP functionalities      |
 |`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation         |
 |`IPCL_SHARED`            | ON/OFF    | ON      | build shared library                |
+
+## Compiling for QAT
+
+Install QAT software stack following the [instructions from the HE QAT Lib](https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny/tree/development#installing-qat-software-stack). The current QAT support is not multithreading safe; therefore, `IPCL_ENABLE_OMP` must be set to `OFF`.
+
+```bash
+export IPCL_DIR=$(pwd)
+export ICP_ROOT=$HOME/QAT
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIPCL_ENABLE_QAT=ON -DIPCL_ENABLE_OMP=OFF
+cmake --build build -j
+```
 
 ## Testing and Benchmarking
 To run a set of unit tests via [Googletest](https://github.com/google/googletest), configure and build library with `-DIPCL_TEST=ON` (see [Instructions](#instructions)).

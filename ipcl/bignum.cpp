@@ -25,7 +25,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-namespace ipcl {
+// namespace ipcl {
 
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
@@ -138,7 +138,7 @@ BigNumber& BigNumber::operator=(const BigNumber& bn) {
     Ipp32u* bnData;
     ippsRef_BN(&bnSgn, &bnBitLen, &bnData, bn);
 
-    delete (Ipp8u*)m_pBN;
+    delete[](Ipp8u*) m_pBN;
     create(bnData, BITSIZE_WORD(bnBitLen), bnSgn);
   }
   return *this;
@@ -509,4 +509,34 @@ void BigNumber::num2char(std::vector<Ipp8u>& dest) const {
   dest.assign(bnData, bnData + len);
 }
 
-}  // namespace ipcl
+bool BigNumber::fromBin(BigNumber& bn, const unsigned char* data, int len) {
+  if (len <= 0) return false;
+
+  // Create BigNumber containg input data passed as argument
+  bn = BigNumber(reinterpret_cast<const Ipp32u*>(data), (len / 4));
+  Ipp32u* ref_bn_data_ = NULL;
+  ippsRef_BN(NULL, NULL, &ref_bn_data_, BN(bn));
+
+  // Convert it to little endian format
+  unsigned char* data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
+  for (int i = 0; i < len; i++) data_[i] = data[len - 1 - i];
+
+  return true;
+}
+
+bool BigNumber::toBin(unsigned char* data, int len, const BigNumber& bn) {
+  if (len <= 0) return false;
+
+  // Extract raw vector of data in little endian format
+  int bitSize = 0;
+  Ipp32u* ref_bn_data_ = NULL;
+  ippsRef_BN(NULL, &bitSize, &ref_bn_data_, BN(bn));
+
+  // Revert it to big endian format
+  int bitSizeLen = BITSIZE_WORD(bitSize) * 4;
+  unsigned char* data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
+  for (int i = 0; i < bitSizeLen; i++) data[len - 1 - i] = data_[i];
+
+  return true;
+}
+//}  // namespace ipcl

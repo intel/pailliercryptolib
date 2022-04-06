@@ -36,8 +36,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
 
-set(CMAKE_C_FLAGS "-O2")
-set(CMAKE_CXX_FLAGS "-O2 -fpermissive")
+#set(CMAKE_C_FLAGS "-O2 -pthread")
+#set(CMAKE_CXX_FLAGS "-O2 -fpermissive -pthread")
+set(CMAKE_C_FLAGS "-pthread")
+set(CMAKE_CXX_FLAGS "-fpermissive -pthread")
 
 if(NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
@@ -50,13 +52,22 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 #---------------------------------------------------
 option(IPCL_TEST "Enable testing" ON)
 option(IPCL_BENCHMARK "Enable benchmark" ON)
+option(IPCL_ENABLE_QAT "Enable QAT" OFF)
 option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
+
+if(IPCL_ENABLE_QAT)
+	add_compile_definitions(IPCL_USE_QAT)
+  message(STATUS "QAT enabled - IPCL_ENABLE_OMP set to OFF")
+  set(IPCL_ENABLE_OMP OFF)
+endif()
+
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
 endif()
+
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(IPCL_DEBUG ON)
@@ -73,6 +84,7 @@ message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "IPCL_TEST:                  ${IPCL_TEST}")
 message(STATUS "IPCL_BENCHMARK:             ${IPCL_BENCHMARK}")
 message(STATUS "IPCL_ENABLE_OMP:            ${IPCL_ENABLE_OMP}")
+message(STATUS "IPCL_ENABLE_QAT:            ${IPCL_ENABLE_QAT}")
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
 
@@ -119,6 +131,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
+
+if(IPCL_ENABLE_QAT)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/heqat/heqat.cmake)
+endif()
 
 if(IPCL_TEST)
   include(cmake/gtest.cmake)
