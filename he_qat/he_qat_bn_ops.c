@@ -26,6 +26,7 @@ double time_taken = 0.0;
 
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
+HE_QAT_RequestBufferList outstanding_buffer;
 
 /// @brief
 /// @function
@@ -98,12 +99,118 @@ static void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 #endif
 }
 
+static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
+                                const HE_QAT_TaskRequestList* _requests) {
+#ifdef HE_QAT_DEBUG
+    printf("Lock write request\n");
+#endif
+    if (0 == _requests->count) return;
+
+    pthread_mutex_lock(&_buffer->mutex);
+
+#ifdef HE_QAT_DEBUG
+    printf("Wait lock write request. [buffer size: %d]\n", _buffer->count);
+#endif
+
+    while (_buffer->count >= HE_QAT_BUFFER_SIZE ||
+           (HE_QAT_BUFFER_SIZE - _buffer->count + 1) < _requests->count)
+        pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
+
+    assert(_buffer->count < HE_QAT_BUFFER_SIZE);
+    assert(_requests->count <= (HE_QAT_BUFFER_SIZE - _buffer->count + 1));
+
+    for (unsigned int i = 0; i < _requests->count; i++) {
+        _buffer->data[_buffer->next_free_slot++] = _requests->request[i];
+        _buffer->next_free_slot %= HE_QAT_BUFFER_SIZE;
+    }
+    _buffer->count += _requests->count;
+
+    pthread_cond_signal(&_buffer->any_more_data);
+    pthread_mutex_unlock(&_buffer->mutex);
+#ifdef HE_QAT_DEBUG
+    printf("Unlocked write request. [buffer size: %d]\n", _buffer->count);
+#endif
+}
+
+static void* get_buffer(HE_QAT_RequestBufferList* _list, unsigned int index) {
+    if (0 == index) return _list->data;
+    unsigned int j = 0;
+    void* curr = _list->next;
+    while (curr) {
+        if (index == ++j) break;
+        curr = _list->next;
+    }
+    return curr;
+}
+
+static void* add_buffer(HE_QAT_RequestBufferList* _list) { return NULL; }
+
+static void del_buffer() { return; }
+
+/// @brief
+/// @function
+/// Thread-safe producer implementation for the shared outstanding request
+/// buffer that stores request from multiple threads.
+/// Stores requests in a buffer that will be sent to the HE QAT buffer.
+static void push_request(HE_QAT_RequestBufferList* _outstanding_buffer,
+                         void* args, unsigned int num_requests = 1) {
+#ifdef HE_QAT_DEBUG
+    printf("Lock write outstanding requests\n");
+#endif
+    pthread_mutex_lock(&_outstanding_buffer->mutex);
+
+#ifdef HE_QAT_DEBUG
+    printf("Wait lock write request. [outstanding buffer size: %d]\n",
+           _outstanding_buffer->count);
+#endif
+    // if (NULL == args) pthread_mutex_unlock(&_outstanding_buffer->mutex);
+    unsigned int list_size = _outstanding_buffer->size;
+    unsigned int buffer_size = list_size * HE_QAT_BUFFER_SIZE;
+    // TODO(fdiasmor): Dynamically expand the outstanding buffer
+    //    while (buffer_size < num_requests &&
+    //		    buffer_size < HE_QAT_LIST_SIZE * HE_QAT_BUFFER_SIZE) {
+    //	_outstanding_buffer->data[list_size] =
+    //malloc(sizeof(HE_QAT_TaskRequest)*HE_QAT_BUFFER_SIZE); 	if
+    //(_outstanding_buffer)
+    //        buffer_size = ++list_size * HE_QAT_BUFFER_SIZE;
+    //    }
+    // Create more space, if required, to a certain extent
+    // For now, it assumes maximum number of requests per thread and per call is
+    // equal to HE_QAT_BUFFER_SIZE and maximum number of threads is
+    // HE_QAT_BUFFER_COUNT
+    while (_outstanding_buffer->count >= buffer_size ||
+           (buffer_size - _outstanding_buffer->count + 1 < num_requests))
+        pthread_cond_wait(&_outstanding_buffer->any_free_slot,
+                          &_outstanding_buffer->mutex);
+
+    assert(_outstanding_buffer->count < buffer_size);
+    assert(buffer_size - _outstanding_buffer->count + 1 >= num_requests);
+
+    HE_QAT_TaskRequestList* requests = (HE_QAT_TaskRequestList*)args;
+    for (unsigned int i = 0; i < requests->count; i++) {
+        unsigned int index = _outstanding_buffer->next_free_slot / buffer_size;
+        unsigned int slot = _outstanding_buffer->next_free_slot % buffer_size;
+        _outstanding_buffer->data[index][slot] = requests->request[i];
+        _outstanding_buffer->next_free_slot++;
+        _outstanding_buffer->next_free_slot %= buffer_size;
+        _outstanding_buffer->count++;
+    }
+
+    pthread_cond_signal(&_outstanding_buffer->any_more_data);
+    pthread_mutex_unlock(&_outstanding_buffer->mutex);
+#ifdef HE_QAT_DEBUG
+    printf("Unlocked write request. [outstanding buffer count: %d]\n",
+           _outstanding_buffer->count);
+#endif
+}
+
 /// @brief
 /// @function
 /// Thread-safe consumer implementation for the shared request buffer.
 /// Read requests from a buffer to finally offload the work to QAT devices.
 static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
     void* item = NULL;
+
     pthread_mutex_lock(&_buffer->mutex);
     // Wait while buffer is empty
     while (_buffer->count <= 0)
@@ -126,13 +233,116 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
 }
 
 /// @brief
+/// @function
+/// Thread-safe consumer implementation for the shared request buffer.
+/// Read requests from a buffer to finally offload the work to QAT devices.
+static void read_request_list(HE_QAT_TaskRequestList* _requests,
+                              HE_QAT_RequestBuffer* _buffer) {
+    if (NULL == _requests) return;
+
+    pthread_mutex_lock(&_buffer->mutex);
+    // Wait while buffer is empty
+    while (_buffer->count <= 0)
+        pthread_cond_wait(&_buffer->any_more_data, &_buffer->mutex);
+
+    assert(_buffer->count > 0);
+    // assert(_buffer->count <= HE_QAT_BUFFER_SIZE);
+
+    for (unsigned int i = 0; i < _buffer->count; i++) {
+        _requests->request[i] = _buffer->data[_buffer->next_data_slot++];
+        _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
+    }
+    _requests->count = _buffer->count;
+    _buffer->count = 0;
+
+    pthread_cond_signal(&_buffer->any_free_slot);
+    pthread_mutex_unlock(&_buffer->mutex);
+
+    return;
+}
+
+/// @brief
+/// @function
+/// Thread-safe consumer implementation for the shared request buffer.
+/// Read requests from a buffer to finally offload the work to QAT devices.
+static void pull_request(HE_QAT_TaskRequestList* _requests,
+                         HE_QAT_RequestBufferList* _outstanding_buffer,
+                         unsigned int max_num_requests = 1) {
+    if (NULL == _requests) return;
+
+    pthread_mutex_lock(&_outstanding_buffer->mutex);
+
+    unsigned int list_size = _outstanding_buffer->size;
+    unsigned int buffer_size = list_size * HE_QAT_BUFFER_SIZE;
+
+    // Wait while buffer is empty
+    while (_outstanding_buffer->count <= 0)
+        pthread_cond_wait(&_outstanding_buffer->any_more_data,
+                          &_outstanding_buffer->mutex);
+
+    assert(_outstanding_buffer->count > 0);
+
+    unsigned int num_requests = (_outstanding_buffer->count <= max_num_requests)
+                                    ? _outstanding_buffer->count
+                                    : max_num_requests;
+
+    assert(num_requests <= HE_QAT_BUFFER_SIZE);
+
+    //_requests->count = 0;
+    for (unsigned int i = 0; i < num_requests; i++) {
+        unsigned int index = _outstanding_buffer->next_data_slot / buffer_size;
+        unsigned int slot = _outstanding_buffer->next_data_slot % buffer_size;
+
+        _requests->request[i] = _outstanding_buffer->data[index][slot];
+        //_requests->count++;
+
+        _outstanding_buffer->next_data_slot++;
+        _outstanding_buffer->next_data_slot %= buffer_size;
+        //_outstanding_buffer->count--;
+    }
+    _requests->count = num_requests;
+    _outstanding_buffer->count -= num_requests;
+
+    pthread_cond_signal(&_outstanding_buffer->any_free_slot);
+    pthread_mutex_unlock(&_outstanding_buffer->mutex);
+
+    return;
+}
+
+static void* schedule_requests(void* state) {
+    if (NULL == state) {
+        printf("Failed at buffer_manager: argument is NULL.\n");
+        pthread_exit(NULL);
+    }
+
+    int* active = (int*)state;
+
+    HE_QAT_TaskRequestList outstanding_requests;
+    for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
+        outstanding_requests->request[i] = NULL;
+    }
+    outstading_requests->count = 0;
+
+    // this thread should receive signal from context to exit
+    while (active) {
+        // collect a set of requests from the outstanding buffer
+        pull_request(&outstanding_requests, &outstanding_buffer,
+                     HE_QAT_BUFFER_SIZE);
+        // submit them to the HE QAT buffer for offloading
+        submit_request(&he_qat_buffer, &outstanding_requests);
+    }
+
+    pthread_exit(NULL);
+}
+
+/// @brief
 /// @function start_inst_polling
 /// @param[in] HE_QAT_InstConfig Parameter values to start and poll instances.
 ///
 static void* start_inst_polling(void* _inst_config) {
     if (NULL == _inst_config) {
         printf(
-            "Failed at start_inst_polling: argument is NULL.");  //,__FUNC__);
+            "Failed at start_inst_polling: argument is NULL.\n");  //,__FUNC__);
         pthread_exit(NULL);
     }
 

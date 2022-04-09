@@ -14,6 +14,7 @@ extern "C" {
 #include <pthread.h>
 
 #define HE_QAT_BUFFER_SIZE 1024
+#define HE_QAT_BUFFER_COUNT 8
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
@@ -31,14 +32,28 @@ typedef pthread_t HE_QAT_Inst;
 
 typedef struct {
     void* data[HE_QAT_BUFFER_SIZE];  //
-    int count;                       // occupied track number of buffer enties
-    int next_free_slot;  // nextin index of the next free slot to accommodate a
-                         // request
-    int next_data_slot;  // nextout index of next request to be processed
-    pthread_mutex_t mutex;         //
+    unsigned int count;              // occupied track number of buffer enties
+    unsigned int
+        next_free_slot;  // nextin index of the next free slot for a request
+    unsigned int
+        next_data_slot;     // nextout index of next request to be processed
+    pthread_mutex_t mutex;  //
     pthread_cond_t any_more_data;  // more
     pthread_cond_t any_free_slot;  // less
 } HE_QAT_RequestBuffer;
+
+typedef struct {
+    void* data[HE_QAT_BUFFER_COUNT][HE_QAT_BUFFER_SIZE];  //
+    unsigned int count;
+    unsigned int size;
+    unsigned int
+        next_free_slot;  // nextin index of the next free slot for a request
+    unsigned int
+        next_data_slot;     // nextout index of next request to be processed
+    pthread_mutex_t mutex;  //
+    pthread_cond_t any_more_data;  // more
+    pthread_cond_t any_free_slot;  // less
+} HE_QAT_RequestBufferList;
 
 typedef struct {
     int inst_id;

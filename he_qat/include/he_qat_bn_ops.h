@@ -47,6 +47,12 @@ typedef struct {
 #endif
 } HE_QAT_TaskRequest;
 
+// One for each consumer
+typedef struct {
+    HE_QAT_TaskRequest* request[HE_QAT_BUFFER_SIZE];
+    unsigned int count;
+} HE_QAT_TaskRequestList;
+
 /// @brief
 /// @function
 /// Perform big number modular exponentiation for input data in
