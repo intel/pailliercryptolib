@@ -32,7 +32,7 @@ typedef pthread_t HE_QAT_Inst;
 
 typedef struct {
     void* data[HE_QAT_BUFFER_SIZE];  //
-    unsigned int count;              // occupied track number of buffer enties
+    volatile unsigned int count;              // occupied track number of buffer enties
     unsigned int
         next_free_slot;  // nextin index of the next free slot for a request
     unsigned int
@@ -54,6 +54,20 @@ typedef struct {
     pthread_cond_t any_more_data;  // more
     pthread_cond_t any_free_slot;  // less
 } HE_QAT_RequestBufferList;
+
+typedef struct {
+    HE_QAT_RequestBuffer buffer[HE_QAT_BUFFER_COUNT];  //
+    unsigned int busy_count;
+    unsigned int
+        next_free_buffer;  // nextin index of the next free slot for a request
+    int free_buffer[HE_QAT_BUFFER_COUNT];
+    unsigned int
+        next_ready_buffer;     // nextout index of next request to be processed
+    int ready_buffer[HE_QAT_BUFFER_COUNT];
+    pthread_mutex_t mutex;  //
+    pthread_cond_t any_ready_buffer;  // more
+    pthread_cond_t any_free_buffer;  // less
+} HE_QAT_OutstandingBuffer;
 
 typedef struct {
     int inst_id;
