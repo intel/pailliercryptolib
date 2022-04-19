@@ -29,10 +29,6 @@
 volatile int context_state = 0;
 
 // Global variable declarations
-// HE_QAT_Inst he_qat_instances[HE_QAT_MAX_NUM_INST];
-// pthread_attr_t he_qat_inst_attr[HE_QAT_MAX_NUM_INST];
-// HE_QAT_InstConfig he_qat_inst_config[HE_QAT_MAX_NUM_INST];
-// HE_QAT_RequestBuffer he_qat_buffer;
 pthread_t buffer_manager;
 HE_QAT_Inst he_qat_instances[NUM_ACTIVE_INSTANCES];
 pthread_attr_t he_qat_inst_attr[NUM_ACTIVE_INSTANCES];
@@ -40,6 +36,7 @@ HE_QAT_InstConfig he_qat_inst_config[NUM_ACTIVE_INSTANCES];
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_RequestBufferList outstanding_buffer;
+extern HE_QAT_OutstandingBuffer outstanding;
 extern void* schedule_requests(void* state);
 extern void* start_perform_op(void* _inst_config);
 extern void stop_perform_op(void* _inst_config, unsigned num_inst);
@@ -146,6 +143,27 @@ HE_QAT_STATUS acquire_qat_devices() {
         he_qat_buffer.data[i] = NULL;
     }
 
+    // Initialize QAT outstanding buffers
+    outstanding.busy_count = 0;
+    outstanding.next_free_buffer = 0;
+    outstanding.next_ready_buffer = 0;
+    for (int i = 0; i < HE_QAT_BUFFER_COUNT; i++) {
+        outstanding.free_buffer[i] = 1;
+	outstanding.ready_buffer[i] = 0;
+	outstanding.buffer[i].count = 0;
+	outstanding.buffer[i].next_free_slot = 0;
+	outstanding.buffer[i].next_data_slot = 0;
+        for (int j = 0; j < HE_QAT_BUFFER_SIZE; j++) {
+            outstanding.buffer[i].data[j] = NULL;
+	}
+        pthread_mutex_init(&outstanding.buffer[i].mutex, NULL);
+        pthread_cond_init(&outstanding.buffer[i].any_more_data, NULL);
+        pthread_cond_init(&outstanding.buffer[i].any_free_data, NULL);
+    }
+    pthread_mutex_init(&outstanding.mutex, NULL);
+    pthread_cond_init(&outstanding.any_free_buffer, NULL);
+    pthread_cond_init(&outstanding.any_ready_buffer, NULL);
+
     // Creating QAT instances (consumer threads) to process op requests
     pthread_attr_t attr;
     cpu_set_t cpus;
@@ -194,7 +212,6 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Launch buffer manager thread to schedule incoming requests
     if (0 != pthread_create(&buffer_manager, NULL, schedule_requests,
                             (void*)&context_state)) {
-        context_state = 0;
         release_qat_devices();
         printf(
             "Failed to complete QAT initialization while creating buffer "
@@ -203,7 +220,6 @@ HE_QAT_STATUS acquire_qat_devices() {
     }
 
     if (0 != pthread_detach(buffer_manager)) {
-        context_state = 0;
         release_qat_devices();
         printf(
             "Failed to complete QAT initialization while launching buffer "
