@@ -5,7 +5,13 @@
 
 #include <crypto_mb/exp.h>
 
+#include <algorithm>
 #include <cstring>
+#include <iostream>
+
+#ifdef IPCL_CRYPTO_OMP
+#include <omp.h>
+#endif
 
 #include "ipcl/util.hpp"
 
@@ -30,6 +36,9 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   std::vector<int64u*> p_array(IPCL_CRYPTO_MB_SIZE);
   int length = dwords * sizeof(int64u);
 
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     out_x[i] = reinterpret_cast<int64u*>(alloca(length));
     b_array[i] = reinterpret_cast<int64u*>(alloca(length));
@@ -53,27 +62,32 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   std::vector<Ipp32u*> pow_b(IPCL_CRYPTO_MB_SIZE);
   std::vector<Ipp32u*> pow_p(IPCL_CRYPTO_MB_SIZE);
   std::vector<Ipp32u*> pow_nsquare(IPCL_CRYPTO_MB_SIZE);
-  int nsqBitLen;
-  int expBitLen = 0;
+  std::vector<int> b_size_v(IPCL_CRYPTO_MB_SIZE);
+  std::vector<int> p_size_v(IPCL_CRYPTO_MB_SIZE);
+  std::vector<int> n_size_v(IPCL_CRYPTO_MB_SIZE);
 
-  for (int i = 0, bBitLen, pBitLen; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    ippsRef_BN(nullptr, &bBitLen, reinterpret_cast<Ipp32u**>(&pow_b[i]),
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+    ippsRef_BN(nullptr, &b_size_v[i], reinterpret_cast<Ipp32u**>(&pow_b[i]),
                base[i]);
-    ippsRef_BN(nullptr, &pBitLen, reinterpret_cast<Ipp32u**>(&pow_p[i]),
+    ippsRef_BN(nullptr, &p_size_v[i], reinterpret_cast<Ipp32u**>(&pow_p[i]),
                pow[i]);
-    ippsRef_BN(nullptr, &nsqBitLen, &pow_nsquare[i], m[i]);
+    ippsRef_BN(nullptr, &n_size_v[i], &pow_nsquare[i], m[i]);
 
-    memcpy(b_array[i], pow_b[i], BITSIZE_WORD(bBitLen) * 4);
-    memcpy(p_array[i], pow_p[i], BITSIZE_WORD(pBitLen) * 4);
-
-    if (expBitLen < pBitLen) expBitLen = pBitLen;
+    memcpy(b_array[i], pow_b[i], BITSIZE_WORD(b_size_v[i]) * 4);
+    memcpy(p_array[i], pow_p[i], BITSIZE_WORD(p_size_v[i]) * 4);
   }
 
-  /*
-   *Note: If actual sizes of exp are different, set the exp_bits parameter equal
-   *to maximum size of the actual module in bit size and extend all the modules
-   *with zero bits
-   */
+  // Find the biggest size of module and exp
+  int nsqBitLen = *std::max_element(n_size_v.begin(), n_size_v.end());
+  int expBitLen = *std::max_element(p_size_v.begin(), p_size_v.end());
+
+  // If actual sizes of modules are different,
+  // set the mod_bits parameter equal to maximum size of the actual module in
+  // bit size and extend all the modules with zero bits to the mod_bits value.
+  // The same is applicable for the exp_bits parameter and actual exponents.
   st = mbx_exp_mb8(out_x.data(), b_array.data(), p_array.data(), expBitLen,
                    reinterpret_cast<Ipp64u**>(pow_nsquare.data()), nsqBitLen,
                    reinterpret_cast<Ipp8u*>(buffer.data()), bufferLen);
@@ -89,6 +103,9 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   BigNumber bn_c(m.front());
 
   std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE, 0);
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
              IppsBigNumPOS);
@@ -152,14 +169,82 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& pow,
 std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& pow,
                                  const std::vector<BigNumber>& m) {
+  std::size_t v_size = base.size();
+  std::vector<BigNumber> res(v_size);
+
 #ifdef IPCL_CRYPTO_MB_MOD_EXP
-  return ippMBModExp(base, pow, m);
-#else
-  std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE);
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
-    res[i] = ippSBModExp(base[i], pow[i], m[i]);
+
+  // If there is only 1 big number, we don't need to use MBModExp
+  if (v_size == 1) {
+    res[0] = ippSBModExp(base[0], pow[0], m[0]);
+    return res;
+  }
+
+  std::size_t offset = 0;
+  std::size_t num_chunk = v_size / IPCL_CRYPTO_MB_SIZE;
+  std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
+
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (std::size_t i = 0; i < num_chunk; i++) {
+    offset = i * IPCL_CRYPTO_MB_SIZE;
+    auto base_start = base.begin() + offset;
+    auto base_end = base_start + IPCL_CRYPTO_MB_SIZE;
+
+    auto pow_start = pow.begin() + offset;
+    auto pow_end = pow_start + IPCL_CRYPTO_MB_SIZE;
+
+    auto m_start = m.begin() + offset;
+    auto m_end = m_start + IPCL_CRYPTO_MB_SIZE;
+
+    auto base_chunk = std::vector<BigNumber>(base_start, base_end);
+    auto pow_chunk = std::vector<BigNumber>(pow_start, pow_end);
+    auto m_chunk = std::vector<BigNumber>(m_start, m_end);
+
+    auto tmp = ippMBModExp(base_chunk, pow_chunk, m_chunk);
+    std::copy(tmp.begin(), tmp.end(), res.begin() + offset);
+  }
+
+  offset = num_chunk * IPCL_CRYPTO_MB_SIZE;
+  // If only 1 big number left, we don't need to make padding
+  if (remainder == 1)
+    res[offset] = ippSBModExp(base[offset], pow[offset], m[offset]);
+
+  // If the 1 < remainder < IPCL_CRYPTO_MB_SIZE, we need to make padding
+  if (remainder > 1) {
+    auto base_start = base.begin() + offset;
+    auto base_end = base_start + remainder;
+
+    auto pow_start = pow.begin() + offset;
+    auto pow_end = pow_start + remainder;
+
+    auto m_start = m.begin() + offset;
+    auto m_end = m_start + remainder;
+
+    std::vector<BigNumber> base_chunk(IPCL_CRYPTO_MB_SIZE, 0);
+    std::vector<BigNumber> pow_chunk(IPCL_CRYPTO_MB_SIZE, 0);
+    std::vector<BigNumber> m_chunk(IPCL_CRYPTO_MB_SIZE, 0);
+
+    std::copy(base_start, base_end, base_chunk.begin());
+    std::copy(pow_start, pow_end, pow_chunk.begin());
+    std::copy(m_start, m_end, m_chunk.begin());
+
+    auto tmp = ippMBModExp(base_chunk, pow_chunk, m_chunk);
+    std::copy(tmp.begin(), tmp.begin() + remainder, res.begin() + offset);
+  }
+
   return res;
-#endif
+
+#else
+
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (int i = 0; i < v_size; i++) res[i] = ippSBModExp(base[i], pow[i], m[i]);
+  return res;
+
+#endif  // IPCL_CRYPTO_MB_MOD_EXP
 }
 
 BigNumber ippModExp(const BigNumber& base, const BigNumber& pow,

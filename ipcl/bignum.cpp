@@ -25,8 +25,6 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-namespace ipcl {
-
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
 bool BigNumber::create(const Ipp32u* pData, int length, IppsBigNumSGN sgn) {
@@ -508,5 +506,3 @@ void BigNumber::num2char(std::vector<Ipp8u>& dest) const {
   int len = (bnBitLen + 7) >> 3;
   dest.assign(bnData, bnData + len);
 }
-
-}  // namespace ipcl

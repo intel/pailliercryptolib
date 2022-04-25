@@ -11,117 +11,58 @@
 #endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
+#include "ipcl/ciphertext.hpp"
 #include "ipcl/keygen.hpp"
-#include "ipcl/ops.hpp"
+#include "ipcl/plaintext.hpp"
+
+constexpr int SELF_DEF_NUM_VALUES = 20;
 
 TEST(CryptoTest, CryptoTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<ipcl::BigNumber> ct(8);
-  std::vector<ipcl::BigNumber> dt(8);
-
-  std::vector<uint32_t> pt(8);
-  std::vector<ipcl::BigNumber> ptbn(8);
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-
-  for (int i = 0; i < 8; i++) {
-    pt[i] = dist(rng);
-    ptbn[i] = pt[i];
-  }
-
-  key.pub_key->encrypt(ct, ptbn);
-  key.priv_key->decrypt(dt, ct);
-
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
-    EXPECT_EQ(v[0], pt[i]);
-  }
-
-  delete key.pub_key;
-  delete key.priv_key;
-}
-
-#ifdef IPCL_USE_OMP
-void Encryption(int num_threads,
-                std::vector<std::vector<ipcl::BigNumber>>& v_ct,
-                const std::vector<std::vector<ipcl::BigNumber>>& v_ptbn,
-                const ipcl::keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct[i], v_ptbn[i]);
-  }
-}
-
-void Decryption(int num_threads,
-                std::vector<std::vector<ipcl::BigNumber>>& v_dt,
-                const std::vector<std::vector<ipcl::BigNumber>>& v_ct,
-                const ipcl::keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_ct[i]);
-  }
-}
-
-TEST(CryptoTest, CryptoTest_OMP) {
-  // use one keypair to do several encryption/decryption
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  size_t num_threads = omp_get_max_threads();
-
-  std::vector<std::vector<ipcl::BigNumber>> v_ct(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt(num_threads,
-                                          std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn(
-      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<uint32_t> exp_value(num_values);
+  ipcl::PlainText pt;
+  ipcl::CipherText ct;
+  ipcl::PlainText dt;
 
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < num_threads; i++) {
-    // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt[i][j] = dist(rng);
-      v_ptbn[i][j] = v_pt[i][j];
-    }
+  for (int i = 0; i < num_values; i++) {
+    exp_value[i] = dist(rng);
   }
 
-  Encryption(num_threads, v_ct, v_ptbn, key);
-  Decryption(num_threads, v_dt, v_ct, key);
+  pt = ipcl::PlainText(exp_value);
+  ct = key.pub_key->encrypt(pt);
+  dt = key.priv_key->decrypt(ct);
 
-  // check output for all threads
-  for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
-      EXPECT_EQ(v[0], v_pt[i][j]);
-    }
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt.getElementVec(i);
+    EXPECT_EQ(v[0], exp_value[i]);
   }
 
   delete key.pub_key;
   delete key.priv_key;
 }
-#endif  // IPCL_USE_OMP
 
 TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
-  ipcl::BigNumber p =
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
+  BigNumber p =
       "0xff03b1a74827c746db83d2eaff00067622f545b62584321256e62b01509f10962f9c5c"
       "8fd0b7f5184a9ce8e81f439df47dda14563dd55a221799d2aa57ed2713271678a5a0b8b4"
       "0a84ad13d5b6e6599e6467c670109cf1f45ccfed8f75ea3b814548ab294626fe4d14ff76"
       "4dd8b091f11a0943a2dd2b983b0df02f4c4d00b413";
-  ipcl::BigNumber q =
+  BigNumber q =
       "0xdacaabc1dc57faa9fd6a4274c4d588765a1d3311c22e57d8101431b07eb3ddcb05d77d"
       "9a742ac2322fe6a063bd1e05acb13b0fe91c70115c2b1eee1155e072527011a5f849de70"
       "72a1ce8e6b71db525fbcda7a89aaed46d27aca5eaeaf35a26270a4a833c5cda681ffd49b"
       "aa0f610bad100cdf47cc86e5034e2a0b2179e04ec7";
 
-  ipcl::BigNumber n = p * q;
+  BigNumber n = p * q;
   int n_length = n.BitSize();
 
   ipcl::PublicKey* public_key = new ipcl::PublicKey(n, n_length);
@@ -129,12 +70,10 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   ipcl::keyPair key = {public_key, private_key};
 
-  std::vector<ipcl::BigNumber> ptbn(8);
-  std::vector<ipcl::BigNumber> ct(8);
-  std::vector<ipcl::BigNumber> dt(8);
-  std::vector<ipcl::BigNumber> ir(8);
+  std::vector<BigNumber> pt_bn_v(num_values);
+  std::vector<BigNumber> ir_bn_v(num_values);
 
-  ipcl::BigNumber c1 =
+  BigNumber c1 =
       "0x1fb7f08a42deb47876e4cbdc3f0b172c033563a696ad7a7c76fa5971b793fa488dcdd6"
       "bd65c7c5440d67d847cb89ccca468b2c96763fff5a5ece8330251112d65e59b7da94cfe9"
       "309f441ccc8f59c67dec75113d37b1ee929c8d4ce6b5e561a30a91104b0526de892e4eff"
@@ -151,7 +90,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
       "b98ccb676367b7b3b269c670cd0210edf70ad9cb337f766af75fe06d18b3f7f7c2eae656"
       "5ff2815c2c09b1a1f5";
 
-  ipcl::BigNumber c2 =
+  BigNumber c2 =
       "0x61803645f2798c06f2c08fc254eee612c55542051c8777d6ce69ede9c84a179afb2081"
       "167494dee727488ae5e9b56d98f4fcf132514616859fc854fbd3acf6aecd97324ac3f2af"
       "fa9f44864a9afc505754aa3b564b4617e887d6aa1f88095bccf6b47f458566f9d85e80fc"
@@ -168,7 +107,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
       "d6f1d6864f1fd3e2e3937e00d391ad330b443aec85528571740ed5538188c32caab27c7b"
       "f437df2bb97cb90e02";
 
-  ipcl::BigNumber c1c2 =
+  BigNumber c1c2 =
       "0x309f6e614d875e3bb0a77eedeb8895e7c6f297f161f576aef4f8b72bb5b81ef78b831a"
       "af134b09fe8697159cfd678c49920cb790e36580c5201a96848d7242fceb025808dd26b5"
       "0ff573ffca3f65e51b3b9fe85c7e44f5c8df0a9e524f64a5acc5c62cba7475978eb55e08"
@@ -185,9 +124,9 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
       "a6d47f9af6e68e18960fa5916cc48994334354d6303312b8e96602766bec337a8a92c596"
       "b21b6038828a6c9744";
 
-  ipcl::BigNumber m1m2 = "0x616263646566676869606a6b6c6d6e6f";
+  BigNumber m1m2 = "0x616263646566676869606a6b6c6d6e6f";
 
-  ipcl::BigNumber r0 =
+  BigNumber r0 =
       "0x57fb19590c31dc7c034b2a889cf4037ce3db799909c1eb0adb6199d8e96791daca9018"
       "891f34309daff32dced4af7d793d16734d055e28023acab7295956bfbfdf62bf0ccb2ed3"
       "1d5d176ca8b404e93007565fb6b72c33a512b4dc4f719231d62e27e34c3733929af32247"
@@ -196,7 +135,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
       "27991c44a43750c24ed0825718ad14cfb9c6b40b78ff3d25f71741f2def1c9d420d4b0fa"
       "1e0a02e7851b5ec6a81133a368b80d1500b0f28fc653d2e6ff4366236dbf80ae3b4beae3"
       "5e04579f2c";
-  ipcl::BigNumber r1 =
+  BigNumber r1 =
       "0x6ee8ed76227672a7bcaa1e7f152c2ea39f2fa225f0713f58210c59b2270b110e38b650"
       "69aaedbeffc713c021336cc12f65227cc0357ca531c07c706e7224c2c11c3145bc0a05b1"
       "64f426ec03350820f9f416377e8720ddb577843cae929178bfe5772e2cc1e9b94e8fce81"
@@ -206,49 +145,108 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
       "4883680e42b5d8582344e3e07a01fbd6c46328dcfa03074d0bc02927f58466c2fa74ab60"
       "8177e3ec1b";
 
-  for (int i = 0; i < 8; i++) {
-    ir[i] = r0;
-    ptbn[i] = "0x414243444546474849404a4b4c4d4e4f";
+  for (int i = 0; i < num_values; i++) {
+    ir_bn_v[i] = r0;
+    pt_bn_v[i] = "0x414243444546474849404a4b4c4d4e4f";
   }
-  ir[1] = r1;
-  ptbn[1] = "0x20202020202020202020202020202020";
+  ir_bn_v[1] = r1;
+  pt_bn_v[1] = "0x20202020202020202020202020202020";
 
-  key.pub_key->setRandom(ir);
+  ipcl::PlainText pt;
+  ipcl::CipherText ct;
 
-  key.pub_key->encrypt(ct, ptbn);
+  key.pub_key->setRandom(ir_bn_v);
 
-  ipcl::EncryptedNumber a(key.pub_key, ct[0]);
-  ipcl::EncryptedNumber b(key.pub_key, ct[1]);
-  ipcl::EncryptedNumber sum = a + b;
-  ipcl::BigNumber res = sum.getBN();
+  pt = ipcl::PlainText(pt_bn_v);
+  ct = key.pub_key->encrypt(pt);
 
-  std::vector<ipcl::BigNumber> ct12(8);
-  std::vector<ipcl::BigNumber> dt12(8);
-  for (int i = 0; i < 8; i++) {
-    ct12[i] = res;
+  ipcl::PlainText dt;
+  dt = key.priv_key->decrypt(ct);
+  for (int i = 0; i < num_values; i++) {
+    EXPECT_EQ(dt.getElement(i), pt_bn_v[i]);
   }
-
-  key.priv_key->decrypt(dt, ct);
-  key.priv_key->decrypt(dt12, ct12);
 
   std::string str1, str2;
-
   c1.num2hex(str1);
-  ct[0].num2hex(str2);
-  EXPECT_EQ(str1, str2);
+  EXPECT_EQ(str1, ct.getElementHex(0));
+  c2.num2hex(str2);
+  EXPECT_EQ(str2, ct.getElementHex(1));
 
-  c2.num2hex(str1);
-  ct[1].num2hex(str2);
-  EXPECT_EQ(str1, str2);
+  ipcl::CipherText a(key.pub_key, ct.getElement(0));
+  ipcl::CipherText b(key.pub_key, ct.getElement(1));
+  ipcl::CipherText sum = a + b;
 
-  c1c2.num2hex(str1);
-  res.num2hex(str2);
-  EXPECT_EQ(str1, str2);
+  std::string str3;
+  c1c2.num2hex(str3);
+  EXPECT_EQ(str3, sum.getElementHex(0));
 
-  m1m2.num2hex(str1);
-  dt12[0].num2hex(str2);
-  EXPECT_EQ(str1, str2);
+  std::string str4;
+  ipcl::PlainText dt_sum;
+
+  dt_sum = key.priv_key->decrypt(sum);
+  m1m2.num2hex(str4);
+  EXPECT_EQ(str4, dt_sum.getElementHex(0));
 
   delete key.pub_key;
   delete key.priv_key;
 }
+
+#ifdef IPCL_USE_OMP
+void Encryption(int num_threads, std::vector<ipcl::CipherText>& ct_v,
+                const std::vector<ipcl::PlainText>& pt_v,
+                const ipcl::keyPair key) {
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    ct_v[i] = key.pub_key->encrypt(pt_v[i]);
+  }
+}
+
+void Decryption(int num_threads, std::vector<ipcl::PlainText>& dt_v,
+                const std::vector<ipcl::CipherText>& ct_v,
+                const ipcl::keyPair key) {
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    dt_v[i] = key.priv_key->decrypt(ct_v[i]);
+  }
+}
+
+TEST(CryptoTest, CryptoTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+  // use one keypair to do several encryption/decryption
+  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
+
+  size_t num_threads = omp_get_max_threads();
+
+  std::vector<std::vector<uint32_t>> exp_value(
+      num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt_v(num_threads);
+  std::vector<ipcl::CipherText> ct_v(num_threads);
+  std::vector<ipcl::PlainText> dt_v(num_threads);
+
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < num_threads; i++) {
+    // for each threads, generated different rand testing value
+    for (int j = 0; j < num_values; j++) {
+      exp_value[i][j] = dist(rng);
+    }
+    pt_v[i] = ipcl::PlainText(exp_value[i]);
+  }
+
+  Encryption(num_threads, ct_v, pt_v, key);
+  Decryption(num_threads, dt_v, ct_v, key);
+
+  // check output for all threads
+  for (int i = 0; i < num_threads; i++) {
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_v[i].getElementVec(j);
+      EXPECT_EQ(v[0], exp_value[i][j]);
+    }
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+#endif  // IPCL_USE_OMP

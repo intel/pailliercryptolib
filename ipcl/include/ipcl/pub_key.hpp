@@ -7,8 +7,11 @@
 #include <vector>
 
 #include "ipcl/bignum.h"
+#include "ipcl/plaintext.hpp"
 
 namespace ipcl {
+
+class CipherText;
 
 class PublicKey {
  public:
@@ -37,20 +40,11 @@ class PublicKey {
 
   /**
    * Encrypt plaintext
-   * @param[out] ciphertext output of the encryption
-   * @param[in] value array of plaintext to be encrypted
+   * @param[in] plaintext of type PlainText
    * @param[in] make_secure apply obfuscator(default value is true)
+   * @return ciphertext of type CipherText
    */
-  void encrypt(std::vector<BigNumber>& ciphertext,
-               const std::vector<BigNumber>& value,
-               bool make_secure = true) const;
-
-  /**
-   * Encrypt plaintext
-   * @param[out] ciphertext output of the encryption
-   * @param[in] value plaintext to be encrypted
-   */
-  void encrypt(BigNumber& ciphertext, const BigNumber& value) const;
+  CipherText encrypt(const PlainText& plaintext, bool make_secure = true) const;
 
   /**
    * Get N of public key in paillier scheme
@@ -113,14 +107,14 @@ class PublicKey {
   std::vector<Ipp32u> randIpp32u(int size) const;
 
   /**
-   * Raw encrypt function
-   * @param[out] ciphertext array output of the encryption
-   * @param[in] plaintext plaintext array to be encrypted
+   * Big number vector multi buffer encryption
+   * @param[in] pt plaintext of BigNumber vector type
    * @param[in] make_secure apply obfuscator(default value is true)
+   * @return ciphertext of BigNumber vector type
    */
-  void raw_encrypt(std::vector<BigNumber>& ciphertext,
-                   const std::vector<BigNumber>& plaintext,
-                   bool make_secure = true) const;
+  std::vector<BigNumber> raw_encrypt(const std::vector<BigNumber>& pt,
+                                     bool make_secure = true) const;
+
   /**
    * Get random value
    * @param[in] length bit length

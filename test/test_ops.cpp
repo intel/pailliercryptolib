@@ -11,120 +11,121 @@
 #endif  // IPCL_USE_OMP
 
 #include "gtest/gtest.h"
+#include "ipcl/ciphertext.hpp"
 #include "ipcl/keygen.hpp"
-#include "ipcl/ops.hpp"
+#include "ipcl/plaintext.hpp"
 
-void CtPlusCt(std::vector<ipcl::BigNumber>& res,
-              const std::vector<ipcl::BigNumber>& ct1,
-              const std::vector<ipcl::BigNumber>& ct2,
-              const ipcl::keyPair key) {
-  for (int i = 0; i < 8; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
-    ipcl::EncryptedNumber sum = a + b;
-    res[i] = sum.getBN();
+constexpr int SELF_DEF_NUM_VALUES = 20;
+
+void CtPlusCt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+              const ipcl::CipherText& ct2, const ipcl::keyPair key) {
+  int size = ct1.getSize();
+  std::vector<BigNumber> sum_bn_v(size);
+
+  for (int i = 0; i < size; i++) {
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::CipherText b(key.pub_key, ct2.getElement(i));
+    ipcl::CipherText sum = a + b;
+    sum_bn_v[i] = sum.getElement(0);
   }
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
-void CtPlusCtArray(std::vector<ipcl::BigNumber>& res,
-                   const std::vector<ipcl::BigNumber>& ct1,
-                   const std::vector<ipcl::BigNumber>& ct2,
-                   const ipcl::keyPair key) {
-  ipcl::EncryptedNumber a(key.pub_key, ct1);
-  ipcl::EncryptedNumber b(key.pub_key, ct2);
-  ipcl::EncryptedNumber sum = a + b;
-  res = sum.getArrayBN();
+void CtPlusCtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+                   const ipcl::CipherText& ct2, const ipcl::keyPair key) {
+  res = ct1 + ct2;
 }
 
-void CtPlusPt(std::vector<ipcl::BigNumber>& res,
-              const std::vector<ipcl::BigNumber>& ct1,
-              const std::vector<uint32_t>& pt2, const ipcl::keyPair key) {
-  for (int i = 0; i < 8; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::BigNumber b = pt2[i];
-    ipcl::EncryptedNumber sum = a + b;
-    res[i] = sum.getBN();
+void CtPlusPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+              const ipcl::PlainText& pt2, const ipcl::keyPair key) {
+  int size = ct1.getSize();
+  std::vector<BigNumber> sum_bn_v(size);
+
+  for (int i = 0; i < size; i++) {
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::PlainText b(pt2.getElement(i));
+    ipcl::CipherText sum = a + b;
+    sum_bn_v[i] = sum.getElement(0);
   }
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
-void CtPlusPtArray(std::vector<ipcl::BigNumber>& res,
-                   const std::vector<ipcl::BigNumber>& ct1,
-                   const std::vector<ipcl::BigNumber>& ptbn2,
-                   const ipcl::keyPair key) {
-  ipcl::EncryptedNumber a(key.pub_key, ct1);
-  ipcl::EncryptedNumber sum = a + ptbn2;
-  res = sum.getArrayBN();
+void CtPlusPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+                   const ipcl::PlainText& pt2, const ipcl::keyPair key) {
+  res = ct1 + pt2;
 }
 
-void CtMultiplyPt(std::vector<ipcl::BigNumber>& res,
-                  const std::vector<ipcl::BigNumber>& ct1,
-                  const std::vector<ipcl::BigNumber>& pt2,
-                  const ipcl::keyPair key) {
-  for (int i = 0; i < 8; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::EncryptedNumber sum = a * pt2[i];
-    res[i] = sum.getBN();
+void CtMultiplyPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+                  const ipcl::PlainText& pt2, const ipcl::keyPair key) {
+  int size = ct1.getSize();
+  std::vector<BigNumber> product_bn_v(size);
+
+  for (int i = 0; i < size; i++) {
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::PlainText b(pt2.getElement(i));
+    ipcl::CipherText product = a * b;
+    product_bn_v[i] = product.getElement(0);
   }
+  res = ipcl::CipherText(key.pub_key, product_bn_v);
 }
 
-void CtMultiplyPtArray(std::vector<ipcl::BigNumber>& res,
-                       const std::vector<ipcl::BigNumber>& ct1,
-                       const std::vector<ipcl::BigNumber>& pt2,
-                       const ipcl::keyPair key) {
-  ipcl::EncryptedNumber a(key.pub_key, ct1);
-  ipcl::EncryptedNumber b(key.pub_key, pt2);
-  ipcl::EncryptedNumber sum = a * b;
-  res = sum.getArrayBN();
+void CtMultiplyPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+                       const ipcl::PlainText& pt2, const ipcl::keyPair key) {
+  res = ct1 * pt2;
 }
 
-void AddSub(std::vector<ipcl::BigNumber>& res,
-            const std::vector<ipcl::BigNumber>& ct1,
-            const std::vector<ipcl::BigNumber>& ct2, const ipcl::keyPair key) {
-  for (int i = 0; i < 8; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, ct1[i]);
-    ipcl::EncryptedNumber b(key.pub_key, ct2[i]);
-    ipcl::BigNumber m1(2);
+void AddSub(ipcl::CipherText& res, const ipcl::CipherText& ct1,
+            const ipcl::CipherText& ct2, const ipcl::keyPair key) {
+  int size = ct1.getSize();
+  std::vector<BigNumber> sum_bn_v(size);
+
+  for (int i = 0; i < size; i++) {
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::CipherText b(key.pub_key, ct2.getElement(i));
+    ipcl::PlainText m1(2);
+
     a = a + b * m1;
-    ipcl::EncryptedNumber sum = a + b;
-    res[i] = sum.getBN();
+    ipcl::CipherText sum = a + b;
+    sum_bn_v[i] = sum.getElement(0);
   }
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
 TEST(OperationTest, CtPlusCtTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_sum;
+  ipcl::CipherText ct1, ct2, ct_sum;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
-  key.pub_key->encrypt(ct2, ptbn2);
+  ct1 = key.pub_key->encrypt(pt1);
+  ct2 = key.pub_key->encrypt(pt2);
 
-  CtPlusCt(res, ct1, ct2, key);
+  CtPlusCt(ct_sum, ct1, ct2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_sum = key.priv_key->decrypt(ct_sum);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_sum.getElementVec(i);
+    uint64_t sum = v[0];
+    if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_sum = (uint64_t)exp_value1[i] + (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(sum, exp_sum);
   }
 
   delete key.pub_key;
@@ -132,40 +133,40 @@ TEST(OperationTest, CtPlusCtTest) {
 }
 
 TEST(OperationTest, CtPlusCtArrayTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_sum;
+  ipcl::CipherText ct1, ct2, ct_sum;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
-  key.pub_key->encrypt(ct2, ptbn2);
+  ct1 = key.pub_key->encrypt(pt1);
+  ct2 = key.pub_key->encrypt(pt2);
 
-  CtPlusCtArray(res, ct1, ct2, key);
+  CtPlusCtArray(ct_sum, ct1, ct2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_sum = key.priv_key->decrypt(ct_sum);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_sum.getElementVec(i);
+    uint64_t sum = v[0];
+    if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_sum = (uint64_t)exp_value1[i] + (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(sum, exp_sum);
   }
 
   delete key.pub_key;
@@ -173,38 +174,39 @@ TEST(OperationTest, CtPlusCtArrayTest) {
 }
 
 TEST(OperationTest, CtPlusPtTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_sum;
+  ipcl::CipherText ct1, ct2, ct_sum;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
+  ct1 = key.pub_key->encrypt(pt1);
 
-  CtPlusPt(res, ct1, pt2, key);
+  CtPlusPt(ct_sum, ct1, pt2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_sum = key.priv_key->decrypt(ct_sum);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_sum.getElementVec(i);
+    uint64_t sum = v[0];
+    if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_sum = (uint64_t)exp_value1[i] + (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(sum, exp_sum);
   }
 
   delete key.pub_key;
@@ -212,39 +214,39 @@ TEST(OperationTest, CtPlusPtTest) {
 }
 
 TEST(OperationTest, CtPlusPtArrayTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_sum;
+  ipcl::CipherText ct1, ct2, ct_sum;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
+  ct1 = key.pub_key->encrypt(pt1);
 
-  CtPlusPtArray(res, ct1, ptbn2, key);
+  CtPlusPtArray(ct_sum, ct1, pt2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_sum = key.priv_key->decrypt(ct_sum);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_sum.getElementVec(i);
+    uint64_t sum = v[0];
+    if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_sum = (uint64_t)exp_value1[i] + (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(sum, exp_sum);
   }
 
   delete key.pub_key;
@@ -252,39 +254,39 @@ TEST(OperationTest, CtPlusPtArrayTest) {
 }
 
 TEST(OperationTest, CtMultiplyPtTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_product;
+  ipcl::CipherText ct1, ct2, ct_product;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
+  ct1 = key.pub_key->encrypt(pt1);
 
-  CtMultiplyPt(res, ct1, ptbn2, key);
+  CtMultiplyPt(ct_product, ct1, pt2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_product = key.priv_key->decrypt(ct_product);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_product.getElementVec(i);
+    uint64_t product = v[0];
+    if (v.size() > 1) product = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_product = (uint64_t)exp_value1[i] * (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(product, exp_product);
   }
 
   delete key.pub_key;
@@ -292,38 +294,40 @@ TEST(OperationTest, CtMultiplyPtTest) {
 }
 
 TEST(OperationTest, CtMultiplyZeroPtTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_product;
+  ipcl::CipherText ct1, ct2, ct_product;
 
-  std::vector<uint32_t> pt1(8), pt2(8, 0);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = 0;
   }
 
-  key.pub_key->encrypt(ct1, ptbn1);
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  CtMultiplyPt(res, ct1, ptbn2, key);
+  ct1 = key.pub_key->encrypt(pt1);
 
-  key.priv_key->decrypt(dt, res);
+  CtMultiplyPt(ct_product, ct1, pt2, key);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  dt_product = key.priv_key->decrypt(ct_product);
 
-    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_product.getElementVec(i);
+    uint64_t product = v[0];
+    if (v.size() > 1) product = ((uint64_t)v[1] << 32) | v[0];
 
-    EXPECT_EQ(v_dp, v_pp);
+    uint64_t exp_product = (uint64_t)exp_value1[i] * (uint64_t)exp_value2[i];
+
+    EXPECT_EQ(product, exp_product);
   }
 
   delete key.pub_key;
@@ -331,39 +335,39 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
 }
 
 TEST(OperationTest, CtMultiplyPtArrayTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_product;
+  ipcl::CipherText ct1, ct2, ct_product;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
+  ct1 = key.pub_key->encrypt(pt1);
 
-  CtMultiplyPtArray(res, ct1, ptbn2, key);
+  CtMultiplyPtArray(ct_product, ct1, pt2, key);
 
-  key.priv_key->decrypt(dt, res);
+  dt_product = key.priv_key->decrypt(ct_product);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_product.getElementVec(i);
+    uint64_t product = v[0];
+    if (v.size() > 1) product = ((uint64_t)v[1] << 32) | v[0];
 
-    uint64_t v_pp = (uint64_t)pt1[i] * (uint64_t)pt2[i];
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+    uint64_t exp_product = (uint64_t)exp_value1[i] * (uint64_t)exp_value2[i];
 
-    EXPECT_EQ(v_dp, v_pp);
+    EXPECT_EQ(product, exp_product);
   }
 
   delete key.pub_key;
@@ -371,39 +375,40 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
 }
 
 TEST(OperationTest, AddSubTest) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
-  std::vector<ipcl::BigNumber> ct1(8), ct2(8);
-  std::vector<ipcl::BigNumber> dt(8), res(8);
+  std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
+  ipcl::PlainText pt1, pt2, dt_sum;
+  ipcl::CipherText ct1, ct2, ct_sum;
 
-  std::vector<uint32_t> pt1(8), pt2(8);
-  std::vector<ipcl::BigNumber> ptbn1(8), ptbn2(8);
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
-  for (int i = 0; i < 8; i++) {
-    pt1[i] = dist(rng);
-    pt2[i] = dist(rng);
-    ptbn1[i] = pt1[i];
-    ptbn2[i] = pt2[i];
+  for (int i = 0; i < num_values; i++) {
+    exp_value1[i] = dist(rng);
+    exp_value2[i] = dist(rng);
   }
+  pt1 = ipcl::PlainText(exp_value1);
+  pt2 = ipcl::PlainText(exp_value2);
 
-  key.pub_key->encrypt(ct1, ptbn1);
-  key.pub_key->encrypt(ct2, ptbn2);
+  ct1 = key.pub_key->encrypt(pt1);
+  ct2 = key.pub_key->encrypt(pt2);
 
-  AddSub(res, ct1, ct2, key);
-  key.priv_key->decrypt(dt, res);
+  AddSub(ct_sum, ct1, ct2, key);
 
-  for (int i = 0; i < 8; i++) {
-    std::vector<Ipp32u> v;
-    dt[i].num2vec(v);
+  dt_sum = key.priv_key->decrypt(ct_sum);
 
-    uint64_t v_pp = (uint64_t)pt1[i] + (uint64_t)pt2[i] * 3;
-    uint64_t v_dp = v[0];
-    if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt_sum.getElementVec(i);
+    uint64_t sum = v[0];
+    if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
 
-    EXPECT_EQ(v_dp, v_pp);
+    uint64_t exp_sum = (uint64_t)exp_value1[i] + (uint64_t)exp_value2[i] * 3;
+
+    EXPECT_EQ(sum, exp_sum);
   }
 
   delete key.pub_key;
@@ -411,143 +416,139 @@ TEST(OperationTest, AddSubTest) {
 }
 
 #ifdef IPCL_USE_OMP
-void CtPlusCt_OMP(int num_threads,
-                  std::vector<std::vector<ipcl::BigNumber>>& v_sum,
-                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
-                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct2,
+void CtPlusCt_OMP(int num_threads, std::vector<ipcl::CipherText>& res_v,
+                  const std::vector<ipcl::CipherText>& ct1_v,
+                  const std::vector<ipcl::CipherText>& ct2_v,
                   const ipcl::keyPair key) {
+  std::vector<std::vector<BigNumber>> sum_bn_v(num_threads);
+
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      ipcl::EncryptedNumber b(key.pub_key, v_ct2[i][j]);
-      ipcl::EncryptedNumber sum = a + b;
-      v_sum[i][j] = sum.getBN();
+    int size = ct1_v[i].getSize();
+    sum_bn_v[i] = std::vector<BigNumber>(size);
+    for (int j = 0; j < size; j++) {
+      ipcl::CipherText a(key.pub_key, ct1_v[i].getElement(j));
+      ipcl::CipherText b(key.pub_key, ct2_v[i].getElement(j));
+      ipcl::CipherText sum = a + b;
+      sum_bn_v[i][j] = sum.getElement(0);
     }
+    res_v[i] = ipcl::CipherText(key.pub_key, sum_bn_v[i]);
   }
 }
 
-void CtPlusPt_OMP(int num_threads,
-                  std::vector<std::vector<ipcl::BigNumber>>& v_sum,
-                  const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
-                  const std::vector<std::vector<uint32_t>>& v_pt2,
+void CtPlusPt_OMP(int num_threads, std::vector<ipcl::CipherText>& res_v,
+                  const std::vector<ipcl::CipherText>& ct1_v,
+                  const std::vector<ipcl::PlainText>& pt2_v,
                   const ipcl::keyPair key) {
+  std::vector<std::vector<BigNumber>> sum_bn_v(num_threads);
+
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      ipcl::BigNumber b = v_pt2[i][j];
-      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      ipcl::EncryptedNumber sum = a + b;
-      v_sum[i][j] = sum.getBN();
+    int size = ct1_v[i].getSize();
+    sum_bn_v[i] = std::vector<BigNumber>(size);
+    for (int j = 0; j < size; j++) {
+      ipcl::CipherText a(key.pub_key, ct1_v[i].getElement(j));
+      ipcl::PlainText b(pt2_v[i].getElement(j));
+      ipcl::CipherText sum = a + b;
+      sum_bn_v[i][j] = sum.getElement(0);
     }
+    res_v[i] = ipcl::CipherText(key.pub_key, sum_bn_v[i]);
   }
 }
 
-void CtPlusPtArray_OMP(int num_threads,
-                       std::vector<std::vector<ipcl::BigNumber>>& v_sum,
-                       const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
-                       const std::vector<std::vector<uint32_t>>& v_pt2,
+void CtPlusPtArray_OMP(int num_threads, std::vector<ipcl::CipherText>& res_v,
+                       const std::vector<ipcl::CipherText>& ct1_v,
+                       const std::vector<ipcl::PlainText>& pt2_v,
                        const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
-    std::vector<ipcl::BigNumber> b(8);
-    for (int j = 0; j < 8; j++) {
-      b[j] = v_pt2[i][j];
-    }
-    ipcl::EncryptedNumber sum = a + b;
-    v_sum[i] = sum.getArrayBN();
+    res_v[i] = ct1_v[i] + pt2_v[i];
   }
 }
 
-void CtMultiplyPt_OMP(int num_threads,
-                      std::vector<std::vector<ipcl::BigNumber>>& v_product,
-                      const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
-                      const std::vector<std::vector<uint32_t>>& v_pt2,
+void CtMultiplyPtArray_OMP(int num_threads,
+                           std::vector<ipcl::CipherText>& res_v,
+                           const std::vector<ipcl::CipherText>& ct1_v,
+                           const std::vector<ipcl::PlainText>& pt2_v,
+                           const ipcl::keyPair key) {
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    res_v[i] = ct1_v[i] * pt2_v[i];
+  }
+}
+
+void CtMultiplyPt_OMP(int num_threads, std::vector<ipcl::CipherText>& res_v,
+                      const std::vector<ipcl::CipherText>& ct1_v,
+                      const std::vector<ipcl::PlainText>& pt2_v,
                       const ipcl::keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      ipcl::EncryptedNumber a(key.pub_key, v_ct1[i][j]);
-      ipcl::BigNumber b = v_pt2[i][j];
-      ipcl::EncryptedNumber product = a * b;
-      v_product[i][j] = product.getBN();
-    }
-  }
-}
+  std::vector<std::vector<BigNumber>> product_bn_v(num_threads);
 
-void CtMultiplyPtArray_OMP(
-    int num_threads, std::vector<std::vector<ipcl::BigNumber>>& v_product,
-    const std::vector<std::vector<ipcl::BigNumber>>& v_ct1,
-    const std::vector<std::vector<uint32_t>>& v_pt2, const ipcl::keyPair key) {
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    ipcl::EncryptedNumber a(key.pub_key, v_ct1[i]);
-    ipcl::EncryptedNumber b(key.pub_key, v_pt2[i]);
-    ipcl::EncryptedNumber product = a * b;
-    v_product[i] = product.getArrayBN();
+    int size = ct1_v[i].getSize();
+    product_bn_v[i] = std::vector<BigNumber>(size);
+    for (int j = 0; j < size; j++) {
+      ipcl::CipherText a(key.pub_key, ct1_v[i].getElement(j));
+      ipcl::PlainText b(pt2_v[i].getElement(j));
+      ipcl::CipherText product = a * b;
+      product_bn_v[i][j] = product.getElement(0);
+    }
+    res_v[i] = ipcl::CipherText(key.pub_key, product_bn_v[i]);
   }
 }
 
 TEST(OperationTest, CtPlusCtTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ct2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_sum(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt1(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<uint32_t>> v_pt2(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<uint32_t>> exp_value1_vv(
+      num_threads, std::vector<uint32_t>(num_values)),
+      exp_value2_vv(num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt1_v(num_threads), pt2_v(num_threads),
+      dt_sum_v(num_threads);
+  std::vector<ipcl::CipherText> ct1_v(num_threads), ct2_v(num_threads),
+      ct_sum_v(num_threads);
+
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
   for (int i = 0; i < num_threads; i++) {
     // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt1[i][j] = dist(rng);
-      v_pt2[i][j] = dist(rng);
-      v_ptbn1[i][j] = v_pt1[i][j];
-      v_ptbn2[i][j] = v_pt2[i][j];
+    for (int j = 0; j < num_values; j++) {
+      exp_value1_vv[i][j] = dist(rng);
+      exp_value2_vv[i][j] = dist(rng);
     }
+    pt1_v[i] = ipcl::PlainText(exp_value1_vv[i]);
+    pt2_v[i] = ipcl::PlainText(exp_value2_vv[i]);
   }
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
-    key.pub_key->encrypt(v_ct2[i], v_ptbn2[i]);
+    ct1_v[i] = key.pub_key->encrypt(pt1_v[i]);
+    ct2_v[i] = key.pub_key->encrypt(pt2_v[i]);
   }
 
-  CtPlusCt_OMP(num_threads, v_sum, v_ct1, v_ct2, key);
+  CtPlusCt_OMP(num_threads, ct_sum_v, ct1_v, ct2_v, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_sum[i]);
+    dt_sum_v[i] = key.priv_key->decrypt(ct_sum_v[i]);
   }
 
   // check output for all threads
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_sum_v[i].getElementVec(j);
+      uint64_t sum = v[0];
+      if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
+      uint64_t exp_sum =
+          (uint64_t)exp_value1_vv[i][j] + (uint64_t)exp_value2_vv[i][j];
 
-      uint64_t v_pp = (uint64_t)v_pt1[i][j] + (uint64_t)v_pt2[i][j];
-      uint64_t v_dp = v[0];
-      if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
-
-      EXPECT_EQ(v_dp, v_pp);
+      EXPECT_EQ(sum, exp_sum);
     }
   }
 
@@ -556,61 +557,56 @@ TEST(OperationTest, CtPlusCtTest_OMP) {
 }
 
 TEST(OperationTest, CtPlusPtTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_sum(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt1(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<uint32_t>> v_pt2(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<uint32_t>> exp_value1_vv(
+      num_threads, std::vector<uint32_t>(num_values)),
+      exp_value2_vv(num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt1_v(num_threads), pt2_v(num_threads),
+      dt_sum_v(num_threads);
+  std::vector<ipcl::CipherText> ct1_v(num_threads), ct2_v(num_threads),
+      ct_sum_v(num_threads);
+
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
 
   for (int i = 0; i < num_threads; i++) {
     // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt1[i][j] = dist(rng);
-      v_pt2[i][j] = dist(rng);
-      v_ptbn1[i][j] = v_pt1[i][j];
-      v_ptbn2[i][j] = v_pt2[i][j];
+    for (int j = 0; j < num_values; j++) {
+      exp_value1_vv[i][j] = dist(rng);
+      exp_value2_vv[i][j] = dist(rng);
     }
+    pt1_v[i] = ipcl::PlainText(exp_value1_vv[i]);
+    pt2_v[i] = ipcl::PlainText(exp_value2_vv[i]);
   }
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
+    ct1_v[i] = key.pub_key->encrypt(pt1_v[i]);
   }
 
-  CtPlusPt_OMP(num_threads, v_sum, v_ct1, v_pt2, key);
+  CtPlusPt_OMP(num_threads, ct_sum_v, ct1_v, pt2_v, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_sum[i]);
+    dt_sum_v[i] = key.priv_key->decrypt(ct_sum_v[i]);
   }
 
   // check output for all threads
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_sum_v[i].getElementVec(j);
+      uint64_t sum = v[0];
+      if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
+      uint64_t exp_sum =
+          (uint64_t)exp_value1_vv[i][j] + (uint64_t)exp_value2_vv[i][j];
 
-      uint64_t v_pp = (uint64_t)v_pt1[i][j] + (uint64_t)v_pt2[i][j];
-      uint64_t v_dp = v[0];
-      if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
-
-      EXPECT_EQ(v_dp, v_pp);
+      EXPECT_EQ(sum, exp_sum);
     }
   }
 
@@ -619,87 +615,19 @@ TEST(OperationTest, CtPlusPtTest_OMP) {
 }
 
 TEST(OperationTest, CtPlusPtArrayTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_sum(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt1(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<uint32_t>> v_pt2(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-
-  for (int i = 0; i < num_threads; i++) {
-    // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt1[i][j] = dist(rng);
-      v_pt2[i][j] = dist(rng);
-      v_ptbn1[i][j] = v_pt1[i][j];
-      v_ptbn2[i][j] = v_pt2[i][j];
-    }
-  }
-
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
-  }
-
-  CtPlusPtArray_OMP(num_threads, v_sum, v_ct1, v_pt2, key);
-
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_sum[i]);
-  }
-
-  // check output for all threads
-  for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
-
-      uint64_t v_pp = (uint64_t)v_pt1[i][j] + (uint64_t)v_pt2[i][j];
-      uint64_t v_dp = v[0];
-      if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
-
-      EXPECT_EQ(v_dp, v_pp);
-    }
-  }
-
-  delete key.pub_key;
-  delete key.priv_key;
-}
-
-TEST(OperationTest, CtMultiplyPtTest_OMP) {
-  ipcl::keyPair key = ipcl::generateKeypair(2048);
-
-  size_t num_threads = omp_get_max_threads();
-
-  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_product(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt1(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<uint32_t>> v_pt2(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<uint32_t>> exp_value1_vv(
+      num_threads, std::vector<uint32_t>(num_values)),
+      exp_value2_vv(num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt1_v(num_threads), pt2_v(num_threads),
+      dt_sum_v(num_threads);
+  std::vector<ipcl::CipherText> ct1_v(num_threads), ct2_v(num_threads),
+      ct_sum_v(num_threads);
 
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -707,36 +635,36 @@ TEST(OperationTest, CtMultiplyPtTest_OMP) {
 
   for (int i = 0; i < num_threads; i++) {
     // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt1[i][j] = dist(rng);
-      v_pt2[i][j] = dist(rng);
-      v_ptbn1[i][j] = v_pt1[i][j];
-      v_ptbn2[i][j] = v_pt2[i][j];
+    for (int j = 0; j < num_values; j++) {
+      exp_value1_vv[i][j] = dist(rng);
+      exp_value2_vv[i][j] = dist(rng);
     }
+    pt1_v[i] = ipcl::PlainText(exp_value1_vv[i]);
+    pt2_v[i] = ipcl::PlainText(exp_value2_vv[i]);
   }
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
+    ct1_v[i] = key.pub_key->encrypt(pt1_v[i]);
   }
 
-  CtMultiplyPt_OMP(num_threads, v_product, v_ct1, v_pt2, key);
+  CtPlusPtArray_OMP(num_threads, ct_sum_v, ct1_v, pt2_v, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_product[i]);
+    dt_sum_v[i] = key.priv_key->decrypt(ct_sum_v[i]);
   }
 
   // check output for all threads
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_sum_v[i].getElementVec(j);
+      uint64_t sum = v[0];
+      if (v.size() > 1) sum = ((uint64_t)v[1] << 32) | v[0];
+      uint64_t exp_sum =
+          (uint64_t)exp_value1_vv[i][j] + (uint64_t)exp_value2_vv[i][j];
 
-      uint64_t v_pp = (uint64_t)v_pt1[i][j] * (uint64_t)v_pt2[i][j];
-      uint64_t v_dp = v[0];
-      if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
-      EXPECT_EQ(v_dp, v_pp);
+      EXPECT_EQ(sum, exp_sum);
     }
   }
 
@@ -745,24 +673,19 @@ TEST(OperationTest, CtMultiplyPtTest_OMP) {
 }
 
 TEST(OperationTest, CtMultiplyPtArrayTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
   size_t num_threads = omp_get_max_threads();
 
-  std::vector<std::vector<ipcl::BigNumber>> v_ct1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_dt(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_product(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<uint32_t>> v_pt1(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<uint32_t>> v_pt2(num_threads,
-                                           std::vector<uint32_t>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn1(
-      num_threads, std::vector<ipcl::BigNumber>(8));
-  std::vector<std::vector<ipcl::BigNumber>> v_ptbn2(
-      num_threads, std::vector<ipcl::BigNumber>(8));
+  std::vector<std::vector<uint32_t>> exp_value1_vv(
+      num_threads, std::vector<uint32_t>(num_values)),
+      exp_value2_vv(num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt1_v(num_threads), pt2_v(num_threads),
+      dt_product_v(num_threads);
+  std::vector<ipcl::CipherText> ct1_v(num_threads), ct2_v(num_threads),
+      ct_product_v(num_threads);
 
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -770,39 +693,99 @@ TEST(OperationTest, CtMultiplyPtArrayTest_OMP) {
 
   for (int i = 0; i < num_threads; i++) {
     // for each threads, generated different rand testing value
-    for (int j = 0; j < 8; j++) {
-      v_pt1[i][j] = dist(rng);
-      v_pt2[i][j] = dist(rng);
-      v_ptbn1[i][j] = v_pt1[i][j];
-      v_ptbn2[i][j] = v_pt2[i][j];
+    for (int j = 0; j < num_values; j++) {
+      exp_value1_vv[i][j] = dist(rng);
+      exp_value2_vv[i][j] = dist(rng);
     }
+    pt1_v[i] = ipcl::PlainText(exp_value1_vv[i]);
+    pt2_v[i] = ipcl::PlainText(exp_value2_vv[i]);
   }
-
-  for (int i = 0; i < num_threads; i++) {
-    key.pub_key->encrypt(v_ct1[i], v_ptbn1[i]);
-  }
-
-  CtMultiplyPtArray_OMP(num_threads, v_product, v_ct1, v_pt2, key);
 
 #pragma omp parallel for
   for (int i = 0; i < num_threads; i++) {
-    key.priv_key->decrypt(v_dt[i], v_product[i]);
+    ct1_v[i] = key.pub_key->encrypt(pt1_v[i]);
+  }
+
+  CtMultiplyPtArray_OMP(num_threads, ct_product_v, ct1_v, pt2_v, key);
+
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    dt_product_v[i] = key.priv_key->decrypt(ct_product_v[i]);
   }
 
   // check output for all threads
   for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < 8; j++) {
-      std::vector<Ipp32u> v;
-      v_dt[i][j].num2vec(v);
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_product_v[i].getElementVec(j);
+      uint64_t product = v[0];
+      if (v.size() > 1) product = ((uint64_t)v[1] << 32) | v[0];
+      uint64_t exp_product =
+          (uint64_t)exp_value1_vv[i][j] * (uint64_t)exp_value2_vv[i][j];
 
-      uint64_t v_pp = (uint64_t)v_pt1[i][j] * (uint64_t)v_pt2[i][j];
-      uint64_t v_dp = v[0];
-      if (v.size() > 1) v_dp = ((uint64_t)v[1] << 32) | v[0];
-      EXPECT_EQ(v_dp, v_pp);
+      EXPECT_EQ(product, exp_product);
     }
   }
 
   delete key.pub_key;
   delete key.priv_key;
 }
+
+TEST(OperationTest, CtMultiplyPtTest_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+
+  ipcl::keyPair key = ipcl::generateKeypair(2048);
+
+  size_t num_threads = omp_get_max_threads();
+
+  std::vector<std::vector<uint32_t>> exp_value1_vv(
+      num_threads, std::vector<uint32_t>(num_values)),
+      exp_value2_vv(num_threads, std::vector<uint32_t>(num_values));
+  std::vector<ipcl::PlainText> pt1_v(num_threads), pt2_v(num_threads),
+      dt_product_v(num_threads);
+  std::vector<ipcl::CipherText> ct1_v(num_threads), ct2_v(num_threads),
+      ct_product_v(num_threads);
+
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < num_threads; i++) {
+    // for each threads, generated different rand testing value
+    for (int j = 0; j < num_values; j++) {
+      exp_value1_vv[i][j] = dist(rng);
+      exp_value2_vv[i][j] = dist(rng);
+    }
+    pt1_v[i] = ipcl::PlainText(exp_value1_vv[i]);
+    pt2_v[i] = ipcl::PlainText(exp_value2_vv[i]);
+  }
+
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    ct1_v[i] = key.pub_key->encrypt(pt1_v[i]);
+  }
+
+  CtMultiplyPt_OMP(num_threads, ct_product_v, ct1_v, pt2_v, key);
+
+#pragma omp parallel for
+  for (int i = 0; i < num_threads; i++) {
+    dt_product_v[i] = key.priv_key->decrypt(ct_product_v[i]);
+  }
+
+  // check output for all threads
+  for (int i = 0; i < num_threads; i++) {
+    for (int j = 0; j < num_values; j++) {
+      std::vector<uint32_t> v = dt_product_v[i].getElementVec(j);
+      uint64_t product = v[0];
+      if (v.size() > 1) product = ((uint64_t)v[1] << 32) | v[0];
+      uint64_t exp_product =
+          (uint64_t)exp_value1_vv[i][j] * (uint64_t)exp_value2_vv[i][j];
+
+      EXPECT_EQ(product, exp_product);
+    }
+  }
+
+  delete key.pub_key;
+  delete key.priv_key;
+}
+
 #endif  // IPCL_USE_OMP

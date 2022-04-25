@@ -14,6 +14,7 @@
 #include <omp.h>
 #endif
 
+#include "ipcl/ciphertext.hpp"
 #include "ipcl/mod_exp.hpp"
 #include "ipcl/util.hpp"
 
@@ -110,12 +111,11 @@ void PublicKey::enableDJN() {
 }
 
 void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
-  std::vector<BigNumber> r(IPCL_CRYPTO_MB_SIZE);
-  std::vector<BigNumber> pown(IPCL_CRYPTO_MB_SIZE, m_n);
-  std::vector<BigNumber> base(IPCL_CRYPTO_MB_SIZE, m_hs);
-  std::vector<BigNumber> sq(IPCL_CRYPTO_MB_SIZE, m_nsquare);
-
-  VEC_SIZE_CHECK(obfuscator);
+  std::size_t obf_size = obfuscator.size();
+  std::vector<BigNumber> r(obf_size);
+  std::vector<BigNumber> pown(obf_size, m_n);
+  std::vector<BigNumber> base(obf_size, m_hs);
+  std::vector<BigNumber> sq(obf_size, m_nsquare);
 
   if (m_enable_DJN) {
     for (auto& r_ : r) {
@@ -123,7 +123,10 @@ void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
     }
     obfuscator = ipcl::ippModExp(base, r, sq);
   } else {
-    for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+    for (int i = 0; i < obf_size; i++) {
       if (m_testv) {
         r[i] = m_r[i];
       } else {
@@ -138,49 +141,42 @@ void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
 }
 
 void PublicKey::setRandom(const std::vector<BigNumber>& r) {
-  VEC_SIZE_CHECK(r);
-
   std::copy(r.begin(), r.end(), std::back_inserter(m_r));
   m_testv = true;
 }
 
-void PublicKey::raw_encrypt(std::vector<BigNumber>& ciphertext,
-                            const std::vector<BigNumber>& plaintext,
-                            bool make_secure) const {
-  // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
+std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
+                                              bool make_secure) const {
+  std::size_t pt_size = pt.size();
+
+  std::vector<BigNumber> ct(pt_size);
   BigNumber sq = m_nsquare;
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    BigNumber bn(plaintext[i]);
-    ciphertext[i] = (m_n * bn + 1) % sq;
+
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (std::size_t i = 0; i < pt_size; i++) {
+    ct[i] = (m_n * pt[i] + 1) % m_nsquare;
   }
 
   if (make_secure) {
-    std::vector<BigNumber> obfuscator(IPCL_CRYPTO_MB_SIZE);
+    std::vector<BigNumber> obfuscator(pt_size);
     applyObfuscator(obfuscator);
 
-    for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++)
-      ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+    for (std::size_t i = 0; i < pt_size; i++)
+      ct[i] = sq.ModMul(ct[i], obfuscator[i]);
   }
+  return ct;
 }
 
-void PublicKey::encrypt(std::vector<BigNumber>& ciphertext,
-                        const std::vector<BigNumber>& value,
-                        bool make_secure) const {
-  VEC_SIZE_CHECK(ciphertext);
-  VEC_SIZE_CHECK(value);
+CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
+  std::size_t pt_size = pt.getSize();
+  std::vector<BigNumber> ct_bn_v(pt_size);
 
-  raw_encrypt(ciphertext, value, make_secure);
+  ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
+  return CipherText(this, ct_bn_v);
 }
-
-// Used for CT+PT, where PT do not need to add obfuscator
-void PublicKey::encrypt(BigNumber& ciphertext, const BigNumber& value) const {
-  // Based on the fact that: (n+1)^plaintext mod n^2 = n*plaintext + 1 mod n^2
-  ciphertext = (m_n * value + 1) % m_nsquare;
-
-  /*----- Path to caculate (n+1)^plaintext mod n^2 ------------
-  BigNumber bn(value);
-  ciphertext = ippMontExp(m_g, bn, m_nsquare);
-  ---------------------------------------------------------- */
-}
-
 }  // namespace ipcl

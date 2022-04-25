@@ -22,8 +22,6 @@
 #include <ostream>
 #include <vector>
 
-namespace ipcl {
-
 class BigNumber {
  public:
   BigNumber(Ipp32u value = 0);
@@ -131,5 +129,4 @@ class BigNumber {
 constexpr int BITSIZE_WORD(int n) { return (((n) + 31) >> 5); }
 constexpr int BITSIZE_DWORD(int n) { return (((n) + 63) >> 6); }
 
-}  // namespace ipcl
 #endif  // _BIGNUM_H_

@@ -3,10 +3,12 @@
 
 set(IPCL_SRCS pri_key.cpp
 							pub_key.cpp
-							ops.cpp
 							keygen.cpp
 							bignum.cpp
 							mod_exp.cpp
+                            base_text.cpp
+                            plaintext.cpp
+                            ciphertext.cpp
 )
 
 
