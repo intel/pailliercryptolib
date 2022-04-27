@@ -14,9 +14,3 @@ target_include_directories(unittest_ipcl PRIVATE
 target_link_libraries(unittest_ipcl PRIVATE
   ipcl -pthread libgtest
 )
-
-# enable OpenMP unittests
-if(IPCL_ENABLE_OMP)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(unittest_ipcl PRIVATE OpenMP::OpenMP_CXX)
-endif()

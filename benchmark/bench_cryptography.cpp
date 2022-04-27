@@ -5,13 +5,8 @@
 
 #include <iostream>
 #include <vector>
-#ifdef IPCL_USE_OMP
-#include <omp.h>
-#endif  // IPCL_USE_OMP
 
 #include "ipcl/keygen.hpp"
-
-constexpr int SELF_DEF_NUM_VALUES = 20;
 
 static void BM_KeyGen(benchmark::State& state) {
   int64_t n_length = state.range(0);

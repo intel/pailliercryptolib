@@ -5,10 +5,6 @@
 
 #include <algorithm>
 
-#ifdef IPCL_CRYPTO_OMP
-#include <omp.h>
-#endif
-
 #include "ipcl/mod_exp.hpp"
 
 namespace ipcl {

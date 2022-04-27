@@ -47,6 +47,11 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
 
 target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 
+if(IPCL_ENABLE_OMP)
+  find_package(OpenMP REQUIRED)
+  target_link_libraries(ipcl PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto)
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})

@@ -6,10 +6,6 @@
 #include <random>
 #include <vector>
 
-#ifdef IPCL_USE_OMP
-#include <omp.h>
-#endif  // IPCL_USE_OMP
-
 #include "gtest/gtest.h"
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/keygen.hpp"
@@ -190,63 +186,3 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   delete key.pub_key;
   delete key.priv_key;
 }
-
-#ifdef IPCL_USE_OMP
-void Encryption(int num_threads, std::vector<ipcl::CipherText>& ct_v,
-                const std::vector<ipcl::PlainText>& pt_v,
-                const ipcl::keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    ct_v[i] = key.pub_key->encrypt(pt_v[i]);
-  }
-}
-
-void Decryption(int num_threads, std::vector<ipcl::PlainText>& dt_v,
-                const std::vector<ipcl::CipherText>& ct_v,
-                const ipcl::keyPair key) {
-#pragma omp parallel for
-  for (int i = 0; i < num_threads; i++) {
-    dt_v[i] = key.priv_key->decrypt(ct_v[i]);
-  }
-}
-
-TEST(CryptoTest, CryptoTest_OMP) {
-  const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  // use one keypair to do several encryption/decryption
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  size_t num_threads = omp_get_max_threads();
-
-  std::vector<std::vector<uint32_t>> exp_value(
-      num_threads, std::vector<uint32_t>(num_values));
-  std::vector<ipcl::PlainText> pt_v(num_threads);
-  std::vector<ipcl::CipherText> ct_v(num_threads);
-  std::vector<ipcl::PlainText> dt_v(num_threads);
-
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-
-  for (int i = 0; i < num_threads; i++) {
-    // for each threads, generated different rand testing value
-    for (int j = 0; j < num_values; j++) {
-      exp_value[i][j] = dist(rng);
-    }
-    pt_v[i] = ipcl::PlainText(exp_value[i]);
-  }
-
-  Encryption(num_threads, ct_v, pt_v, key);
-  Decryption(num_threads, dt_v, ct_v, key);
-
-  // check output for all threads
-  for (int i = 0; i < num_threads; i++) {
-    for (int j = 0; j < num_values; j++) {
-      std::vector<uint32_t> v = dt_v[i].getElementVec(j);
-      EXPECT_EQ(v[0], exp_value[i][j]);
-    }
-  }
-
-  delete key.pub_key;
-  delete key.priv_key;
-}
-#endif  // IPCL_USE_OMP

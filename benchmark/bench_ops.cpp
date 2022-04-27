@@ -3,17 +3,12 @@
 
 #include <benchmark/benchmark.h>
 
-#include <vector>
-#ifdef IPCL_USE_OMP
-#include <omp.h>
-#endif  // IPCL_USE_OMP
 #include <iostream>
+#include <vector>
 
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/keygen.hpp"
 #include "ipcl/plaintext.hpp"
-
-constexpr int SELF_DEF_NUM_VALUES = 20;
 
 static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);

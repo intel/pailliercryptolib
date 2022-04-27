@@ -9,10 +9,6 @@
 #include <cstring>
 #include <iostream>
 
-#ifdef IPCL_CRYPTO_OMP
-#include <omp.h>
-#endif
-
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -34,23 +30,16 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   std::vector<int64u*> out_x(IPCL_CRYPTO_MB_SIZE);
   std::vector<int64u*> b_array(IPCL_CRYPTO_MB_SIZE);
   std::vector<int64u*> p_array(IPCL_CRYPTO_MB_SIZE);
-  int length = dwords * sizeof(int64u);
 
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
+  int mem_pool_size = IPCL_CRYPTO_MB_SIZE * dwords;
+  std::vector<int64u> out_mem_pool(mem_pool_size);
+  std::vector<int64u> base_mem_pool(mem_pool_size);
+  std::vector<int64u> pow_mem_pool(mem_pool_size);
+
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    out_x[i] = reinterpret_cast<int64u*>(alloca(length));
-    b_array[i] = reinterpret_cast<int64u*>(alloca(length));
-    p_array[i] = reinterpret_cast<int64u*>(alloca(length));
-
-    ERROR_CHECK(
-        out_x[i] != nullptr && b_array[i] != nullptr && p_array[i] != nullptr,
-        "ippMultiBuffExp: alloc memory for error");
-
-    memset(out_x[i], 0, length);
-    memset(b_array[i], 0, length);
-    memset(p_array[i], 0, length);
+    out_x[i] = &out_mem_pool[i * dwords];
+    b_array[i] = &base_mem_pool[i * dwords];
+    p_array[i] = &pow_mem_pool[i * dwords];
   }
 
   /*
@@ -66,9 +55,6 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   std::vector<int> p_size_v(IPCL_CRYPTO_MB_SIZE);
   std::vector<int> n_size_v(IPCL_CRYPTO_MB_SIZE);
 
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
     ippsRef_BN(nullptr, &b_size_v[i], reinterpret_cast<Ipp32u**>(&pow_b[i]),
                base[i]);
@@ -100,16 +86,11 @@ static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
   }
 
   // It is important to hold a copy of nsquare for thread-safe purpose
-  BigNumber bn_c(m.front());
+  std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE, m.front());
 
-  std::vector<BigNumber> res(IPCL_CRYPTO_MB_SIZE, 0);
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
   for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    bn_c.Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
-             IppsBigNumPOS);
-    res[i] = bn_c;
+    res[i].Set(reinterpret_cast<Ipp32u*>(out_x[i]), BITSIZE_WORD(nsqBitLen),
+               IppsBigNumPOS);
   }
   return res;
 }
@@ -188,14 +169,13 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #pragma omp parallel for
 #endif  // IPCL_USE_OMP
   for (std::size_t i = 0; i < num_chunk; i++) {
-    offset = i * IPCL_CRYPTO_MB_SIZE;
-    auto base_start = base.begin() + offset;
+    auto base_start = base.begin() + i * IPCL_CRYPTO_MB_SIZE;
     auto base_end = base_start + IPCL_CRYPTO_MB_SIZE;
 
-    auto pow_start = pow.begin() + offset;
+    auto pow_start = pow.begin() + i * IPCL_CRYPTO_MB_SIZE;
     auto pow_end = pow_start + IPCL_CRYPTO_MB_SIZE;
 
-    auto m_start = m.begin() + offset;
+    auto m_start = m.begin() + i * IPCL_CRYPTO_MB_SIZE;
     auto m_end = m_start + IPCL_CRYPTO_MB_SIZE;
 
     auto base_chunk = std::vector<BigNumber>(base_start, base_end);
@@ -203,7 +183,7 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
     auto m_chunk = std::vector<BigNumber>(m_start, m_end);
 
     auto tmp = ippMBModExp(base_chunk, pow_chunk, m_chunk);
-    std::copy(tmp.begin(), tmp.end(), res.begin() + offset);
+    std::copy(tmp.begin(), tmp.end(), res.begin() + i * IPCL_CRYPTO_MB_SIZE);
   }
 
   offset = num_chunk * IPCL_CRYPTO_MB_SIZE;

@@ -10,10 +10,6 @@
 #include <cstring>
 #include <random>
 
-#ifdef IPCL_CRYPTO_OMP
-#include <omp.h>
-#endif
-
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/mod_exp.hpp"
 #include "ipcl/util.hpp"
@@ -123,9 +119,6 @@ void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
     }
     obfuscator = ipcl::ippModExp(base, r, sq);
   } else {
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
     for (int i = 0; i < obf_size; i++) {
       if (m_testv) {
         r[i] = m_r[i];
@@ -152,9 +145,6 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
   std::vector<BigNumber> ct(pt_size);
   BigNumber sq = m_nsquare;
 
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
   for (std::size_t i = 0; i < pt_size; i++) {
     ct[i] = (m_n * pt[i] + 1) % m_nsquare;
   }
@@ -163,9 +153,6 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
     std::vector<BigNumber> obfuscator(pt_size);
     applyObfuscator(obfuscator);
 
-#ifdef IPCL_USE_OMP
-#pragma omp parallel for
-#endif  // IPCL_USE_OMP
     for (std::size_t i = 0; i < pt_size; i++)
       ct[i] = sq.ModMul(ct[i], obfuscator[i]);
   }

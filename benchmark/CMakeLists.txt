@@ -14,9 +14,3 @@ target_include_directories(bench_ipcl PRIVATE
 target_link_libraries(bench_ipcl PRIVATE
   ipcl -pthread libgbenchmark
 )
-
-# enable OpenMP benchmarks
-if(IPCL_ENABLE_OMP)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(bench_ipcl PRIVATE OpenMP::OpenMP_CXX)
-endif()
