@@ -48,7 +48,7 @@ if(HE_QAT_MISC)
   
   install(TARGETS test_bnConversion RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
  
-  # Sample demonstrating how to use bnModExp with BigNumber type 
+  # Sample demonstrating how to use bnModExp
   add_executable(test_bnModExp test_bnModExp.cpp)
   
   target_include_directories(test_bnModExp PUBLIC ${COMMON_INC_DIR})
@@ -61,4 +61,21 @@ if(HE_QAT_MISC)
   target_link_libraries(test_bnModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
   
   install(TARGETS test_bnModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+ 
+  if(OpenMP_CXX_FOUND) 
+    # Sample demonstrating how to use multithread-supported interface bnModExp_MT 
+    add_executable(test_bnModExp_MT test_bnModExp_MT.cpp)
+    
+    target_include_directories(test_bnModExp_MT PUBLIC ${COMMON_INC_DIR})
+    target_include_directories(test_bnModExp_MT PUBLIC ${ICP_INC_DIR})
+    target_include_directories(test_bnModExp_MT PUBLIC ${HE_QAT_MISC_INC_DIR})
+    
+    target_link_libraries(test_bnModExp_MT PUBLIC he_qat)
+    target_link_libraries(test_bnModExp_MT PUBLIC he_qat_misc)
+    target_link_libraries(test_bnModExp_MT PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(test_bnModExp_MT PUBLIC IPPCP::ippcp) # IPPCP::crypto_mb)
+    target_link_libraries(test_bnModExp_MT PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
+    
+    install(TARGETS test_bnModExp_MT RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
 endif()

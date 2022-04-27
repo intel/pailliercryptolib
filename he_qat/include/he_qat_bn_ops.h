@@ -114,11 +114,11 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
 
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
 
-HE_QAT_STATUS HE_QAT_bnModExp_MT(int _buffer_id, unsigned char* r,
+HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
                                  unsigned char* b, unsigned char* e,
                                  unsigned char* m, int nbits);
 
-void release_bnModExp_buffer(int _buffer_id, unsigned int _batch_size);
+void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size);
 
 #ifdef __cplusplus
 }  // extern "C" {
