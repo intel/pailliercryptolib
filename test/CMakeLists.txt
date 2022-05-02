@@ -15,12 +15,6 @@ target_link_libraries(unittest_ipcl PRIVATE
   ipcl libgtest Threads::Threads
 )
 
-# enable OpenMP unittests
-if(IPCL_ENABLE_OMP)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(unittest_ipcl PRIVATE OpenMP::OpenMP_CXX)
-endif()
-
 # enable QAT unittests
 if(IPCL_ENABLE_QAT)
   target_link_libraries(unittest_ipcl PRIVATE libhe_qat)

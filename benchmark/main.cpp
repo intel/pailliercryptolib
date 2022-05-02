@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #ifdef IPCL_USE_QAT
-#include "he_qat_context.h"
+#include <he_qat_context.h>
 #endif  // IPCL_USE_QAT
 
 #include <benchmark/benchmark.h>

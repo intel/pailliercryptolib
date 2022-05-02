@@ -3,10 +3,12 @@
 
 set(IPCL_SRCS pri_key.cpp
 							pub_key.cpp
-							ops.cpp
 							keygen.cpp
 							bignum.cpp
 							mod_exp.cpp
+                            base_text.cpp
+                            plaintext.cpp
+                            ciphertext.cpp
 )
 
 
@@ -43,6 +45,11 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
         PATTERN "*.h")
 
 target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+
+if(IPCL_ENABLE_OMP)
+  find_package(OpenMP REQUIRED)
+  target_link_libraries(ipcl PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto)

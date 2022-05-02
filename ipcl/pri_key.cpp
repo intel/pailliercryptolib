@@ -53,54 +53,53 @@ PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
   ERROR_CHECK(p != q, "PrivateKey ctor: p and q are same");
 }
 
+PlainText PrivateKey::decrypt(const CipherText& ct) const {
+  ERROR_CHECK(ct.getPubKey().getN() == m_pubkey->getN(),
+              "decrypt: The value of N in public key mismatch.");
+
+  std::size_t ct_size = ct.getSize();
+  std::vector<BigNumber> pt_bn(ct_size);
+  std::vector<BigNumber> ct_bn = ct.getTexts();
+
+  if (m_enable_crt)
+    decryptCRT(pt_bn, ct_bn);
+  else
+    decryptRAW(pt_bn, ct_bn);
+
+  return PlainText(pt_bn);
+}
+
 void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
                             const std::vector<BigNumber>& ciphertext) const {
-  std::vector<BigNumber> pow_lambda(IPCL_CRYPTO_MB_SIZE, m_lambda);
-  std::vector<BigNumber> modulo(IPCL_CRYPTO_MB_SIZE, m_nsquare);
+  std::size_t v_size = plaintext.size();
+
+  std::vector<BigNumber> pow_lambda(v_size, m_lambda);
+  std::vector<BigNumber> modulo(v_size, m_nsquare);
   std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
 
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    BigNumber m = (res[i] - 1) / m_n;
-    m *= m_x;
-    plaintext[i] = m % m_n;
+  BigNumber nn = m_n;
+  BigNumber xx = m_x;
+
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (int i = 0; i < v_size; i++) {
+    BigNumber m = (res[i] - 1) / nn;
+    m = m * xx;
+    plaintext[i] = m % nn;
   }
-}
-
-void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
-                         const std::vector<BigNumber>& ciphertext) const {
-  VEC_SIZE_CHECK(plaintext);
-  VEC_SIZE_CHECK(ciphertext);
-
-  if (m_enable_crt)
-    decryptCRT(plaintext, ciphertext);
-  else
-    decryptRAW(plaintext, ciphertext);
-}
-
-void PrivateKey::decrypt(std::vector<BigNumber>& plaintext,
-                         const EncryptedNumber ciphertext) const {
-  VEC_SIZE_CHECK(plaintext);
-  // check key match
-  ERROR_CHECK(ciphertext.getPK().getN() == m_pubkey->getN(),
-              "decrypt: public key mismatch error.");
-
-  const std::vector<BigNumber>& res = ciphertext.getArrayBN();
-  if (m_enable_crt)
-    decryptCRT(plaintext, res);
-  else
-    decryptRAW(plaintext, res);
 }
 
 // CRT to calculate base^exp mod n^2
 void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
                             const std::vector<BigNumber>& ciphertext) const {
-  std::vector<BigNumber> basep(IPCL_CRYPTO_MB_SIZE), baseq(IPCL_CRYPTO_MB_SIZE);
-  std::vector<BigNumber> pm1(IPCL_CRYPTO_MB_SIZE, m_pminusone),
-      qm1(IPCL_CRYPTO_MB_SIZE, m_qminusone);
-  std::vector<BigNumber> psq(IPCL_CRYPTO_MB_SIZE, m_psquare),
-      qsq(IPCL_CRYPTO_MB_SIZE, m_qsquare);
+  std::size_t v_size = plaintext.size();
 
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  std::vector<BigNumber> basep(v_size), baseq(v_size);
+  std::vector<BigNumber> pm1(v_size, m_pminusone), qm1(v_size, m_qminusone);
+  std::vector<BigNumber> psq(v_size, m_psquare), qsq(v_size, m_qsquare);
+
+  for (int i = 0; i < v_size; i++) {
     basep[i] = ciphertext[i] % psq[i];
     baseq[i] = ciphertext[i] % qsq[i];
   }
@@ -109,7 +108,10 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> resp = ipcl::ippModExp(basep, pm1, psq);
   std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+#ifdef IPCL_USE_OMP
+#pragma omp parallel for
+#endif  // IPCL_USE_OMP
+  for (int i = 0; i < v_size; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
     BigNumber dq = computeLfun(resq[i], m_q) * m_hq % m_q;
     plaintext[i] = computeCRT(dp, dq);

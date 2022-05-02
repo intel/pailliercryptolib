@@ -3,378 +3,75 @@
 
 #include <benchmark/benchmark.h>
 
-#include <vector>
-#ifdef IPCL_USE_OMP
-#include <omp.h>
-#endif  // IPCL_USE_OMP
 #include <iostream>
+#include <vector>
 
+#include "ipcl/ciphertext.hpp"
 #include "ipcl/keygen.hpp"
-#include "ipcl/ops.hpp"
+#include "ipcl/plaintext.hpp"
 
 static void BM_Add_CTCT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_b(dsize, std::vector<BigNumber>(8));
+  std::vector<uint32_t> exp_value1_v(dsize, 65535), exp_value2_v(dsize, 65535);
 
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
-
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_b[i], b[i]);
+  ipcl::PlainText pt1, pt2;
+  for (int i = 0; i < dsize; i++) {
+    exp_value1_v[i] += (unsigned int)(i * 1024);
+    exp_value2_v[i] += (unsigned int)(i * 1024);
   }
+  pt1 = ipcl::PlainText(exp_value1_v);
+  pt2 = ipcl::PlainText(exp_value2_v);
 
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::EncryptedNumber sum = pen_a + pen_b;
-    }
-  }
+  ipcl::CipherText ct1 = key.pub_key->encrypt(pt1);
+  ipcl::CipherText ct2 = key.pub_key->encrypt(pt2);
+  ipcl::CipherText sum;
+  for (auto _ : state) sum = ct1 + ct2;
 }
 
 BENCHMARK(BM_Add_CTCT)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
-
-static void BM_Add_CTCT_buff8(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_b(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-    key.pub_key->encrypt(ct_b[i], b[i]);
-  }
-
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::EncryptedNumber sum = pen_a + pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTCT_buff8)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
 
 static void BM_Add_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
+  std::vector<uint32_t> exp_value1_v(dsize, 65535), exp_value2_v(dsize, 65535);
 
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
+  ipcl::PlainText pt1, pt2;
+  for (int i = 0; i < dsize; i++) {
+    exp_value1_v[i] += (unsigned int)(i * 1024);
+    exp_value2_v[i] += (unsigned int)(i * 1024);
   }
+  pt1 = ipcl::PlainText(exp_value1_v);
+  pt2 = ipcl::PlainText(exp_value2_v);
 
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber sum = pen_a + b[i];
-    }
-  }
+  ipcl::CipherText ct1 = key.pub_key->encrypt(pt1);
+  ipcl::CipherText sum;
+
+  for (auto _ : state) sum = ct1 + pt2;
 }
 
 BENCHMARK(BM_Add_CTPT)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
-
-static void BM_Add_CTPT_buff8(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber sum = pen_a + b[i];
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTPT_buff8)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
 
 static void BM_Mul_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
+  std::vector<uint32_t> exp_value1_v(dsize, 65535), exp_value2_v(dsize, 65535);
 
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
+  ipcl::PlainText pt1, pt2;
+  for (int i = 0; i < dsize; i++) {
+    exp_value1_v[i] += (unsigned int)(i * 1024);
+    exp_value2_v[i] += (unsigned int)(i * 1024);
   }
+  pt1 = ipcl::PlainText(exp_value1_v);
+  pt2 = ipcl::PlainText(exp_value2_v);
 
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::EncryptedNumber sum = pen_a * pen_b;
-    }
-  }
+  ipcl::CipherText ct1 = key.pub_key->encrypt(pt1);
+  ipcl::CipherText product;
+
+  for (auto _ : state) product = ct1 * pt2;
 }
 
 BENCHMARK(BM_Mul_CTPT)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
-
-static void BM_Mul_CTPT_buff8(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::EncryptedNumber sum = pen_a * pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Mul_CTPT_buff8)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-#ifdef IPCL_USE_OMP
-static void BM_Add_CTCT_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_b(dsize, std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
-
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_b[i], b[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::EncryptedNumber sum = pen_a + pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTCT_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-static void BM_Add_CTCT_buff8_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_b(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-    key.pub_key->encrypt(ct_b[i], b[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, ct_b[i]);
-      ipcl::EncryptedNumber sum = pen_a + pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTCT_buff8_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-static void BM_Add_CTPT_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber sum = pen_a + b[i];
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTPT_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-static void BM_Add_CTPT_buff8_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber sum = pen_a + b[i];
-    }
-  }
-}
-
-BENCHMARK(BM_Add_CTPT_buff8_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-static void BM_Mul_CTPT_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize, std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize; ++i) {
-    a[i][0] = BigNumber((unsigned int)i);
-    b[i][0] = BigNumber((unsigned int)i);
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::EncryptedNumber sum = pen_a * pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Mul_CTPT_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-
-static void BM_Mul_CTPT_buff8_OMP(benchmark::State& state) {
-  size_t dsize = state.range(0);
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
-
-  std::vector<std::vector<BigNumber>> a(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> b(dsize / 8, std::vector<BigNumber>(8));
-  std::vector<std::vector<BigNumber>> ct_a(dsize / 8,
-                                           std::vector<BigNumber>(8));
-
-  for (size_t i = 0; i < dsize / 8; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
-      a[i][j] = BigNumber((unsigned int)(i * 8 + j));
-      b[i][j] = BigNumber((unsigned int)(i * 8 + j));
-    }
-
-    key.pub_key->encrypt(ct_a[i], a[i]);
-  }
-
-  for (auto _ : state) {
-#pragma omp parallel for
-    for (size_t i = 0; i < dsize / 8; ++i) {
-      ipcl::EncryptedNumber pen_a(key.pub_key, ct_a[i]);
-      ipcl::EncryptedNumber pen_b(key.pub_key, b[i]);
-      ipcl::EncryptedNumber sum = pen_a * pen_b;
-    }
-  }
-}
-
-BENCHMARK(BM_Mul_CTPT_buff8_OMP)
-    ->Unit(benchmark::kMicrosecond)
-    ->Args({16})
-    ->Args({64});
-#endif  // IPCL_USE_OMP

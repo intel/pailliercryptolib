@@ -6,7 +6,8 @@
 
 #include <vector>
 
-#include "ipcl/ops.hpp"
+#include "ipcl/ciphertext.hpp"
+#include "ipcl/plaintext.hpp"
 
 namespace ipcl {
 
@@ -29,19 +30,10 @@ class PrivateKey {
 
   /**
    * Decrypt ciphertext
-   * @param[out] plaintext output of the decryption
-   * @param[in] ciphertext ciphertext to be decrypted
+   * @param[in] ciphertext CipherText to be decrypted
+   * @return plaintext of type PlainText
    */
-  void decrypt(std::vector<BigNumber>& plaintext,
-               const std::vector<BigNumber>& ciphertext) const;
-
-  /**
-   * Decrypt ciphertext
-   * @param[out] plaintext output of the decryption
-   * @param[in] ciphertext EncryptedNumber to be decrypted
-   */
-  void decrypt(std::vector<BigNumber>& plaintext,
-               const EncryptedNumber ciphertext) const;
+  PlainText decrypt(const CipherText& ciphertext) const;
 
   const void* addr = static_cast<const void*>(this);
 

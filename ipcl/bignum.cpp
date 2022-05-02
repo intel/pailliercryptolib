@@ -25,8 +25,6 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-// namespace ipcl {
-
 BigNumber::~BigNumber() { delete[](Ipp8u*) m_pBN; }
 
 bool BigNumber::create(const Ipp32u* pData, int length, IppsBigNumSGN sgn) {
@@ -138,7 +136,7 @@ BigNumber& BigNumber::operator=(const BigNumber& bn) {
     Ipp32u* bnData;
     ippsRef_BN(&bnSgn, &bnBitLen, &bnData, bn);
 
-    delete[](Ipp8u*) m_pBN;
+    delete (Ipp8u*)m_pBN;
     create(bnData, BITSIZE_WORD(bnBitLen), bnSgn);
   }
   return *this;
@@ -509,7 +507,6 @@ void BigNumber::num2char(std::vector<Ipp8u>& dest) const {
   dest.assign(bnData, bnData + len);
 }
 
-
 bool BigNumber::fromBin(BigNumber& bn, const unsigned char* data, int len) {
   if (len <= 0) return false;
 
@@ -540,4 +537,3 @@ bool BigNumber::toBin(unsigned char* data, int len, const BigNumber& bn) {
 
   return true;
 }
-//}  // namespace ipcl
