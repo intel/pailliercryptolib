@@ -23,7 +23,8 @@ namespace ipcl {
 // Multiple input QAT ModExp interface to offload computation to QAT
 static std::vector<BigNumber> heQatBnModExp(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
-    const std::vector<BigNumber>& modulus) {
+    const std::vector<BigNumber>& modulus,
+    std::size_t batch_size = IPCL_CRYPTO_MB_SIZE) {
   static unsigned int counter = 0;
   int nbits = modulus.front().BitSize();
   int length = BITSIZE_WORD(nbits) * 4;
@@ -32,11 +33,11 @@ static std::vector<BigNumber> heQatBnModExp(
   HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
   // TODO(fdiasmor): Try replace calloc by alloca to see impact on performance.
-  unsigned char* bn_base_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_exponent_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_modulus_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_remainder_data_[IPCL_CRYPTO_MB_SIZE];
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  unsigned char* bn_base_data_[batch_size];
+  unsigned char* bn_exponent_data_[batch_size];
+  unsigned char* bn_modulus_data_[batch_size];
+  unsigned char* bn_remainder_data_[batch_size];
+  for (int i = 0; i < batch_size; i++) {
     bn_base_data_[i] = reinterpret_cast<unsigned char*>(
         malloc(length * sizeof(unsigned char)));
     bn_exponent_data_[i] = reinterpret_cast<unsigned char*>(
@@ -57,9 +58,7 @@ static std::vector<BigNumber> heQatBnModExp(
     memset(bn_remainder_data_[i], 0, length);
   }
 
-  // TODO(fdiasmor): Define and use IPCL_QAT_BATCH_SIZE instead of
-  // IPCL_CRYPTO_MB_SIZE.
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (unsigned int i = 0; i < batch_size; i++) {
     bool ret = BigNumber::toBin(bn_base_data_[i], length, base[i]);
     if (!ret) {
       printf("bn_base_data_: failed at bigNumberToBin()\n");
@@ -91,11 +90,11 @@ static std::vector<BigNumber> heQatBnModExp(
       PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
     }
   }
-  getBnModExpRequest(IPCL_CRYPTO_MB_SIZE);
+  getBnModExpRequest(batch_size);
 
-  std::vector<BigNumber> remainder(IPCL_CRYPTO_MB_SIZE, 0);
+  std::vector<BigNumber> remainder(batch_size, 0);
   // Collect results and pack them into BigNumber
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (unsigned int i = 0; i < batch_size; i++) {
     unsigned char* bn_remainder_ = bn_remainder_data_[i];
     bool ret = BigNumber::fromBin(remainder[i], bn_remainder_, length);
     if (!ret) {
@@ -104,7 +103,7 @@ static std::vector<BigNumber> heQatBnModExp(
     }
   }
 
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (unsigned int i = 0; i < batch_size; i++) {
     free(bn_base_data_[i]);
     bn_base_data_[i] = NULL;
     free(bn_exponent_data_[i]);
@@ -113,7 +112,7 @@ static std::vector<BigNumber> heQatBnModExp(
     bn_modulus_data_[i] = NULL;
   }
 
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
+  for (unsigned int i = 0; i < batch_size; i++) {
     free(bn_remainder_data_[i]);
     bn_remainder_data_[i] = NULL;
   }
