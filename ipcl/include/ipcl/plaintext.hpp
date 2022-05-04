@@ -69,6 +69,12 @@ class PlainText : public BaseText {
    * Convert all element to type BigNumber.
    */
   operator std::vector<BigNumber>();
+
+  /**
+   * Rotate PlainText
+   * @param[in] shift rotate length
+   */
+  PlainText rotate(int shift) const;
 };
 
 }  // namespace ipcl

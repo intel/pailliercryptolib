@@ -52,8 +52,6 @@ class CipherText : public BaseText {
    */
   CipherText rotate(int shift) const;
 
-  const void* addr = static_cast<const void*>(this);
-
  private:
   BigNumber raw_add(const BigNumber& a, const BigNumber& b) const;
   BigNumber raw_mul(const BigNumber& a, const BigNumber& b) const;

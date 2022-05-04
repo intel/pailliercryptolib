@@ -3,6 +3,8 @@
 
 #include "ipcl/plaintext.hpp"
 
+#include <algorithm>
+
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -41,6 +43,24 @@ PlainText::operator std::vector<BigNumber>() {
   ERROR_CHECK(m_size > 0,
               "PlainText: type conversion to BigNumber vector error");
   return m_texts;
+}
+
+PlainText PlainText::rotate(int shift) const {
+  ERROR_CHECK(m_size != 1, "rotate: Cannot rotate single CipherText");
+  ERROR_CHECK(shift >= -m_size && shift <= m_size,
+              "rotate: Cannot shift more than the test size");
+
+  if (shift == 0 || shift == m_size || shift == -m_size)
+    return PlainText(m_texts);
+
+  if (shift > 0)
+    shift = m_size - shift;
+  else
+    shift = -shift;
+
+  std::vector<BigNumber> new_bn = getTexts();
+  std::rotate(std::begin(new_bn), std::begin(new_bn) + shift, std::end(new_bn));
+  return PlainText(new_bn);
 }
 
 }  // namespace ipcl
