@@ -74,6 +74,8 @@ class BaseText {
    */
   std::size_t getSize() const;
 
+  const void* addr = static_cast<const void*>(this);
+
  protected:
   std::vector<BigNumber> m_texts;  ///< Container used to store BigNumber
   std::size_t m_size;              ///< Container size
