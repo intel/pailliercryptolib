@@ -337,6 +337,7 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& pow,
                                  const std::vector<BigNumber>& m) {
 #ifdef IPCL_USE_QAT
+  // TODO(fdiasmor): Slice with custom batches, test OMP
   std::vector<BigNumber> remainder(IPCL_CRYPTO_MB_SIZE);
   remainder = heQatBnModExp(base, pow, m);
   return remainder;
