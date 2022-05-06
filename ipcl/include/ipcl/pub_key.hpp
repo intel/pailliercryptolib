@@ -39,6 +39,16 @@ class PublicKey {
   void enableDJN();
 
   /**
+   * Set DJN with given parameters
+   * @param[in] hs hs value for DJN scheme
+   * @param[in] randbit random bit for DJN scheme
+   */
+  void setDJN(const BigNumber& hs, int randbit) {
+    m_hs = hs;
+    m_randbits = randbit;
+  }
+
+  /**
    * Encrypt plaintext
    * @param[in] plaintext of type PlainText
    * @param[in] make_secure apply obfuscator(default value is true)
