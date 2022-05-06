@@ -43,10 +43,7 @@ class PublicKey {
    * @param[in] hs hs value for DJN scheme
    * @param[in] randbit random bit for DJN scheme
    */
-  void setDJN(const BigNumber& hs, int randbit) {
-    m_hs = hs;
-    m_randbits = randbit;
-  }
+  void setDJN(const BigNumber& hs, int randbit);
 
   /**
    * Encrypt plaintext
