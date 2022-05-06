@@ -92,9 +92,24 @@ class PublicKey {
 
   /**
    * Check if using DJN scheme
-   * @return boolean output
    */
   bool isDJN() const { return m_enable_DJN; }
+
+  /**
+   * Get hs for DJN scheme
+   */
+  BigNumber getHS() const {
+    if (m_enable_DJN) return m_hs;
+    return BigNumber::Zero();
+  }
+
+  /**
+   * Get randbits for DJN scheme
+   */
+  int getRandBits() const {
+    if (m_enable_DJN) return m_randbits;
+    return -1;
+  }
 
   const void* addr = static_cast<const void*>(this);
 
