@@ -85,11 +85,16 @@ class PublicKey {
   void applyObfuscator(std::vector<BigNumber>& obfuscator) const;
 
   /**
-   * @brief Set the Random object for ISO/IEC 18033-6 compliance check
-   *
-   * @param r
+   * Set the Random object for ISO/IEC 18033-6 compliance check
+   * @param[in] r
    */
   void setRandom(const std::vector<BigNumber>& r);
+
+  /**
+   * Check if using DJN scheme
+   * @return boolean output
+   */
+  bool isDJN() const { return m_enable_DJN; }
 
   const void* addr = static_cast<const void*>(this);
 
