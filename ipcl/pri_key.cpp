@@ -54,10 +54,12 @@ PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
 }
 
 PlainText PrivateKey::decrypt(const CipherText& ct) const {
-  ERROR_CHECK(ct.getPubKey().getN() == m_pubkey->getN(),
+  ERROR_CHECK(ct.getPubKey()->getN() == m_pubkey->getN(),
               "decrypt: The value of N in public key mismatch.");
 
   std::size_t ct_size = ct.getSize();
+  ERROR_CHECK(ct_size > 0, "decrypt: Cannot decrypt empty CipherText");
+
   std::vector<BigNumber> pt_bn(ct_size);
   std::vector<BigNumber> ct_bn = ct.getTexts();
 

@@ -44,7 +44,7 @@ class CipherText : public BaseText {
   /**
    * Get public key
    */
-  PublicKey getPubKey() const;
+  const PublicKey* getPubKey() const;
 
   /**
    * Rotate CipherText

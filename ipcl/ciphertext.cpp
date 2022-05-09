@@ -103,7 +103,7 @@ CipherText CipherText::operator*(const PlainText& other) const {
   }
 }
 
-PublicKey CipherText::getPubKey() const { return *m_pubkey; }
+const PublicKey* CipherText::getPubKey() const { return m_pubkey; }
 
 CipherText CipherText::rotate(int shift) const {
   ERROR_CHECK(m_size != 1, "rotate: Cannot rotate single CipherText");

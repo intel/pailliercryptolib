@@ -35,6 +35,30 @@ class BaseText {
   BaseText& operator=(const BaseText& other);
 
   /**
+   * Overloading [] operator to access BigNumber elements
+   */
+  BigNumber& operator[](const std::size_t idx);
+
+  /**
+   * Insert a big number before pos
+   * @param[in] pos Position in m_texts
+   * @bn[in] Big number need to be inserted
+   */
+  void insert(const std::size_t pos, BigNumber& bn);
+
+  /**
+   * Clear all big number element
+   */
+  void clear();
+
+  /**
+   * Remove big number element for pos to pos+length.
+   * @param[in] pos Position in m_texts
+   * @length[in] Length need to be removed(default value is 1)
+   */
+  void remove(const std::size_t pos, const std::size_t length = 1);
+
+  /**
    * Gets the specified BigNumber element in m_text
    * @param[in] idx Element index
    * return Element in m_text of type BigNumber

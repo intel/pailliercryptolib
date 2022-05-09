@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+#include "ipcl/ciphertext.hpp"
 #include "ipcl/util.hpp"
 
 namespace ipcl {
@@ -23,6 +24,14 @@ PlainText& PlainText::operator=(const PlainText& other) {
   BaseText::operator=(other);
 
   return *this;
+}
+
+CipherText PlainText::operator+(const CipherText& other) const {
+  return other.operator+(*this);
+}
+
+CipherText PlainText::operator*(const CipherText& other) const {
+  return other.operator*(*this);
 }
 
 PlainText::operator std::vector<uint32_t>() {

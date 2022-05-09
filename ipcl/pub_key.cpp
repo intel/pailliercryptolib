@@ -161,6 +161,7 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
 
 CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   std::size_t pt_size = pt.getSize();
+  ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt emtpy PlainText");
   std::vector<BigNumber> ct_bn_v(pt_size);
 
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
