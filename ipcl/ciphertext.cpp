@@ -107,10 +107,10 @@ const PublicKey* CipherText::getPubKey() const { return m_pubkey; }
 
 CipherText CipherText::rotate(int shift) const {
   ERROR_CHECK(m_size != 1, "rotate: Cannot rotate single CipherText");
-  ERROR_CHECK(shift >= -m_size && shift <= m_size,
+  ERROR_CHECK(shift >= (-1) * static_cast<int>(m_size) && shift <= m_size,
               "rotate: Cannot shift more than the test size");
 
-  if (shift == 0 || shift == m_size || shift == -m_size)
+  if (shift == 0 || shift == m_size || shift == (-1) * static_cast<int>(m_size))
     return CipherText(m_pubkey, m_texts);
 
   if (shift > 0)
