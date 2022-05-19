@@ -45,44 +45,24 @@ std::vector<Ipp32u> PublicKey::randIpp32u(int size) const {
 }
 
 // length is arbitrary
-BigNumber PublicKey::getRandom(int length) const {
+BigNumber PublicKey::getRandom(int bit_len) const {
   IppStatus stat;
-  int size;
-  constexpr int seedBitSize = 160;
-  constexpr int seedSize = BITSIZE_WORD(seedBitSize);
-
-  stat = ippsPRNGGetSize(&size);
-  ERROR_CHECK(stat == ippStsNoErr,
-              "getRandom: get IppsPRNGState context error.");
-
-  auto rands = std::vector<Ipp8u>(size);
-
-  stat =
-      ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rands.data()));
-  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init rand context error.");
-
-  auto seed = randIpp32u(seedSize);
-  BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
-
-  stat = ippsPRNGSetSeed(BN(bseed),
-                         reinterpret_cast<IppsPRNGState*>(rands.data()));
-  ERROR_CHECK(stat == ippStsNoErr, "getRandom: set up seed value error.");
+  int bn_buf_size;
 
   // define length Big Numbers
-  int bn_size = BITSIZE_WORD(length);
-  stat = ippsBigNumGetSize(bn_size, &size);
+  int bn_len = BITSIZE_WORD(bit_len);
+  stat = ippsBigNumGetSize(bn_len, &bn_buf_size);
   ERROR_CHECK(stat == ippStsNoErr,
               "getRandom: get IppsBigNumState context error.");
 
-  IppsBigNumState* pBN = reinterpret_cast<IppsBigNumState*>(alloca(size));
+  IppsBigNumState* pBN =
+      reinterpret_cast<IppsBigNumState*>(alloca(bn_buf_size));
   ERROR_CHECK(pBN != nullptr, "getRandom: big number alloca error");
 
-  stat = ippsBigNumInit(bn_size, pBN);
+  stat = ippsBigNumInit(bn_len, pBN);
   ERROR_CHECK(stat == ippStsNoErr, "getRandom: init big number context error.");
 
-  int bnBitSize = length;
-  ippsPRNGenRDRAND_BN(pBN, bnBitSize,
-                      reinterpret_cast<IppsPRNGState*>(rands.data()));
+  ippsPRNGenRDRAND_BN(pBN, bit_len, NULL);
 
   return BigNumber{pBN};
 }
