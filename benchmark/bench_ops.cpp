@@ -74,4 +74,4 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   for (auto _ : state) product = ct1 * pt2;
 }
 
-BENCHMARK(BM_Mul_CTPT)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
+BENCHMARK(BM_Mul_CTPT)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64})->Args({128})->Args({256})->Args({512})->Args({1024})->Args({2048})->Args({2100});

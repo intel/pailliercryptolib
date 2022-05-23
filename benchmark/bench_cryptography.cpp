@@ -31,7 +31,7 @@ static void BM_Encrypt(benchmark::State& state) {
   for (auto _ : state) ct = key.pub_key->encrypt(pt);
 }
 
-BENCHMARK(BM_Encrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
+BENCHMARK(BM_Encrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64})->Args({128})->Args({256})->Args({512})->Args({1024})->Args({2048})->Args({2100});
 
 static void BM_Decrypt(benchmark::State& state) {
   size_t dsize = state.range(0);
@@ -48,4 +48,4 @@ static void BM_Decrypt(benchmark::State& state) {
   for (auto _ : state) dt = key.priv_key->decrypt(ct);
 }
 
-BENCHMARK(BM_Decrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64});
+BENCHMARK(BM_Decrypt)->Unit(benchmark::kMicrosecond)->Args({16})->Args({64})->Args({128})->Args({256})->Args({512})->Args({1024})->Args({2048})->Args({2100});
