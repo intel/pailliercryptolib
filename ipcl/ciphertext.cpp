@@ -53,14 +53,14 @@ CipherText CipherText::operator+(const CipherText& other) const {
     if (b_size == 1) {
       // add vector by scalar
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(m_size)
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[0]);
     } else {
       // add vector by vector
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(m_size)
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[i]);

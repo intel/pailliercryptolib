@@ -97,7 +97,7 @@ Then, run
 ```bash
 cmake --build build --target benchmark
 ```
-Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will automatically enable OpenMP unit-tests and benchmarks.
+Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will automatically enable OpenMP unit-tests and benchmarks. The `OMP_THREAD_LIMIT` environment variable can be used to set the maximum number of OpenMP threads.
 
 The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
 

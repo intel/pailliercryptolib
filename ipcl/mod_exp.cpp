@@ -166,7 +166,7 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(num_chunk)
 #endif  // IPCL_USE_OMP
   for (std::size_t i = 0; i < num_chunk; i++) {
     auto base_start = base.begin() + i * IPCL_CRYPTO_MB_SIZE;
@@ -219,7 +219,7 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #else
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(v_size)
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) res[i] = ippSBModExp(base[i], pow[i], m[i]);
   return res;
