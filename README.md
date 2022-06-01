@@ -92,6 +92,7 @@ sudo apt install -y libnl-3-dev
 sudo apt install -y linux-headers-$(uname -r)
 sudo apt install -y build-essential
 sudo apt install -y libboost-regex-dev
+sudo apt install -y pkg-config
 ```
 
 #### Installing OpenSSL
