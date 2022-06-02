@@ -9,6 +9,7 @@ set(IPCL_SRCS pri_key.cpp
                             base_text.cpp
                             plaintext.cpp
                             ciphertext.cpp
+                            util.cpp
 )
 
 

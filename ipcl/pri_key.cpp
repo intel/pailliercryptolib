@@ -83,7 +83,9 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
   BigNumber xx = m_x;
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for num_threads(v_size)
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
     BigNumber m = (res[i] - 1) / nn;
@@ -111,7 +113,9 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for num_threads(v_size)
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;

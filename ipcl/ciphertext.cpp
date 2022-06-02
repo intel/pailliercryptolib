@@ -51,16 +51,20 @@ CipherText CipherText::operator+(const CipherText& other) const {
     std::vector<BigNumber> sum(m_size);
 
     if (b_size == 1) {
-      // add vector by scalar
+// add vector by scalar
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for num_threads(m_size)
+      int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, m_size))
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[0]);
     } else {
-      // add vector by vector
+// add vector by vector
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for num_threads(m_size)
+      int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, m_size))
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[i]);
