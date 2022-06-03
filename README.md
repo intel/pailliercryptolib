@@ -55,6 +55,7 @@ pthread
 OpenSSL >=1.1.0
 gcc >= 9.1
 QAT20.L.0.8.0-00071.tar.gz (qatlib and QAT drivers)
+nasm >= 2.15
 ipp-crypto
 ```
 
@@ -151,7 +152,21 @@ $ cmake --install build
 
 The cmake configuration variable `HE_QAT_MISC=ON` enables `BigNumber` resources and samples, requiring IPP Crypto installation as a dependency. If usage of the utility functions that support `BigNumber` data type is needed, follow the building instructions below to install IPP Crypto and then rebuild the library with the cmake flag `HE_QAT_MISC=ON`:
 
+Installing `nasm-2.15`:
+
 ```
+$ wget -c https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.xz
+$ tar -xf nasm-2.15.05.tar.xz
+$ cd nasm-2.15.05/
+$ ./configure --prefix=/opt/nasm-2.15
+$ make -j
+$ sudo make install
+```
+
+Installing `ippcrypto`:
+
+```
+$ cd ~
 $ git clone https://github.com/intel/ipp-crypto.git
 $ cd ipp-crypto
 $ CC=gcc CXX=g++ cmake CMakeLists.txt -B_build -DARCH=intel64 -DMERGED_BLD:BOOL=ON -DCMAKE_INSTALL_PREFIX=/opt/ipp-crypto -DOPENSSL_INCLUDE_DIR=/opt/openssl/include -DOPENSSL_LIBRARIES=/opt/openssl/lib -DOPENSSL_ROOT_DIR=/opt/openssl -DCMAKE_ASM_NASM_COMPILER=/opt/nasm-2.15/bin/nasm
