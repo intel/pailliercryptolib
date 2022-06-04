@@ -9,6 +9,7 @@ Intel Homomorphic Encryption Acceleration Library for QAT (HE QAT Lib) is an ope
     - [Requirements](#requirements)
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
+  - [Troubleshooting](#troubleshooting)
   - [Testing and Benchmarking](#testing-and-benchmarking)
 <!-- - [Standardization](#standardization) -->
 - [Contributors](#contributors)
@@ -220,6 +221,43 @@ Test showing functional correctness and performance using `BigNumber` data types
 
 ```
 ./build/samples/test_bnModExp
+```
+## Troubleshooting
+
+- **Issue #1** 
+
+```
+xuser@ubuntu-guest:~/heqat$ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHE_QAT_MISC=ON
+-- CMAKE_INSTALL_PREFIX: /usr/local
+-- CMAKE_PREFIX_PATH /home/xuser/ipp-crypto/_build/
+-- Missed required Intel IPP Cryptography component: ippcp
+--   library not found:
+   /opt/ipp-crypto/lib/intel64/libippcp.a
+CMake Error at CMakeLists.txt:93 (find_package):
+  Found package configuration file:
+
+    /opt/ipp-crypto/lib/cmake/ippcp/ippcp-config.cmake
+
+  but it set IPPCP_FOUND to FALSE so package "IPPCP" is considered to be NOT
+  FOUND.
+```
+
+To resolve the error below simply create the symbolic link `/opt/ipp-crypto/lib/intel64/libippcp.a` from the apropriate static ippcp library that was compiled. For example: 
+
+```
+xuser@ubuntu-guest:/opt/ipp-crypto/lib/intel64$ ls -lha
+total 7.3M
+drwxr-xr-x 2 root root 4.0K Jun  3 16:29 .
+drwxr-xr-x 5 root root 4.0K Jun  3 16:29 ..
+-rw-r--r-- 1 root root 1.6M Jun  3 16:28 libcrypto_mb.a
+lrwxrwxrwx 1 root root   18 Jun  3 16:29 libcrypto_mb.so -> libcrypto_mb.so.11
+lrwxrwxrwx 1 root root   20 Jun  3 16:29 libcrypto_mb.so.11 -> libcrypto_mb.so.11.5
+-rw-r--r-- 1 root root 1.3M Jun  3 16:28 libcrypto_mb.so.11.5
+lrwxrwxrwx 1 root root   16 Jun  3 16:29 libippcpmx.so -> libippcpmx.so.11
+lrwxrwxrwx 1 root root   18 Jun  3 16:29 libippcpmx.so.11 -> libippcpmx.so.11.5
+-rw-r--r-- 1 root root 1.7M Jun  3 16:28 libippcpmx.so.11.5
+-rw-r--r-- 1 root root 2.9M Jun  3 16:28 libippcp_s_mx.a
+xuser@ubuntu-guest:/opt/ipp-crypto/lib/intel64$ sudo ln -s libippcp_s_mx.a libippcp.a
 ```
 
 ## Testing and Benchmarking
