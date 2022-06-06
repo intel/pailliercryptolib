@@ -36,6 +36,7 @@ inline void vec_size_check(const std::vector<T>& v, const char* file,
 
 #define VEC_SIZE_CHECK(v) vec_size_check(v, __FILE__, __LINE__)
 
+#ifdef IPCL_USE_OMP
 class OMPUtilities {
  public:
   static const int MaxThreads;
@@ -50,6 +51,7 @@ class OMPUtilities {
     return retval;
   }
 };
+#endif  // IPCL_USE_OMP
 
 }  // namespace ipcl
 
