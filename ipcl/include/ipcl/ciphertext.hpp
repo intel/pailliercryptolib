@@ -42,6 +42,11 @@ class CipherText : public BaseText {
   CipherText operator*(const PlainText& other) const;
 
   /**
+   * Get ciphertext of idx
+   */
+  CipherText getCipherText(const size_t& idx) const;
+
+  /**
    * Get public key
    */
   const PublicKey* getPubKey() const;

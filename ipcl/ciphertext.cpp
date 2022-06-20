@@ -107,6 +107,13 @@ CipherText CipherText::operator*(const PlainText& other) const {
   }
 }
 
+CipherText CipherText::getCipherText(const size_t& idx) const {
+  ERROR_CHECK((idx >= 0) && (idx < m_size),
+              "CipherText::getCipherText index is out of range");
+
+  return CipherText(m_pubkey, m_texts[idx]);
+}
+
 const PublicKey* CipherText::getPubKey() const { return m_pubkey; }
 
 CipherText CipherText::rotate(int shift) const {
