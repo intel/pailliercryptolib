@@ -50,7 +50,20 @@ class OMPUtilities {
       retval = 1;
     return retval;
   }
+
+ private:
+  static const int nodes;
+  static const int cpus;
+
+  static int getMaxThreads() {
+#ifdef IPCL_NUM_THREADS
+    return IPCL_NUM_THREADS;
+#else
+    return cpus / nodes;
+#endif  // IPCL_NUM_THREADS
+  }
 };
+
 #endif  // IPCL_USE_OMP
 
 }  // namespace ipcl
