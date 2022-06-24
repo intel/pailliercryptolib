@@ -12,6 +12,7 @@
 namespace ipcl {
 
 constexpr int N_BIT_SIZE_MAX = 2048;
+constexpr int N_BIT_SIZE_MIN = 16;
 
 static void rand32u(std::vector<Ipp32u>& addr) {
   std::random_device dev;
@@ -52,9 +53,27 @@ BigNumber getPrimeBN(int maxBitSize) {
   return pBN;
 }
 
+static BigNumber getPrimeDistance(int64_t key_size) {
+  uint64_t count = key_size / 2 - 100;
+  uint64_t ct32 = count / 32;   // number of 2**32 needed
+  uint64_t res = count & 0x1F;  // count % 32
+  std::vector<Ipp32u> tmp(ct32 + 1, 0);
+  tmp[ct32] = 1 << res;
+
+  BigNumber ref_dist(tmp.data(), tmp.size());
+  return ref_dist;
+}
+
+static bool isClosePrimeBN(const BigNumber& p, const BigNumber& q,
+                           const BigNumber& ref_dist) {
+  BigNumber real_dist = (p >= q) ? (p - q) : (q - p);
+  return (real_dist > ref_dist) ? false : true;
+}
+
 static void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                        BigNumber& n) {
-  for (int64_t len = 0; len != n_length; len = n.BitSize()) {
+                        BigNumber& n, const BigNumber& ref_dist) {
+  for (int64_t len = 0; (len != n_length) || isClosePrimeBN(p, q, ref_dist);
+       len = n.BitSize()) {
     p = getPrimeBN(n_length / 2);
     q = p;
     while (q == p) {
@@ -64,8 +83,8 @@ static void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
   }
 }
 
-static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
-                     BigNumber& n) {
+static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q, BigNumber& n,
+                     BigNumber& ref_dist) {
   BigNumber gcd;
   do {
     do {
@@ -77,9 +96,9 @@ static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q,
     } while (q == p || !p.TestBit(1));  // get q: q!=p and q mod 4 = 3
 
     gcd = (p - 1).gcd(q - 1);  // (p - 1) is a BigNumber
-  } while (gcd.compare(2));    // gcd(p-1,q-1)=2
-
-  n = p * q;
+    n = p * q;
+  } while ((gcd.compare(2)) || (n.BitSize() != n_length) ||
+           isClosePrimeBN(p, q, ref_dist));  // gcd(p-1,q-1)=2
 }
 
 keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
@@ -91,13 +110,17 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
       n_length <= N_BIT_SIZE_MAX,
       "generateKeyPair: modulus size in bits should belong to either 1Kb, 2Kb, "
       "3Kb or 4Kb range only, key size exceed the range!!!");
+  ERROR_CHECK((n_length >= N_BIT_SIZE_MIN) && (n_length % 4 == 0),
+              "generateKeyPair: key size should >=16, and divisible by 4");
+
+  BigNumber ref_dist = getPrimeDistance(n_length);
 
   BigNumber p, q, n;
 
   if (enable_DJN)
-    getDJNBN(n_length, p, q, n);
+    getDJNBN(n_length, p, q, n, ref_dist);
   else
-    getNormalBN(n_length, p, q, n);
+    getNormalBN(n_length, p, q, n, ref_dist);
 
   PublicKey* public_key = new PublicKey(n, n_length, enable_DJN);
   PrivateKey* private_key = new PrivateKey(public_key, p, q);
