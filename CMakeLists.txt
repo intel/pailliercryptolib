@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.15.1)
 
-project(IPCL VERSION 1.1.3 LANGUAGES C CXX)
+project(IPCL VERSION 2.0.0 LANGUAGES C CXX)
 
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
