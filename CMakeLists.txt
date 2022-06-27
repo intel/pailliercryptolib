@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.15.1)
 
-project(IPCL VERSION 1.0.0 LANGUAGES C CXX)
+project(IPCL VERSION 1.1.3 LANGUAGES C CXX)
 
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
@@ -36,10 +36,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
 
-#set(CMAKE_C_FLAGS "-O2 -pthread")
-#set(CMAKE_CXX_FLAGS "-O2 -fpermissive -pthread")
-set(CMAKE_C_FLAGS "-pthread")
-set(CMAKE_CXX_FLAGS "-fpermissive -pthread")
+set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
+set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
 
 if(NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
@@ -55,6 +53,7 @@ option(IPCL_BENCHMARK "Enable benchmark" ON)
 option(IPCL_ENABLE_QAT "Enable QAT" OFF)
 option(IPCL_USE_QAT_LITE "Enable uses QAT for base and exponent length different than modulus" OFF)
 option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
+option(IPCL_THREAD_COUNT "The max number of threads used by OpenMP(If the value is OFF/0, it is determined at runtime)" OFF)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 
@@ -72,6 +71,9 @@ endif()
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
+    if(IPCL_THREAD_COUNT)
+	    add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
+    endif()
 endif()
 
 
@@ -91,6 +93,11 @@ message(STATUS "IPCL_TEST:                  ${IPCL_TEST}")
 message(STATUS "IPCL_BENCHMARK:             ${IPCL_BENCHMARK}")
 message(STATUS "IPCL_ENABLE_OMP:            ${IPCL_ENABLE_OMP}")
 message(STATUS "IPCL_ENABLE_QAT:            ${IPCL_ENABLE_QAT}")
+if (IPCL_ENABLE_OMP)
+  message(STATUS "IPCL_THREAD_COUNT:          ${IPCL_THREAD_COUNT}")
+else()
+  message(STATUS "IPCL_THREAD_COUNT:          IGNORE")
+endif()
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
 
@@ -111,14 +118,13 @@ set(IPCL_FORWARD_CMAKE_ARGS
 )
 
 # find package for OpenSSL and Threads
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
 # External dependencies
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 

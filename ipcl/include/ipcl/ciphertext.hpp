@@ -42,17 +42,20 @@ class CipherText : public BaseText {
   CipherText operator*(const PlainText& other) const;
 
   /**
+   * Get ciphertext of idx
+   */
+  CipherText getCipherText(const size_t& idx) const;
+
+  /**
    * Get public key
    */
-  PublicKey getPubKey() const;
+  const PublicKey* getPubKey() const;
 
   /**
    * Rotate CipherText
    * @param[in] shift rotate length
    */
   CipherText rotate(int shift) const;
-
-  const void* addr = static_cast<const void*>(this);
 
  private:
   BigNumber raw_add(const BigNumber& a, const BigNumber& b) const;

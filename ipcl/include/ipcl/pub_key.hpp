@@ -39,6 +39,13 @@ class PublicKey {
   void enableDJN();
 
   /**
+   * Set DJN with given parameters
+   * @param[in] hs hs value for DJN scheme
+   * @param[in] randbit random bit for DJN scheme
+   */
+  void setDJN(const BigNumber& hs, int randbit);
+
+  /**
    * Encrypt plaintext
    * @param[in] plaintext of type PlainText
    * @param[in] make_secure apply obfuscator(default value is true)
@@ -78,11 +85,31 @@ class PublicKey {
   void applyObfuscator(std::vector<BigNumber>& obfuscator) const;
 
   /**
-   * @brief Set the Random object for ISO/IEC 18033-6 compliance check
-   *
-   * @param r
+   * Set the Random object for ISO/IEC 18033-6 compliance check
+   * @param[in] r
    */
   void setRandom(const std::vector<BigNumber>& r);
+
+  /**
+   * Check if using DJN scheme
+   */
+  bool isDJN() const { return m_enable_DJN; }
+
+  /**
+   * Get hs for DJN scheme
+   */
+  BigNumber getHS() const {
+    if (m_enable_DJN) return m_hs;
+    return BigNumber::Zero();
+  }
+
+  /**
+   * Get randbits for DJN scheme
+   */
+  int getRandBits() const {
+    if (m_enable_DJN) return m_randbits;
+    return -1;
+  }
 
   const void* addr = static_cast<const void*>(this);
 

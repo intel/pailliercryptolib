@@ -54,10 +54,12 @@ PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
 }
 
 PlainText PrivateKey::decrypt(const CipherText& ct) const {
-  ERROR_CHECK(ct.getPubKey().getN() == m_pubkey->getN(),
+  ERROR_CHECK(ct.getPubKey()->getN() == m_pubkey->getN(),
               "decrypt: The value of N in public key mismatch.");
 
   std::size_t ct_size = ct.getSize();
+  ERROR_CHECK(ct_size > 0, "decrypt: Cannot decrypt empty CipherText");
+
   std::vector<BigNumber> pt_bn(ct_size);
   std::vector<BigNumber> ct_bn = ct.getTexts();
 
@@ -77,15 +79,15 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> modulo(v_size, m_nsquare);
   std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
 
-  BigNumber nn = m_n;
-  BigNumber xx = m_x;
-
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
-    BigNumber m = (res[i] - 1) / nn;
-    m = m * xx;
+    BigNumber nn = m_n;
+    BigNumber xx = m_x;
+    BigNumber m = ((res[i] - 1) / nn) * xx;
     plaintext[i] = m % nn;
   }
 }
@@ -99,6 +101,11 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> pm1(v_size, m_pminusone), qm1(v_size, m_qminusone);
   std::vector<BigNumber> psq(v_size, m_psquare), qsq(v_size, m_qsquare);
 
+#ifdef IPCL_USE_OMP
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
+#endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
     basep[i] = ciphertext[i] % psq[i];
     baseq[i] = ciphertext[i] % qsq[i];
@@ -109,7 +116,9 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+  omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
     BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;

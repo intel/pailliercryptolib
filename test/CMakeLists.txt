@@ -12,7 +12,8 @@ target_include_directories(unittest_ipcl PRIVATE
   ${IPCL_INC_DIR}
 )
 target_link_libraries(unittest_ipcl PRIVATE
-  ipcl libgtest Threads::Threads
+  ipcl -pthread libgtest
+  # ipcl Threads::Threads libgtest
 )
 
 # enable QAT unittests

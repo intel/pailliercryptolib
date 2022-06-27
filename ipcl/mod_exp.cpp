@@ -49,8 +49,10 @@ static std::vector<BigNumber> heQatBnModExp(
   unsigned char* bn_remainder_data_[batch_size];
 
 #if defined(IPCL_USE_QAT_LITE)
-  int base_len_[batch_size];
-  int exp_len_[batch_size];
+  // int base_len_[batch_size];
+  std::vector<int> base_len_(batch_size, 0);
+  // int exp_len_[batch_size];
+  std::vector<int> exp_len_(batch_size, 0);
 #endif
 
   // Pre-allocate memory used to batch input data
@@ -613,7 +615,9 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, num_chunk))
 #endif  // IPCL_USE_OMP
   for (std::size_t i = 0; i < num_chunk; i++) {
     auto base_start = base.begin() + i * IPCL_CRYPTO_MB_SIZE;
@@ -666,7 +670,9 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #else
 
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+  int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) res[i] = ippSBModExp(base[i], pow[i], m[i]);
   return res;

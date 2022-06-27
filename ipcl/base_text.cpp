@@ -34,14 +34,44 @@ BaseText& BaseText::operator=(const BaseText& other) {
   return *this;
 }
 
+BigNumber& BaseText::operator[](const std::size_t idx) {
+  ERROR_CHECK(idx < m_size, "BaseText:operator[] index is out of range");
+
+  return m_texts[idx];
+}
+
+void BaseText::insert(const std::size_t pos, BigNumber& bn) {
+  ERROR_CHECK((pos >= 0) && (pos <= m_size),
+              "BaseText: insert position is out of range");
+
+  auto it = m_texts.begin() + pos;
+  m_texts.insert(it, bn);
+  m_size++;
+}
+
+void BaseText::clear() {
+  m_texts.clear();
+  m_size = 0;
+}
+
+void BaseText::remove(const std::size_t pos, const std::size_t length) {
+  ERROR_CHECK((pos >= 0) && (pos + length < m_size),
+              "BaseText: remove position is out of range");
+
+  auto start = m_texts.begin() + pos;
+  auto end = start + length;
+  m_texts.erase(start, end);
+  m_size = m_size - length;
+}
+
 BigNumber BaseText::getElement(const std::size_t& idx) const {
-  ERROR_CHECK(idx <= m_size, "BaseText: getElement index is out of range");
+  ERROR_CHECK(idx < m_size, "BaseText: getElement index is out of range");
 
   return m_texts[idx];
 }
 
 std::vector<uint32_t> BaseText::getElementVec(const std::size_t& idx) const {
-  ERROR_CHECK(idx <= m_size, "BaseText: getElementVec index is out of range");
+  ERROR_CHECK(idx < m_size, "BaseText: getElementVec index is out of range");
 
   std::vector<uint32_t> v;
   m_texts[idx].num2vec(v);
@@ -50,7 +80,7 @@ std::vector<uint32_t> BaseText::getElementVec(const std::size_t& idx) const {
 }
 
 std::string BaseText::getElementHex(const std::size_t& idx) const {
-  ERROR_CHECK(idx <= m_size, "BaseText: getElementHex index is out of range");
+  ERROR_CHECK(idx < m_size, "BaseText: getElementHex index is out of range");
   std::string s;
   m_texts[idx].num2hex(s);
 

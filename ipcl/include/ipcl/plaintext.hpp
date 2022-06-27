@@ -9,6 +9,8 @@
 #include "ipcl/base_text.hpp"
 
 namespace ipcl {
+
+class CipherText;
 /**
  * This structure encapsulates types uint32_t,
  * uint32_t vector, BigNumber and BigNumber vector.
@@ -59,6 +61,16 @@ class PlainText : public BaseText {
   operator std::vector<uint32_t>();
 
   /**
+   * PT + CT
+   */
+  CipherText operator+(const CipherText& other) const;
+
+  /**
+   * PT * CT
+   */
+  CipherText operator*(const CipherText& other) const;
+
+  /**
    * User define implicit type conversion
    * Convert 1st element to type BigNumber.
    */
@@ -69,6 +81,12 @@ class PlainText : public BaseText {
    * Convert all element to type BigNumber.
    */
   operator std::vector<BigNumber>();
+
+  /**
+   * Rotate PlainText
+   * @param[in] shift rotate length
+   */
+  PlainText rotate(int shift) const;
 };
 
 }  // namespace ipcl

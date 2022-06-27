@@ -12,7 +12,8 @@ target_include_directories(bench_ipcl PRIVATE
 )
 
 target_link_libraries(bench_ipcl PRIVATE
-  ipcl libgbenchmark Threads::Threads
+  # ipcl Threads::Threads libgbenchmark
+  ipcl -pthread libgbenchmark
 )
 
 # enable QAT unittests

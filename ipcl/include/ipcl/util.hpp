@@ -36,5 +36,36 @@ inline void vec_size_check(const std::vector<T>& v, const char* file,
 
 #define VEC_SIZE_CHECK(v) vec_size_check(v, __FILE__, __LINE__)
 
+#ifdef IPCL_USE_OMP
+class OMPUtilities {
+ public:
+  static const int MaxThreads;
+
+  static int assignOMPThreads(int& remaining_threads, int requested_threads) {
+    int retval = (requested_threads > 0 ? requested_threads : 1);
+    if (retval > remaining_threads) retval = remaining_threads;
+    if (retval > 1)
+      remaining_threads -= retval;
+    else
+      retval = 1;
+    return retval;
+  }
+
+ private:
+  static const int nodes;
+  static const int cpus;
+
+  static int getMaxThreads() {
+#ifdef IPCL_NUM_THREADS
+    return IPCL_NUM_THREADS;
+#else
+    return cpus / nodes;
+#endif  // IPCL_NUM_THREADS
+  }
+};
+
+#endif  // IPCL_USE_OMP
+
 }  // namespace ipcl
+
 #endif  // IPCL_INCLUDE_IPCL_UTIL_HPP_

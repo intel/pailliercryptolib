@@ -56,16 +56,21 @@ The following libraries and tools are also required,
 ```
 nasm >= 2.15
 OpenSSL >= 1.1.0
+numa >= 2.0.12
 ```
 
 For ```nasm```, please refer to the [Netwide Assembler](https://nasm.us/) for installation details.
 
-On Ubuntu, ```OpenSSL``` can be installed with:
+On Ubuntu, ```OpenSSL``` and ```numa``` can be installed with:
 ```bash
 sudo apt update
 sudo apt install libssl-dev
+sudo apt install libnuma-dev
 ```
-For RHEL, ```OpenSSL``` needs to be built and installed from source as the static libraries are missing when installed through the package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details for static libraries.
+For RHEL, ```OpenSSL``` needs to be built and installed from source as the static libraries are missing when installed through the package managers. Please refer to [OpenSSL Project](https://github.com/openssl/openssl) for installation details for static libraries. ```numa``` can be installed with:
+```
+sudo yum install numactl-devel
+```
 
 ### Instructions
 The library can be built using the following commands:
@@ -83,6 +88,7 @@ It is possible to pass additional options to enable more features. The following
 |`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                           |
 |`IPCL_ENABLE_QAT`        | ON/OFF    | OFF     | enables QAT functionalities         |
 |`IPCL_ENABLE_OMP`        | ON/OFF    | ON      | enables OpenMP functionalities      |
+|`IPCL_THREAD_COUNT`      | Integer   | OFF     | The max number of threads           |
 |`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation         |
 |`IPCL_SHARED`            | ON/OFF    | ON      | build shared library                |
 
@@ -109,7 +115,7 @@ Then, run
 ```bash
 cmake --build build --target benchmark
 ```
-Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will automatically enable OpenMP unit-tests and benchmarks.
+Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will use OpenMP for acceleration. Setting the value of `-DIPCL_THREAD_COUNT` will limit the maximum number of threads used by OpenMP (If set to OFF or 0, its actual value will be determined at run time).
 
 The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
 

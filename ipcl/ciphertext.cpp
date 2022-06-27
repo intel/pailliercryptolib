@@ -51,16 +51,20 @@ CipherText CipherText::operator+(const CipherText& other) const {
     std::vector<BigNumber> sum(m_size);
 
     if (b_size == 1) {
-      // add vector by scalar
+// add vector by scalar
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+      int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, m_size))
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[0]);
     } else {
-      // add vector by vector
+// add vector by vector
 #ifdef IPCL_USE_OMP
-#pragma omp parallel for
+      int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, m_size))
 #endif  // IPCL_USE_OMP
       for (std::size_t i = 0; i < m_size; i++)
         sum[i] = a.raw_add(a.m_texts[i], b.m_texts[i]);
@@ -103,18 +107,25 @@ CipherText CipherText::operator*(const PlainText& other) const {
   }
 }
 
-PublicKey CipherText::getPubKey() const { return *m_pubkey; }
+CipherText CipherText::getCipherText(const size_t& idx) const {
+  ERROR_CHECK((idx >= 0) && (idx < m_size),
+              "CipherText::getCipherText index is out of range");
+
+  return CipherText(m_pubkey, m_texts[idx]);
+}
+
+const PublicKey* CipherText::getPubKey() const { return m_pubkey; }
 
 CipherText CipherText::rotate(int shift) const {
   ERROR_CHECK(m_size != 1, "rotate: Cannot rotate single CipherText");
-  ERROR_CHECK(shift >= -8 && shift <= 8,
-              "rotate: Cannot shift more than 8 or -8");
+  ERROR_CHECK(shift >= (-1) * static_cast<int>(m_size) && shift <= m_size,
+              "rotate: Cannot shift more than the test size");
 
-  if (shift == 0 || shift == 8 || shift == -8)
+  if (shift == 0 || shift == m_size || shift == (-1) * static_cast<int>(m_size))
     return CipherText(m_pubkey, m_texts);
 
   if (shift > 0)
-    shift = 8 - shift;
+    shift = m_size - shift;
   else
     shift = -shift;
 
