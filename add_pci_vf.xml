@@ -1,0 +1,6 @@
+<hostdev mode='subsystem' type='pci' managed='no'>
+<driver name='vfio' />
+<source>
+<address domain='0x0000' bus='0x75' slot='0x00' function='0x01' />
+</source>
+</hostdev>

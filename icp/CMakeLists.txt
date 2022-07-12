@@ -24,11 +24,31 @@ set(ICP_INC_DIR ${ICP_API_DIR}/include
                 ${ICP_LAC_DIR}/include 
                 ${ICP_ADF_DIR}/include
                 ${CMN_ROOT}
-	        ${ICP_API_DIR}/include/dc
+	        	${ICP_API_DIR}/include/dc
                 ${ICP_API_DIR}/include/lac)
 
-#Macros for the test case
+# Macros for the test case
 add_definitions(-DDO_CRYPTO) 
 add_definitions(-DUSER_SPACE) 
 add_compile_options(-fPIC)
 
+add_library(libadf_static STATIC IMPORTED GLOBAL)
+add_library(libosal_static STATIC IMPORTED GLOBAL)
+add_library(libqat_static STATIC IMPORTED GLOBAL)
+add_library(libusdm_drv_static STATIC IMPORTED GLOBAL)
+
+set_target_properties(libadf_static PROPERTIES
+	IMPORTED_LOCATION ${ICP_BUILDOUTPUT_PATH}/libadf.a
+)
+
+set_target_properties(libosal_static PROPERTIES
+	IMPORTED_LOCATION ${ICP_BUILDOUTPUT_PATH}/libosal.a
+)
+
+set_target_properties(libqat_static PROPERTIES
+	IMPORTED_LOCATION ${ICP_BUILDOUTPUT_PATH}/libqat.a
+)
+
+set_target_properties(libusdm_drv_static PROPERTIES
+	IMPORTED_LOCATION ${ICP_BUILDOUTPUT_PATH}/libusdm_drv.a
+)

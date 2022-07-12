@@ -1,0 +1,2 @@
+sudo chown fdiasmor $(tty) export GPG_TTY =
+    $(tty) git commit - S - m "Add initial 'code' to set up QAT context."

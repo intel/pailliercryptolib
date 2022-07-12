@@ -16,13 +16,10 @@ add_library(HE_QAT::he_qat ALIAS he_qat)
 target_include_directories(he_qat 
 	PUBLIC $<BUILD_INTERFACE:${COMMON_INC_DIR}> #Public headers 
 	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers 
-	#	PUBLIC $<BUILD_INTERFACE:${OPENSSL_INC_DIR}> #Public headers 
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> #Public headers
-        PRIVATE ${COMMON_INC_DIR} #Private headers 
+	PRIVATE ${COMMON_INC_DIR} #Private headers 
 	PRIVATE ${ICP_INC_DIR} #Private headers 
-	#PRIVATE ${OPENSSL_INC_DIR} #Private headers
 )
-#target_include_directories(he_qat PUBLIC ${HE_QAT_UTILS_INC_DIR})
 
 install(DIRECTORY ${COMMON_INC_DIR}/
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
@@ -37,13 +34,18 @@ install(DIRECTORY ${HE_QAT_INC_DIR}/
 	PATTERN "*.h")
 
 target_link_directories(he_qat PUBLIC ${ICP_BUILDOUTPUT_PATH})
-#target_link_directories(he_qat PUBLIC ${OPENSSL_LIB_DIR})
 target_link_libraries(he_qat PRIVATE OpenSSL::SSL Threads::Threads)
-target_link_libraries(he_qat PRIVATE cpa_sample_utils)
-target_link_libraries(he_qat PRIVATE qat_s usdm_drv_s)
-target_link_libraries(he_qat PRIVATE z)
+target_link_libraries(he_qat PRIVATE udev z)
+
 if(HE_QAT_MISC)
-  target_link_libraries(he_qat PRIVATE he_qat_misc)
+	target_link_libraries(he_qat PRIVATE he_qat_misc)
+endif()
+
+if(HE_QAT_SHARED)
+	target_link_libraries(he_qat PRIVATE qat_s usdm_drv_s)
+	target_link_libraries(he_qat PRIVATE cpa_sample_utils)
+else()
+	heqat_create_archive(he_qat cpa_sample_utils)
 endif()
 
 set_target_properties(he_qat PROPERTIES POSITION_INDEPENDENT_CODE ON)

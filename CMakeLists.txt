@@ -36,10 +36,12 @@ set(CMAKE_CXX_FLAGS "-O2 -fpermissive")
 # What does it do?
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# When to use it?
+# When to use it? To build with shared libraries.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Why?
 set(CMAKE_INSTALL_MESSAGE LAZY)
+
 # Why?
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
 
@@ -51,7 +53,7 @@ message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 # Which features or functions does it bring?
 include(GNUInstallDirs)
 
-# What is CMAKE_ARCHIVE_OUTPUT_DIRECTORY?
+# Location where to unpack and pack static libraries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 # -------------------------------------------------------------------
@@ -83,11 +85,14 @@ if(HE_QAT_MISC)
   # IPP Crypto installation
   if(IPPCP_PREFIX_PATH)
     list(APPEND CMAKE_PREFIX_PATH "${IPPCP_PREFIX_PATH}")
+    set(IPPCP_DIR "${IPPCP_PREFIX_PATH}/../../../")
+    message(STATUS "IPPCP_DIR=${IPPCP_DIR}")
   else()
     # Default to this
     set(IPPCP_DIR "/opt/ipp-crypto")
     set(IPPCP_PREFIX_PATH "${IPPCP_DIR}/lib/cmake")
     list(APPEND CMAKE_PREFIX_PATH "${IPPCP_PREFIX_PATH}")
+    message(STATUS "Else IPPCP_DIR=${IPPCP_DIR}")
   endif()
   find_package(IPPCP REQUIRED)
   message(STATUS "IPPCP_LIBRARIES ${IPPCP_LIBRARIES}")
@@ -103,6 +108,7 @@ endif()
 
 set(HE_QAT_FORWARD_CMAKE_ARGS
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_C_STANDARD=${CMAKE_C_STANDARD}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
     -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
@@ -115,6 +121,12 @@ set(HE_QAT_FORWARD_CMAKE_ARGS
 
 
 #OpenSSL installation
+if(NOT HE_QAT_SHARED)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
+  message(STATUS "OPENSSL_USE_STATIC_LIBS TRUE")
+else()
+	message(STATUS "OPENSSL_USE_STATIC_LIBS FALSE") 
+endif()
 find_package(OpenSSL REQUIRED)
 
 # External dependencies
@@ -124,7 +136,8 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #set(OPENSSL_INC_DIR /opt/openssl/include) 
 #set(OPENSSL_LIB_DIR /opt/openssl/lib)
 
-#set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
+include(heqat-util)
 
 set(COMMON_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 if(NOT CMAKE_INSTALL_PREFIX)
