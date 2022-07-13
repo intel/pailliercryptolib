@@ -5,9 +5,7 @@ include(ExternalProject)
 MESSAGE(STATUS "Configuring HE QAT")
 set(HEQAT_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_he_qat)
 set(HEQAT_GIT_REPO_URL git@github.com:intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git)
-#set(HEQAT_GIT_REPO_URL https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git)
-#set(HEQAT_GIT_LABEL development)
-set(HEQAT_GIT_LABEL fdiasmor/modexp_latency)
+set(HEQAT_GIT_LABEL development)
 set(HEQAT_SRC_DIR ${HEQAT_PREFIX}/src/ext_he_qat/)
 
 set(HEQAT_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS}")
@@ -22,29 +20,38 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=${HEQAT_PREFIX}
 	     -DHE_QAT_MISC=OFF
 	     -DIPPCP_PREFIX_PATH=${IPPCRYPTO_PREFIX}/lib/cmake
-	     #-DARCH=${HEQAT_ARCH}
-	     #-DCMAKE_ASM_NASM_COMPILER=nasm
-	     #-DCMAKE_BUILD_TYPE=Release
+       -DHE_QAT_SHARED=OFF
+	     -DCMAKE_BUILD_TYPE=Release
   UPDATE_COMMAND ""
 )
+add_dependencies(ext_he_qat ext_ipp-crypto)
 
-add_dependencies(ext_he_qat libippcrypto)
-
-set(HEQAT_INC_DIR ${HEQAT_PREFIX}/include) #${HEQAT_SRC_DIR}/install/include)
+set(HEQAT_INC_DIR ${HEQAT_PREFIX}/include)
 
 # Bring up CPA variables
 include(${CMAKE_CURRENT_LIST_DIR}/icp/CMakeLists.txt)
 list(APPEND HEQAT_INC_DIR ${ICP_INC_DIR})
 
-add_library(libhe_qat INTERFACE)
-add_dependencies(libhe_qat ext_he_qat)
+if(IPCL_SHARED)
+  add_library(libhe_qat INTERFACE)
+  add_dependencies(libhe_qat ext_he_qat)
 
-ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
+  ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
-target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.a) # ${HEQAT_PREFIX}/lib/libhe_qat_misc.a)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat_debug.so)
+  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.a)
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat_debug.a)
+  else()
+    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat.a)
+  endif()
+  target_include_directories(libhe_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})
 else()
-  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat.so)
+  add_library(libhe_qat STATIC IMPORTED GLOBAL)
+  add_dependencies(libhe_qat ext_he_qat)
+
+  ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
+
+  set_target_properties(libhe_qat PROPERTIES
+    IMPORTED_LOCATION ${HEQAT_PREFIX}/lib/libhe_qat.a
+    INCLUDE_DIRECTORIES ${HEQAT_INC_DIR})
 endif()
-target_include_directories(libhe_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})

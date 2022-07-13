@@ -40,7 +40,7 @@ if(IPCL_SHARED)
 
   ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libippcrypto INTERFACE ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a)
+  target_link_libraries(libippcrypto INTERFACE ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.so ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.so)
   target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_PREFIX}/include)
 
 else()

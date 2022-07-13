@@ -19,4 +19,5 @@ target_link_libraries(bench_ipcl PRIVATE
 # enable QAT unittests
 if(IPCL_ENABLE_QAT)
   target_link_libraries(bench_ipcl PRIVATE libhe_qat)
+  target_include_directories(bench_ipcl PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>")
 endif()
