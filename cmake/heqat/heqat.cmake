@@ -20,7 +20,7 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=${HEQAT_PREFIX}
 	     -DHE_QAT_MISC=OFF
 	     -DIPPCP_PREFIX_PATH=${IPPCRYPTO_PREFIX}/lib/cmake
-       -DHE_QAT_SHARED=OFF
+       -DHE_QAT_SHARED=${IPCL_SHARED}
 	     -DCMAKE_BUILD_TYPE=Release
   UPDATE_COMMAND ""
 )
@@ -38,11 +38,11 @@ if(IPCL_SHARED)
 
   ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.a)
+  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.so)
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat_debug.a)
+    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat_debug.so)
   else()
-    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat.a)
+    target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat.so)
   endif()
   target_include_directories(libhe_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})
 else()
