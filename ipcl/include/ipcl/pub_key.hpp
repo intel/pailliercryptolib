@@ -90,6 +90,8 @@ class PublicKey {
    */
   void setRandom(const std::vector<BigNumber>& r);
 
+  void setHS(const BigNumber& hs);
+
   /**
    * Check if using DJN scheme
    */
@@ -148,6 +150,10 @@ class PublicKey {
    * @return the random value of type BigNumber
    */
   BigNumber getRandom(int length) const;
+
+  void applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const;
+
+  void applyNormalObfuscator(std::vector<BigNumber>& obfuscator) const;
 };
 
 }  // namespace ipcl

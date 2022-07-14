@@ -86,30 +86,45 @@ void PublicKey::enableDJN() {
   m_enable_DJN = true;
 }
 
-void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
+void PublicKey::applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const {
   std::size_t obf_size = obfuscator.size();
   std::vector<BigNumber> r(obf_size);
-  std::vector<BigNumber> pown(obf_size, m_n);
   std::vector<BigNumber> base(obf_size, m_hs);
   std::vector<BigNumber> sq(obf_size, m_nsquare);
 
-  if (m_enable_DJN) {
+  if (m_testv) {
+    r = m_r;
+  } else {
     for (auto& r_ : r) {
       r_ = getRandom(m_randbits);
     }
-    obfuscator = ipcl::ippModExp(base, r, sq);
+  }
+  obfuscator = ipcl::ippModExp(base, r, sq);
+}
+
+void PublicKey::applyNormalObfuscator(
+    std::vector<BigNumber>& obfuscator) const {
+  std::size_t obf_size = obfuscator.size();
+  std::vector<BigNumber> r(obf_size);
+  std::vector<BigNumber> sq(obf_size, m_nsquare);
+  std::vector<BigNumber> pown(obf_size, m_n);
+
+  if (m_testv) {
+    r = m_r;
   } else {
     for (int i = 0; i < obf_size; i++) {
-      if (m_testv) {
-        r[i] = m_r[i];
-      } else {
-        r[i] = getRandom(m_bits);
-        r[i] = r[i] % (m_n - 1) + 1;
-      }
-      pown[i] = m_n;
-      sq[i] = m_nsquare;
+      r[i] = getRandom(m_bits);
+      r[i] = r[i] % (m_n - 1) + 1;
     }
-    obfuscator = ipcl::ippModExp(r, pown, sq);
+  }
+  obfuscator = ipcl::ippModExp(r, pown, sq);
+}
+
+void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
+  if (m_enable_DJN) {
+    applyDjnObfuscator(obfuscator);
+  } else {
+    applyNormalObfuscator(obfuscator);
   }
 }
 
@@ -117,6 +132,8 @@ void PublicKey::setRandom(const std::vector<BigNumber>& r) {
   std::copy(r.begin(), r.end(), std::back_inserter(m_r));
   m_testv = true;
 }
+
+void PublicKey::setHS(const BigNumber& hs) { m_hs = hs; }
 
 std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
                                               bool make_secure) const {
