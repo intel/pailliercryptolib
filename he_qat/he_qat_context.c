@@ -24,7 +24,7 @@
 #define MAX_INSTANCES 1
 #endif
 
-#define NUM_ACTIVE_INSTANCES 8
+#define NUM_ACTIVE_INSTANCES 1
 
 volatile int context_state = 0;
 
