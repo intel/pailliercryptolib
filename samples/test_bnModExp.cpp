@@ -18,7 +18,7 @@
 int gDebugParam = 1;
 #endif
 
-const unsigned int BATCH_SIZE = 512;
+const unsigned int BATCH_SIZE = 1024;
 
 using namespace std::chrono;
 

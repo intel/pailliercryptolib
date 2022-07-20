@@ -24,6 +24,8 @@ double time_taken = 0.0;
 #pragma message "Asynchronous execution mode."
 #endif
 
+#define RESTART_LATENCY_MICROSEC 620
+
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
 HE_QAT_RequestBufferList outstanding_buffer;
@@ -34,8 +36,8 @@ volatile unsigned long response_count = 0;
 pthread_mutex_t response_mutex;
 
 unsigned long request_latency = 0; // unused
-unsigned long restart_threshold = 12;
-unsigned long max_pending = 24; // each QAT endpoint has 6 PKE slices 
+unsigned long restart_threshold = 6;
+unsigned long max_pending = 64; // each QAT endpoint has 6 PKE slices 
                                 // single socket has 4 QAT endpoints (24 simultaneous requests)
 				// dual-socket has 8 QAT endpoints (48 simultaneous requests)
 				// max_pending = (num_sockets * num_qat_devices * num_pke_slices) / k
@@ -496,6 +498,10 @@ static void* start_inst_polling(void* _inst_config) {
 
     if (NULL == config->inst_handle) return NULL;
 
+#ifdef HE_QAT_DEBUG
+    printf("Instance ID %d Polling\n",config->inst_id);
+#endif
+
     // What is harmful for polling without performing any operation?
     config->polling = 1;
     while (config->polling) {
@@ -520,6 +526,21 @@ void* start_instances(void* _config) {
 
     HE_QAT_Config* config = (HE_QAT_Config*)_config;
     instance_count = config->count;
+
+    printf("Instance Count: %d\n",instance_count);
+    pthread_t* polling_thread = (pthread_t *) malloc(sizeof(pthread_t)*instance_count);
+    if (NULL == polling_thread) {
+        printf("Failed in start_instances: polling_thread is NULL.\n");
+        pthread_exit(NULL);
+    }
+    unsigned* request_count_per_instance = (unsigned *) malloc(sizeof(unsigned)*instance_count);
+    if (NULL == request_count_per_instance) {
+        printf("Failed in start_instances: polling_thread is NULL.\n");
+        pthread_exit(NULL);
+    }
+    for (unsigned i = 0; i < instance_count; i++) {
+        request_count_per_instance[i] = 0;
+    }
 
     CpaStatus status = CPA_STATUS_FAIL;
 
@@ -547,18 +568,23 @@ void* start_instances(void* _config) {
     
         if (CPA_STATUS_SUCCESS != status) pthread_exit(NULL);
 
+        printf("Instance ID: %d\n",config->inst_config[j].inst_id);
+
          // Start QAT instance and start polling
-         pthread_t polling_thread;
-         if (pthread_create(&polling_thread, config->inst_config[j].attr, start_inst_polling,
+         //pthread_t polling_thread;
+         if (pthread_create(&polling_thread[j], config->inst_config[j].attr, start_inst_polling,
                             (void*)&(config->inst_config[j])) != 0) {
              printf("Failed at creating and starting polling thread.\n");
              pthread_exit(NULL);
          }
 
-         if (pthread_detach(polling_thread) != 0) {
+         if (pthread_detach(polling_thread[j]) != 0) {
              printf("Failed at detaching polling thread.\n");
              pthread_exit(NULL);
          }
+	 
+	 config->inst_config[j].active = 1;
+	 config->inst_config[j].running = 1;
     
     } // for loop
     
@@ -588,9 +614,11 @@ void* start_instances(void* _config) {
 	   printf("[WAIT]\n");
 #endif
 	   // argument passed in microseconds 
-	   OS_SLEEP(650);
+	   OS_SLEEP(RESTART_LATENCY_MICROSEC);
            pending = request_count - response_count;
 	   available = max_pending - ((pending < max_pending)?pending:max_pending);
+//           printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+//          			request_count,response_count,pending,available);
 	}
 #ifdef HE_QAT_DEBUG
 	printf("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
@@ -649,6 +677,7 @@ void* start_instances(void* _config) {
 
 	    if (CPA_STATUS_RETRY == status) {
 	        printf("CPA requested RETRY\n");
+		pthread_exit(NULL);
 	    }
 
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
@@ -657,8 +686,15 @@ void* start_instances(void* _config) {
         if (CPA_STATUS_SUCCESS == status) {
 	    // Global tracking of number of requests 
 	    request_count += 1;
+	    request_count_per_instance[next_instance] += 1;
+//            printf("Instance %d Count %u\n",next_instance,request_count_per_instance[next_instance]);
             next_instance = (next_instance + 1) % instance_count;
 //		printf("retry_count = %d\n",retry_count);
+//            printf("SUCCESS Next Instance = %d\n",next_instance);
+	// Wake up any blocked call to stop_perform_op, signaling that now it is
+        // safe to terminate running instances. Check if this detereorate
+        // performance.
+        pthread_cond_signal(&config->inst_config[next_instance].ready);  // Prone to the lost wake-up problem
 #ifdef HE_QAT_SYNC_MODE
             // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
@@ -673,6 +709,7 @@ void* start_instances(void* _config) {
         } else {
             request->op_status = CPA_STATUS_FAIL;
             request->request_status = HE_QAT_STATUS_FAIL;  // Review it
+	    printf("Request Submission FAILED\n");
         }
 
 #ifdef HE_QAT_DEBUG
@@ -682,15 +719,9 @@ void* start_instances(void* _config) {
 	// Reset pointer
 	outstanding_requests.request[i] = NULL;
 	request = NULL;
-
+	
         }// for loop over batch of requests
         outstanding_requests.count = 0;
-       	
-	// Wake up any blocked call to stop_perform_op, signaling that now it is
-        // safe to terminate running instances. Check if this detereorate
-        // performance.
-   //     pthread_cond_signal(
-   //         &config->ready);  // Prone to the lost wake-up problem
     }
     pthread_exit(NULL);
 }
@@ -1165,7 +1196,7 @@ void getBnModExpRequest(unsigned int batch_size) {
 #ifdef HE_QAT_PERF
     gettimeofday(&start_time, NULL);
 #endif
-//printf("batch_size=%u ",batch_size);
+//printf("batch_size=%u \n",batch_size);
 //    while (j < batch_size) {
     do {
         // Buffer read may be safe for single-threaded blocking calls only.
@@ -1225,7 +1256,7 @@ void getBnModExpRequest(unsigned int batch_size) {
     printf("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
-    printf("\n");
+//    printf("\n");
 
     return;
 }
@@ -1240,16 +1271,16 @@ static void HE_QAT_bnModExpCallback(
     void* pOpData,  // This is fixed -- please swap it
     CpaFlatBuffer* pOut) {
     HE_QAT_TaskRequest* request = NULL;
-
-//    pthread_mutex_lock(&response_mutex);
-    // Global track of reponses by accelerator
-    response_count += 1;
-//    pthread_mutex_unlock(&response_mutex);
-    
+ 
     // Check if input data for the op is available and do something
     if (NULL != pCallbackTag) {
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
+    
+    	pthread_mutex_lock(&response_mutex);
+        // Global track of reponses by accelerator
+        response_count += 1;
+        pthread_mutex_unlock(&response_mutex);
 
         pthread_mutex_lock(&request->mutex);
         // Collect the device output in pOut
@@ -1261,6 +1292,7 @@ static void HE_QAT_bnModExpCallback(
                 // Copy compute results to output destination
                 memcpy(request->op_output, request->op_result.pData,
                        request->op_result.dataLenInBytes);
+//		printf("Request ID %llu Completed.\n",request->id);
 #ifdef HE_QAT_PERF
                 gettimeofday(&request->end, NULL);
 #endif
@@ -1281,10 +1313,9 @@ static void HE_QAT_bnModExpCallback(
 
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits) {
-#ifdef HE_QAT_DEBUG
+//#ifdef HE_QAT_DEBUG
     static unsigned long long req_count = 0;
-    // printf("Wait lock write request. [buffer size: %d]\n",_buffer->count);
-#endif
+//#endif
     // Unpack data and copy to QAT friendly memory space
     int len = nbits / 8;
 
@@ -1367,11 +1398,12 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     request->callback_func = (void*)HE_QAT_bnModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
-
+    
     // Ensure calls are synchronized at exit (blocking)
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
 
+    request->id = req_count;
 #ifdef HE_QAT_DEBUG
     printf("BN ModExp interface call for request #%llu\n", ++req_count);
 #endif
