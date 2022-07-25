@@ -28,6 +28,7 @@ volatile int context_state = 0;
 
 // Global variable declarations
 pthread_t         buffer_manager;
+pthread_t         he_qat_runner;
 HE_QAT_Inst       he_qat_instances[HE_QAT_NUM_ACTIVE_INSTANCES];
 pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
 HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
@@ -36,11 +37,20 @@ HE_QAT_Config*    he_qat_config = NULL;
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_RequestBufferList outstanding_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
+
+
+/***********           Internal Services          ***********/
+// Start scheduler of work requests (consumer)
 extern void* schedule_requests(void* state);
-extern void* start_perform_op(void* _inst_config);
+// Activate cpaCyInstances to run on background and poll responses from QAT accelerator
 extern void* start_instances(void* _inst_config);
+// Stop a running group of cpaCyInstances started with the "start_instances" service
 extern void stop_instances(HE_QAT_Config* _config);
+// Stop running individual QAT instances from a list of cpaCyInstances (called by "stop_instances")
 extern void stop_perform_op(void* _inst_config, unsigned num_inst);
+// Activate a cpaCyInstance to run on background and poll responses from QAT accelerator 
+// WARNING: Deprecated when "start_instances" becomes default.
+extern void* start_perform_op(void* _inst_config);
 
 CpaInstanceHandle handle = NULL;
 
@@ -221,17 +231,19 @@ HE_QAT_STATUS acquire_qat_devices() {
     he_qat_config->active = 0;
 
     // Work on this
-    pthread_create(&he_qat_instances[0], NULL, start_instances, (void*)he_qat_config);
+ //   pthread_create(&he_qat_instances[0], NULL, start_instances, (void*)he_qat_config);
+    pthread_create(&he_qat_runner, NULL, start_instances, (void*)he_qat_config);
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Created processing threads.\n");
 #endif
 
     // Dispatch the qat instances to run independently in the background
-    // for (int i = 0; i < HE_QAT_SYNC; i++) {
-    pthread_detach(he_qat_instances[0]);
 //    for (int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
 //        pthread_detach(he_qat_instances[i]);
 //    }
+    // Dispatch all QAT instances in a single thread 
+//    pthread_detach(he_qat_instances[0]);
+    pthread_detach(he_qat_runner);
 #ifdef _DESTINY_DEBUG_VERBOSE
     printf("Detached processing threads.\n");
 #endif

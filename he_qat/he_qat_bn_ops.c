@@ -24,7 +24,8 @@ double time_taken = 0.0;
 #pragma message "Asynchronous execution mode."
 #endif
 
-#define RESTART_LATENCY_MICROSEC 620
+#define RESTART_LATENCY_MICROSEC 600
+#define NUM_PKE_SLICES 6
 
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
@@ -36,8 +37,8 @@ volatile unsigned long response_count = 0;
 pthread_mutex_t response_mutex;
 
 unsigned long request_latency = 0; // unused
-unsigned long restart_threshold = 6;
-unsigned long max_pending = 64; // each QAT endpoint has 6 PKE slices 
+unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
+unsigned long max_pending = (NUM_PKE_SLICES * 8 * HE_QAT_NUM_ACTIVE_INSTANCES); // each QAT endpoint has 6 PKE slices 
                                 // single socket has 4 QAT endpoints (24 simultaneous requests)
 				// dual-socket has 8 QAT endpoints (48 simultaneous requests)
 				// max_pending = (num_sockets * num_qat_devices * num_pke_slices) / k
@@ -677,7 +678,8 @@ void* start_instances(void* _config) {
 
 	    if (CPA_STATUS_RETRY == status) {
 	        printf("CPA requested RETRY\n");
-		pthread_exit(NULL);
+	        printf("RETRY count = %u\n",retry);
+		pthread_exit(NULL); // halt the whole system
 	    }
 
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
@@ -837,6 +839,7 @@ void* start_perform_op(void* _inst_config) {
             switch (request->op_type) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
+		//if (retry > 0) printf("Try offloading again last request\n");
 #ifdef HE_QAT_DEBUG
                 printf("Offload request using instance #%d\n", config->inst_id);
 #endif
@@ -862,6 +865,8 @@ void* start_perform_op(void* _inst_config) {
 
 	    if (CPA_STATUS_RETRY == status) {
 	        printf("CPA requested RETRY\n");
+	        printf("RETRY count: %u\n",retry);
+                OS_SLEEP(600);
 	    }
 
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
@@ -870,8 +875,7 @@ void* start_perform_op(void* _inst_config) {
         if (CPA_STATUS_SUCCESS == status) {
 	    // Global tracking of number of requests 
 	    request_count += 1;
-
-//		printf("retry_count = %d\n",retry_count);
+	    //printf("retry_count = %d\n",retry_count);
 #ifdef HE_QAT_SYNC_MODE
             // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
