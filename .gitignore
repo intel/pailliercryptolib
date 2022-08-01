@@ -1,0 +1,17 @@
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+.vscode/
+.vs/
+build*/
+
+.DS_Store
+
+# Generated files
+docs/doxygen/
+*.log
+Doxyfile
+cmake/ipcl-*.*.*/IPCLConfig.cmake
+
+# vim
+**.swp

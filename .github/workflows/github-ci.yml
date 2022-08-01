@@ -1,0 +1,102 @@
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+name: ipcl
+on:
+  # By default this will run when the activity type is "opened", "synchronize",
+  # or "reopened".
+  pull_request:
+    branches:
+      - main
+      - development
+  push:
+    branches:
+      - development
+
+  # Manually run this workflow on any specified branch.
+  workflow_dispatch:
+
+##############
+# IceLake CI #
+##############
+jobs:
+  format:
+    name: Format check
+    runs-on: [self-hosted, linux, x64, icx]
+    # Use environment protection (require review)
+    environment: intel_workflow
+    steps:
+      - uses: actions/checkout@v2
+        # Add local bin for cpplint
+      - name: Setup
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: pre-commit
+        run: pre-commit run --all-files
+
+  build-and-test:
+    name: Build, test and run kernels - shared
+    needs: [format]
+    runs-on: [self-hosted, linux, x64, icx]
+    # Use environment protection (require review)
+    environment: intel_workflow
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v2
+      - name: Validate paths
+        run: |
+          whoami
+          echo $HOME
+          echo $GITHUB_WORKSPACE
+          echo "Testing from branch:"
+          echo $GITHUB_REF
+          pwd
+
+      # Build library
+      - name: Build the repository
+        run: |
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target all -j
+
+      # Unit tests and examples
+      - name: Run the unit tests
+        run: ./build/test/unittest_ipcl
+
+      - name: Run the benchmarks
+        run: ./build/benchmark/bench_ipcl
+
+  build-and-test-static:
+    name: Build, test and run kernels - static
+    needs: [format]
+    runs-on: [self-hosted, linux, x64, icx]
+    # Use environment protection (require review)
+    environment: intel_workflow
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v2
+      - name: Validate paths
+        run: |
+          whoami
+          echo $HOME
+          echo $GITHUB_WORKSPACE
+          echo "Testing from branch:"
+          echo $GITHUB_REF
+          pwd
+
+      # Build library
+      - name: Build the repository
+        run: |
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_SHARED=OFF
+          cmake --build build --target all -j
+
+      # Unit tests and examples
+      - name: Run the unit tests
+        run: ./build/test/unittest_ipcl
+
+      - name: Run the benchmarks
+        run: ./build/benchmark/bench_ipcl

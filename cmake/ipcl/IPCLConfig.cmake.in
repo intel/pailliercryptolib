@@ -1,0 +1,21 @@
+# Copyright (C) 2021 Intel Corporation
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+include(${CMAKE_CURRENT_LIST_DIR}/ipclTargets.cmake)
+
+if(TARGET IPCL::ipcl)
+  set(IPCL_FOUND TRUE)
+  message(STATUS "Intel Paillier Cryptosystem Library found")
+else()
+  message(STATUS "Intel Paillier Cryptosystem Library not found")
+endif()
+
+set(IPCL_VERSION "@IPCL_VERSION")
+set(IPCL_VERSION_MAJOR "@IPCL_VERSION_MAJOR")
+set(IPCL_VERSION_MINOR "@IPCL_VERSION")
+set(IPCL_VERSION_PATCH "@IPCL_VERSION")
+
+set(IPCL_DEBUG "@IPCL_DEBUG")

@@ -1,0 +1,30 @@
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+PROJECT_NAME           = "Intel Paillier Cryptosystem Library"
+PROJECT_BRIEF          = "Intel Paillier Cryptosystem library C++ backend with Intel IPP-Crypto"
+
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_SOURCE_DIR@/doxygen
+INPUT                  = @CMAKE_SOURCE_DIR@/ipcl/include \
+                         @CMAKE_SOURCE_DIR@/README.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+USE_MATHJAX            = YES
+FULL_PATH_NAMES        = NO
+
+GENERATE_XML           = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+SHOW_NAMESPACES        = YES
+GENERATE_LATEX         = YES
+
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = YES
+
+QUIET                  = NO
+
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
