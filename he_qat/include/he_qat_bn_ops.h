@@ -16,6 +16,10 @@ extern "C" {
 #include "cpa_sample_utils.h"
 #include <pthread.h>
 
+#ifdef HE_QAT_PERF
+#include <sys/time.h>
+#endif
+
 //#include <semaphore.h>
 #include <openssl/bn.h>
 
@@ -33,9 +37,14 @@ typedef struct {
     // CpaCyLnModExpOpData op_data;
     void* op_data;
     void* op_output;
-    HE_QAT_STATUS request_status;
+    void* callback_func;
+    volatile HE_QAT_STATUS request_status;
     pthread_mutex_t mutex;
     pthread_cond_t ready;
+#ifdef HE_QAT_PERF
+    struct timeval start;
+    struct timeval end;
+#endif
 } HE_QAT_TaskRequest;
 
 /// @brief

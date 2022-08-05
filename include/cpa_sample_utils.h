@@ -314,8 +314,11 @@ static __inline CpaStatus sampleSleep(Cpa32U ms)
 #ifdef USER_SPACE
     int ret = 0;
     struct timespec resTime, remTime;
-    resTime.tv_sec = ms / 1000;
-    resTime.tv_nsec = (ms % 1000) * 1000000;
+    //resTime.tv_sec = ms / 1000;
+    //resTime.tv_nsec = (ms % 1000) * 1000000;
+    // microseconds
+    resTime.tv_sec = ms / 1000000;
+    resTime.tv_nsec = (ms % 1000000) * 1000;
     do
     {
         ret = nanosleep(&resTime, &remTime);

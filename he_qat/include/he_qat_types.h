@@ -13,7 +13,7 @@ extern "C" {
 
 #include <pthread.h>
 
-#define HE_QAT_BUFFER_SIZE 16
+#define HE_QAT_BUFFER_SIZE 1024
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
@@ -41,6 +41,7 @@ typedef struct {
 } HE_QAT_RequestBuffer;
 
 typedef struct {
+    int inst_id;
     CpaInstanceHandle inst_handle;
     pthread_attr_t* attr;
     HE_QAT_RequestBuffer* he_qat_buffer;

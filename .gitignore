@@ -1,2 +1,12 @@
-build
+.vscode/
+.vs/
+
+
+build*/
 install
+
+cmake/he_qat-*.*.*/HE_QATConfig.cmake
+*.log
+Doxyfile
+
+**.swp
