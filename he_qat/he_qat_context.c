@@ -149,16 +149,17 @@ HE_QAT_STATUS acquire_qat_devices() {
     outstanding.next_ready_buffer = 0;
     for (int i = 0; i < HE_QAT_BUFFER_COUNT; i++) {
         outstanding.free_buffer[i] = 1;
-	outstanding.ready_buffer[i] = 0;
-	outstanding.buffer[i].count = 0;
-	outstanding.buffer[i].next_free_slot = 0;
-	outstanding.buffer[i].next_data_slot = 0;
+        outstanding.ready_buffer[i] = 0;
+        outstanding.buffer[i].count = 0;
+        outstanding.buffer[i].next_free_slot = 0;
+        outstanding.buffer[i].next_data_slot = 0;
+        outstanding.buffer[i].next_data_out = 0;
         for (int j = 0; j < HE_QAT_BUFFER_SIZE; j++) {
             outstanding.buffer[i].data[j] = NULL;
-	}
+        }
         pthread_mutex_init(&outstanding.buffer[i].mutex, NULL);
         pthread_cond_init(&outstanding.buffer[i].any_more_data, NULL);
-        pthread_cond_init(&outstanding.buffer[i].any_free_data, NULL);
+        pthread_cond_init(&outstanding.buffer[i].any_free_slot, NULL);
     }
     pthread_mutex_init(&outstanding.mutex, NULL);
     pthread_cond_init(&outstanding.any_free_buffer, NULL);
