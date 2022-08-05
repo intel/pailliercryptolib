@@ -47,6 +47,12 @@ typedef struct {
 #endif
 } HE_QAT_TaskRequest;
 
+// One for each consumer
+typedef struct {
+    HE_QAT_TaskRequest* request[HE_QAT_BUFFER_SIZE];
+    unsigned int count;
+} HE_QAT_TaskRequestList;
+
 /// @brief
 /// @function
 /// Perform big number modular exponentiation for input data in
@@ -103,6 +109,16 @@ void getBnModExpRequest(unsigned int num_requests);
 /// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits);
+
+/* ***** Multi-threading supported interface ******* */
+
+HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
+
+HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
+                                 unsigned char* b, unsigned char* e,
+                                 unsigned char* m, int nbits);
+
+void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size);
 
 #ifdef __cplusplus
 }  // extern "C" {
