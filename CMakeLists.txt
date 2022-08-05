@@ -30,8 +30,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 11) 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "-O2")
-set(CMAKE_CXX_FLAGS "-O2 -fpermissive")
+set(CMAKE_C_FLAGS "-O2 -Wunused-variable -Wunused-function")
+set(CMAKE_CXX_FLAGS "-O2 -Wunused-variable -Wunused-function -fpermissive")
 
 # What does it do?
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
