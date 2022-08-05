@@ -19,7 +19,7 @@
 int gDebugParam = 1;
 #endif
 
-const unsigned int BATCH_SIZE = 2048;
+const unsigned int BATCH_SIZE = 4096;
 
 using namespace std::chrono;
 
@@ -44,7 +44,7 @@ int main(int argc, const char** argv) {
     BN_CTX* ctx = BN_CTX_new();
     BN_CTX_start(ctx);
 
-    int nthreads = 2;
+    int nthreads = 4;
     for (unsigned int mod = 0; mod < num_trials; mod++) {
         // Generate modulus number
         BIGNUM* bn_mod = generateTestBNData(bit_length);
