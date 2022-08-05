@@ -129,13 +129,6 @@ class PublicKey {
   bool m_testv;
 
   /**
-   * Get random value
-   * @param[in] size size of random
-   * @return addr of random of type Ipp32u vector
-   */
-  std::vector<Ipp32u> randIpp32u(int size) const;
-
-  /**
    * Big number vector multi buffer encryption
    * @param[in] pt plaintext of BigNumber vector type
    * @param[in] make_secure apply obfuscator(default value is true)
@@ -143,13 +136,6 @@ class PublicKey {
    */
   std::vector<BigNumber> raw_encrypt(const std::vector<BigNumber>& pt,
                                      bool make_secure = true) const;
-
-  /**
-   * Get random value
-   * @param[in] length bit length
-   * @return the random value of type BigNumber
-   */
-  BigNumber getRandom(int length) const;
 
   void applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const;
 
