@@ -15,6 +15,7 @@ struct timeval start_time, end_time;
 double time_taken = 0.0;
 #endif
 
+#include <stdio.h>
 #include <pthread.h>
 #include <assert.h>
 
@@ -29,7 +30,6 @@ double time_taken = 0.0;
 
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
-HE_QAT_RequestBufferList outstanding_buffer;
 HE_QAT_OutstandingBuffer outstanding;
 
 volatile unsigned long request_count = 0;
@@ -71,6 +71,9 @@ static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
                 BIGNUM* r = BN_bin2bn(request->op_result.pData,
                                       request->op_result.dataLenInBytes,
                                       (BIGNUM*)request->op_output);
+		if (NULL == r) 
+                   request->request_status = HE_QAT_STATUS_FAIL;
+		   
             } else {
                 request->request_status = HE_QAT_STATUS_FAIL;
             }
@@ -291,6 +294,7 @@ static void read_request_list(HE_QAT_TaskRequestList* _requests,
 /// Thread-safe consumer implementation for the shared request buffer.
 /// Read requests from a buffer to finally offload the work to QAT devices.
 /// @deprecated
+//[[deprecated("Replaced by pull_outstanding_requests() in schedule_requests().")]]
 static void pull_request(HE_QAT_TaskRequestList* _requests,
                          // HE_QAT_OutstandingBuffer *_outstanding_buffer,
                          HE_QAT_RequestBufferList* _outstanding_buffer,
