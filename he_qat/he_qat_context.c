@@ -35,7 +35,6 @@ HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
 HE_QAT_Config*    he_qat_config = NULL;
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
-extern HE_QAT_RequestBufferList outstanding_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
 
 
