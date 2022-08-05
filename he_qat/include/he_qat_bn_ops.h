@@ -16,6 +16,10 @@ extern "C" {
 #include "cpa_sample_utils.h"
 #include <pthread.h>
 
+#ifdef HE_QAT_PERF
+#include <sys/time.h>
+#endif
+
 //#include <semaphore.h>
 #include <openssl/bn.h>
 
@@ -33,10 +37,21 @@ typedef struct {
     // CpaCyLnModExpOpData op_data;
     void* op_data;
     void* op_output;
-    HE_QAT_STATUS request_status;
+    void* callback_func;
+    volatile HE_QAT_STATUS request_status;
     pthread_mutex_t mutex;
     pthread_cond_t ready;
+#ifdef HE_QAT_PERF
+    struct timeval start;
+    struct timeval end;
+#endif
 } HE_QAT_TaskRequest;
+
+// One for each consumer
+typedef struct {
+    HE_QAT_TaskRequest* request[HE_QAT_BUFFER_SIZE];
+    unsigned int count;
+} HE_QAT_TaskRequestList;
 
 /// @brief
 /// @function
@@ -94,6 +109,18 @@ void getBnModExpRequest(unsigned int num_requests);
 /// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits);
+
+
+/* ***** Multi-threading supported interface ******* */
+
+
+HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int *_buffer_id);
+
+HE_QAT_STATUS HE_QAT_bnModExp_MT(int _buffer_id, 
+		unsigned char* r, unsigned char* b, 
+		unsigned char* e, unsigned char* m, int nbits);
+
+void release_bnModExp_buffer(int _buffer_id, unsigned int _batch_size);
 
 #ifdef __cplusplus
 }  // extern "C" {
