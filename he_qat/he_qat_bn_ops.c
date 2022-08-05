@@ -38,7 +38,7 @@ pthread_mutex_t response_mutex;
 
 unsigned long request_latency = 0; // unused
 unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
-unsigned long max_pending = (NUM_PKE_SLICES * 8 * HE_QAT_NUM_ACTIVE_INSTANCES); // each QAT endpoint has 6 PKE slices 
+unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); // each QAT endpoint has 6 PKE slices 
                                 // single socket has 4 QAT endpoints (24 simultaneous requests)
 				// dual-socket has 8 QAT endpoints (48 simultaneous requests)
 				// max_pending = (num_sockets * num_qat_devices * num_pke_slices) / k
