@@ -38,7 +38,7 @@ if(IPCL_SHARED)
 
   ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.a)
+  target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libcpa_sample_utils.so)
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries(libhe_qat INTERFACE ${HEQAT_PREFIX}/lib/libhe_qat_debug.so)
   else()
