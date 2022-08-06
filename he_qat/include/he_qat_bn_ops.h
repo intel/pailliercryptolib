@@ -29,6 +29,7 @@ extern "C" {
 
 // One for each consumer
 typedef struct {
+    unsigned long long id; 
     // sem_t callback;
     struct COMPLETION_STRUCT callback;
     HE_QAT_OP op_type;
