@@ -60,8 +60,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 option(HE_QAT_MISC "Enable miscellaneous features" ON)
 option(HE_QAT_SYNC "Enable synchronous mode execution" OFF)
+option(HE_QAT_MT "Enable interfaces for multithreaded programs" ON)
 option(HE_QAT_PERF "Show request performance" OFF)
 option(HE_QAT_TEST "Enable testing" OFF)
+option(HE_QAT_OMP "Enable tests using OpenMP" ON)
 option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
 option(HE_QAT_DOCS "Enable document building" OFF)
@@ -76,10 +78,24 @@ endif()
 
 # Why?
 set(HE_QAT_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/he_qat")
-
 set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}) 
 set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/he_qat) 
 set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/he_qat/include)
+
+if(HE_QAT_OMP)
+  find_package(OpenMP REQUIRED)
+  if(NOT TARGET OpenMP::OpenMP_CXX)
+    message(FATAL_ERROR "Missing OpenMP::OpenMP_CXX.")
+  endif()
+  if(NOT TARGET OpenMP::OpenMP_C)
+    message(FATAL_ERROR "Missing OpenMP::OpenMP_C.")
+  endif()
+endif()
+
+if(HE_QAT_MT)
+  add_definitions(-DHE_QAT_MT)
+  message(STATUS "Compile with multithreaded interfaces.")
+endif()
 
 if(HE_QAT_MISC)
   # IPP Crypto installation
