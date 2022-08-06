@@ -13,8 +13,9 @@ extern "C" {
 
 #include <pthread.h>
 
+#define HE_QAT_NUM_ACTIVE_INSTANCES 8
 #define HE_QAT_BUFFER_SIZE 1024
-#define HE_QAT_BUFFER_COUNT 8
+#define HE_QAT_BUFFER_COUNT HE_QAT_NUM_ACTIVE_INSTANCES
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
@@ -84,6 +85,13 @@ typedef struct {
     volatile int running;
     CpaStatus status;
 } HE_QAT_InstConfig;
+
+typedef struct {
+   HE_QAT_InstConfig *inst_config;
+   volatile int active;
+   volatile int running;
+   unsigned int count;
+} HE_QAT_Config;
 
 #ifdef __cplusplus
 }  // close the extern "C" {

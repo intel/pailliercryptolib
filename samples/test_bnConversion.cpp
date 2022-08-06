@@ -5,31 +5,18 @@
 #include "he_qat_context.h"
 #include "cpa_sample_utils.h"
 
-//#ifdef __cplusplus
-// extern "C" {
-//#endif
-
 #include <time.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-//#ifdef __cplusplus
-//}
-//#endif
-
 #include <string>
 
-//#include "ippcp.h"
 #include <iomanip>
 
 int main(int argc, const char** argv) {
     const int bit_length = 1024;
     const size_t num_trials = 4;
-
-    double avg_speed_up = 0.0;
-    double ssl_avg_time = 0.0;
-    double qat_avg_time = 0.0;
 
     clock_t start = CLOCKS_PER_SEC;
     clock_t ssl_elapsed = CLOCKS_PER_SEC;
