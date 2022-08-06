@@ -5,7 +5,7 @@ include(ExternalProject)
 MESSAGE(STATUS "Configuring HE QAT")
 set(HEQAT_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_he_qat)
 set(HEQAT_GIT_REPO_URL git@github.com:intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git)
-set(HEQAT_GIT_LABEL development)
+set(HEQAT_GIT_LABEL v1.0-pre-release)
 set(HEQAT_SRC_DIR ${HEQAT_PREFIX}/src/ext_he_qat/)
 
 set(HEQAT_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS}")
