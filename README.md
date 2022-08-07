@@ -1,5 +1,5 @@
 # Intel Paillier Cryptosystem Library
-Intel Paillier Cryptosystem Library is an open-source library which provides accelerated performance of a partial homomorphic encryption (HE), named Paillier cryptosystem, by utilizing Intel® [Integrated Performance Primitives Cryptography](https://github.com/intel/ipp-crypto) technologies on Intel CPUs supporting the AVX512IFMA instructions. The library is written in modern standard C++ and provides the essential API for the Paillier cryptosystem scheme. Intel Paillier Cryptosystem Library is certified for ISO compliance. 
+Intel Paillier Cryptosystem Library is an open-source library which provides accelerated performance of a partial homomorphic encryption (HE), named Paillier cryptosystem, by utilizing Intel® [Integrated Performance Primitives Cryptography](https://github.com/intel/ipp-crypto) technologies on Intel CPUs supporting the AVX512IFMA instructions. The library is written in modern standard C++ and provides the essential API for the Paillier cryptosystem scheme. Intel Paillier Cryptosystem Library is certified for ISO compliance.
 
 ## Contents
 - [Intel Paillier Cryptosystem Library](#intel-paillier-cryptosystem-library)
@@ -112,10 +112,13 @@ This library is certified for ISO compliance with the homomorphic encryption sta
 
 # Contributors
 Main contributors to this project, sorted by alphabetical order of last name are:
+  - [Flavio Bergamaschi](https://www.linkedin.com/in/flavio-bergamaschi)
   - [Xiaoran Fang](https://github.com/fangxiaoran)
   - [Hengrui Hu](https://github.com/hhr293)
   - [Xiaojun Huang](https://github.com/xhuan28)
-  - [Hamish Hunt](https://github.com/hamishun)
-  - [Sejun Kim](https://github.com/skmono) (lead)
+  - [Hamish Hunt](https://www.linkedin.com/in/hamish-hunt)
+  - [Jingyi Jin](https://www.linkedin.com/in/jingyi-jin-655735)
+  - [Sejun Kim](https://www.linkedin.com/in/sejun-kim-2b1b4866) (lead)
+  - [Fillipe D.M. de Souza](https://www.linkedin.com/in/fillipe-d-m-de-souza-a8281820)
   - [Bin Wang](https://github.com/bwang30)
   - [Pengfei Zhao](https://github.com/justalittlenoob)
