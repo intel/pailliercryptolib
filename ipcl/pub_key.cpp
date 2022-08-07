@@ -35,44 +35,12 @@ PublicKey::PublicKey(const BigNumber& n, int bits, bool enableDJN_)
   if (enableDJN_) this->enableDJN();  // sets m_enable_DJN
 }
 
-// array of 32-bit random, using rand() from stdlib
-std::vector<Ipp32u> PublicKey::randIpp32u(int size) const {
-  std::vector<Ipp32u> addr(size);
-  // TODO(skmono): check if copy of m_init_seed is needed for const
-  unsigned int init_seed = m_init_seed;
-  for (auto& a : addr) a = (rand_r(&init_seed) << 16) + rand_r(&init_seed);
-  return addr;
-}
-
-// length is arbitrary
-BigNumber PublicKey::getRandom(int bit_len) const {
-  IppStatus stat;
-  int bn_buf_size;
-
-  // define length Big Numbers
-  int bn_len = BITSIZE_WORD(bit_len);
-  stat = ippsBigNumGetSize(bn_len, &bn_buf_size);
-  ERROR_CHECK(stat == ippStsNoErr,
-              "getRandom: get IppsBigNumState context error.");
-
-  IppsBigNumState* pBN =
-      reinterpret_cast<IppsBigNumState*>(alloca(bn_buf_size));
-  ERROR_CHECK(pBN != nullptr, "getRandom: big number alloca error");
-
-  stat = ippsBigNumInit(bn_len, pBN);
-  ERROR_CHECK(stat == ippStsNoErr, "getRandom: init big number context error.");
-
-  ippsPRNGenRDRAND_BN(pBN, bit_len, NULL);
-
-  return BigNumber{pBN};
-}
-
 void PublicKey::enableDJN() {
   BigNumber gcd;
   BigNumber rmod;
   do {
     int rand_bit = m_n.BitSize();
-    BigNumber rand = getRandom(rand_bit + 128);
+    BigNumber rand = getRandomBN(rand_bit + 128);
     rmod = rand % m_n;
     gcd = rand.gcd(m_n);
   } while (gcd.compare(1));
@@ -96,7 +64,7 @@ void PublicKey::applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const {
     r = m_r;
   } else {
     for (auto& r_ : r) {
-      r_ = getRandom(m_randbits);
+      r_ = getRandomBN(m_randbits);
     }
   }
   obfuscator = ipcl::ippModExp(base, r, sq);
@@ -113,7 +81,7 @@ void PublicKey::applyNormalObfuscator(
     r = m_r;
   } else {
     for (int i = 0; i < obf_size; i++) {
-      r[i] = getRandom(m_bits);
+      r[i] = getRandomBN(m_bits);
       r[i] = r[i] % (m_n - 1) + 1;
     }
   }

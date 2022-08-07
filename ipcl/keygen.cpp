@@ -3,8 +3,6 @@
 
 #include "ipcl/keygen.hpp"
 
-#include <climits>
-#include <random>
 #include <vector>
 
 #include "ipcl/util.hpp"
@@ -12,14 +10,7 @@
 namespace ipcl {
 
 constexpr int N_BIT_SIZE_MAX = 2048;
-constexpr int N_BIT_SIZE_MIN = 16;
-
-static void rand32u(std::vector<Ipp32u>& addr) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-  for (auto& x : addr) x = (dist(rng) << 16) + dist(rng);
-}
+constexpr int N_BIT_SIZE_MIN = 200;
 
 BigNumber getPrimeBN(int maxBitSize) {
   int PrimeSize;
@@ -27,19 +18,14 @@ BigNumber getPrimeBN(int maxBitSize) {
   auto primeGen = std::vector<Ipp8u>(PrimeSize);
   ippsPrimeInit(maxBitSize, reinterpret_cast<IppsPrimeState*>(primeGen.data()));
 
-  // define Pseudo Random Generator (default settings)
+  // default seed bit size
   constexpr int seedBitSize = 160;
-  constexpr int seedSize = BITSIZE_WORD(seedBitSize);
+  BigNumber seed = getRandomBN(seedBitSize);
 
-  ippsPRNGGetSize(&PrimeSize);
   auto rand = std::vector<Ipp8u>(PrimeSize);
   ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rand.data()));
 
-  auto seed = std::vector<Ipp32u>(seedSize);
-  rand32u(seed);
-  BigNumber bseed(seed.data(), seedSize, IppsBigNumPOS);
-
-  ippsPRNGSetSeed(BN(bseed), reinterpret_cast<IppsPRNGState*>(rand.data()));
+  ippsPRNGSetSeed(seed, reinterpret_cast<IppsPRNGState*>(rand.data()));
 
   // generate maxBit prime
   BigNumber pBN(0, maxBitSize / 8);
@@ -111,7 +97,7 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
       "generateKeyPair: modulus size in bits should belong to either 1Kb, 2Kb, "
       "3Kb or 4Kb range only, key size exceed the range!!!");
   ERROR_CHECK((n_length >= N_BIT_SIZE_MIN) && (n_length % 4 == 0),
-              "generateKeyPair: key size should >=16, and divisible by 4");
+              "generateKeyPair: key size should >=200, and divisible by 4");
 
   BigNumber ref_dist = getPrimeDistance(n_length);
 
