@@ -31,9 +31,7 @@ BigNumber getRandomBN(int bit_len) {
 #elif defined(IPCL_RNG_INSTR_RDRAND)
   ippsPRNGenRDRAND_BN(pBN, bit_len, NULL);
 #else
-  ERROR_CHECK(
-      false,
-      "getRandomBN: CPU doest NOT support RDSEED and RDRAND instruction");
+  ippsPRNGen_BN(pBN, bit_len, NULL);
 #endif
 
   return BigNumber{pBN};
