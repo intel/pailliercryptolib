@@ -179,7 +179,7 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #endif  // IPCL_USE_OMP
   for (std::size_t i = 0; i < num_chunk; i++) {
     std::size_t chunk_size = IPCL_CRYPTO_MB_SIZE;
-    if ((i == (num_chunk - 1)) && (remainder > 1)) chunk_size = remainder;
+    if ((i == (num_chunk - 1)) && (remainder > 0)) chunk_size = remainder;
 
     std::size_t chunk_offset = i * IPCL_CRYPTO_MB_SIZE;
 

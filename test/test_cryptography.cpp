@@ -11,7 +11,7 @@
 #include "ipcl/keygen.hpp"
 #include "ipcl/plaintext.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 20;
+constexpr int SELF_DEF_NUM_VALUES = 9;
 
 TEST(CryptoTest, CryptoTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
@@ -45,7 +45,9 @@ TEST(CryptoTest, CryptoTest) {
 }
 
 TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
-  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+  // Ensure that at least 2 different numbers are encrypted
+  // Because ir_bn_v[1] will set to a specific value
+  const uint32_t num_values = SELF_DEF_NUM_VALUES + 1;
 
   BigNumber p =
       "0xff03b1a74827c746db83d2eaff00067622f545b62584321256e62b01509f10962f9c5c"
