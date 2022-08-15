@@ -11,7 +11,7 @@
 #include "ipcl/keygen.hpp"
 #include "ipcl/plaintext.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 20;
+constexpr int SELF_DEF_NUM_VALUES = 7;
 
 void CtPlusCt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
               const ipcl::CipherText& ct2, const ipcl::keyPair key) {
