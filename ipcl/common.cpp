@@ -9,11 +9,31 @@
 
 namespace ipcl {
 
-BigNumber getRandomBN(int bit_len) {
+IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
+#ifdef IPCL_RNG_INSTR_RDSEED
+  return ippsTRNGenRDSEED(rand, bits, ctx);
+#elif defined(IPCL_RNG_INSTR_RDRAND)
+  return ippsPRNGenRDRAND(rand, bits, ctx);
+#else
+  return ippsPRNGen(rand, bits, ctx);
+#endif
+}
+
+IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
+#ifdef IPCL_RNG_INSTR_RDSEED
+  return ippsTRNGenRDSEED_BN(rand, bits, ctx);
+#elif defined(IPCL_RNG_INSTR_RDRAND)
+  return ippsPRNGenRDRAND_BN(rand, bits, ctx);
+#else
+  return ippsPRNGen_BN(rand, bits, ctx);
+#endif
+}
+
+BigNumber getRandomBN(int bits) {
   IppStatus stat;
   int bn_buf_size;
 
-  int bn_len = BITSIZE_WORD(bit_len);
+  int bn_len = BITSIZE_WORD(bits);
   stat = ippsBigNumGetSize(bn_len, &bn_buf_size);
   ERROR_CHECK(stat == ippStsNoErr,
               "getRandomBN: get IppsBigNumState context error.");
@@ -26,13 +46,9 @@ BigNumber getRandomBN(int bit_len) {
   ERROR_CHECK(stat == ippStsNoErr,
               "getRandomBN: init big number context error.");
 
-#ifdef IPCL_RNG_INSTR_RDSEED
-  ippsTRNGenRDSEED_BN(pBN, bit_len, NULL);
-#elif defined(IPCL_RNG_INSTR_RDRAND)
-  ippsPRNGenRDRAND_BN(pBN, bit_len, NULL);
-#else
-  ippsPRNGen_BN(pBN, bit_len, NULL);
-#endif
+  stat = ippGenRandomBN(pBN, bits, NULL);
+  ERROR_CHECK(stat == ippStsNoErr,
+              "getRandomBN:  generate random big number error.");
 
   return BigNumber{pBN};
 }
