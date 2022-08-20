@@ -1,0 +1,4 @@
+
+#define RESTART_LATENCY_MICROSEC 600
+#define NUM_PKE_SLICES 6
+

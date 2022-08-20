@@ -9,50 +9,12 @@
 extern "C" {
 #endif
 
-#include "cpa.h"
-#include "cpa_cy_ln.h"
-
 #include "he_qat_types.h"
-#include "cpa_sample_utils.h"
-#include <pthread.h>
-
-#ifdef HE_QAT_PERF
-#include <sys/time.h>
-#endif
+//#include "cpa_sample_utils.h"
+//#include <pthread.h>
 
 //#include <semaphore.h>
 #include <openssl/bn.h>
-
-// #include "bignum.h" or create a standard interface
-
-#define HE_QAT_MAX_RETRY 100
-
-// One for each consumer
-typedef struct {
-    unsigned long long id; 
-    // sem_t callback;
-    struct COMPLETION_STRUCT callback;
-    HE_QAT_OP op_type;
-    CpaStatus op_status;
-    CpaFlatBuffer op_result;
-    // CpaCyLnModExpOpData op_data;
-    void* op_data;
-    void* op_output;
-    void* callback_func;
-    volatile HE_QAT_STATUS request_status;
-    pthread_mutex_t mutex;
-    pthread_cond_t ready;
-#ifdef HE_QAT_PERF
-    struct timeval start;
-    struct timeval end;
-#endif
-} HE_QAT_TaskRequest;
-
-// One for each consumer
-typedef struct {
-    HE_QAT_TaskRequest* request[HE_QAT_BUFFER_SIZE];
-    unsigned int count;
-} HE_QAT_TaskRequestList;
 
 /// @brief
 /// @function

@@ -8,14 +8,23 @@
 extern "C" {
 #endif
 
+// QATLib Headers
 #include "cpa.h"
 #include "cpa_cy_im.h"
+#include "cpa_cy_ln.h"
+#include "cpa_sample_utils.h"
 
+// C Libraries
 #include <pthread.h>
+#ifdef HE_QAT_PERF
+#include <sys/time.h>
+#endif
 
+// Local Constants
 #define HE_QAT_NUM_ACTIVE_INSTANCES 8
 #define HE_QAT_BUFFER_SIZE 1024
 #define HE_QAT_BUFFER_COUNT HE_QAT_NUM_ACTIVE_INSTANCES
+#define HE_QAT_MAX_RETRY 100
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
@@ -92,6 +101,33 @@ typedef struct {
    volatile int running;
    unsigned int count;
 } HE_QAT_Config;
+
+// One for each consumer
+typedef struct {
+    unsigned long long id; 
+    // sem_t callback;
+    struct COMPLETION_STRUCT callback;
+    HE_QAT_OP op_type;
+    CpaStatus op_status;
+    CpaFlatBuffer op_result;
+    // CpaCyLnModExpOpData op_data;
+    void* op_data;
+    void* op_output;
+    void* callback_func;
+    volatile HE_QAT_STATUS request_status;
+    pthread_mutex_t mutex;
+    pthread_cond_t ready;
+#ifdef HE_QAT_PERF
+    struct timeval start;
+    struct timeval end;
+#endif
+} HE_QAT_TaskRequest;
+
+// One for each consumer
+typedef struct {
+    HE_QAT_TaskRequest* request[HE_QAT_BUFFER_SIZE];
+    unsigned int count;
+} HE_QAT_TaskRequestList;
 
 #ifdef __cplusplus
 }  // close the extern "C" {

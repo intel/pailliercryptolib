@@ -18,6 +18,7 @@ double time_taken = 0.0;
 #include <stdio.h>
 #include <pthread.h>
 #include <assert.h>
+#include <openssl/bn.h>
 
 #ifdef HE_QAT_SYNC_MODE
 #pragma message "Synchronous execution mode."
@@ -25,69 +26,28 @@ double time_taken = 0.0;
 #pragma message "Asynchronous execution mode."
 #endif
 
-#define RESTART_LATENCY_MICROSEC 600
-#define NUM_PKE_SLICES 6
+//#define RESTART_LATENCY_MICROSEC 600
+//#define NUM_PKE_SLICES 6
+
+#include "he_qat_gconst.h"
 
 // Global buffer for the runtime environment
 HE_QAT_RequestBuffer he_qat_buffer;
 HE_QAT_OutstandingBuffer outstanding;
 
-volatile unsigned long request_count = 0;
-volatile unsigned long response_count = 0;
-pthread_mutex_t response_mutex;
+extern volatile unsigned long request_count; // = 0;
+extern volatile unsigned long response_count; // = 0;
+extern pthread_mutex_t response_mutex;
 
-unsigned long request_latency = 0; // unused
-unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
-unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); // each QAT endpoint has 6 PKE slices 
-                                // single socket has 4 QAT endpoints (24 simultaneous requests)
-				// dual-socket has 8 QAT endpoints (48 simultaneous requests)
-				// max_pending = (num_sockets * num_qat_devices * num_pke_slices) / k
-				// k (default: 1) can be adjusted dynamically as the measured request_latency deviate from the hardware latency
+extern unsigned long request_latency; // = 0; // unused
+extern unsigned long restart_threshold; // = NUM_PKE_SLICES;//48; 
 
+extern unsigned long max_pending; // = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); 
 
-/// @brief
-/// @function
-/// Callback function for lnModExpPerformOp. It performs any data processing
-/// required after the modular exponentiation.
-static void lnModExpCallback(void* pCallbackTag,  // This type can be variable
-                             CpaStatus status,
-                             void* pOpData,  // This is fixed -- please swap it
-                             CpaFlatBuffer* pOut) {
-    HE_QAT_TaskRequest* request = NULL;
+// Callback functions
+extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
+extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
 
-    // Check if input data for the op is available and do something
-    if (NULL != pCallbackTag) {
-        // Read request data
-        request = (HE_QAT_TaskRequest*)pCallbackTag;
-
-        pthread_mutex_lock(&request->mutex);
-        // Collect the device output in pOut
-        request->op_status = status;
-        if (CPA_STATUS_SUCCESS == status) {
-            if (pOpData == request->op_data) {
-                // Mark request as complete or ready to be used
-                request->request_status = HE_QAT_STATUS_READY;
-
-                BIGNUM* r = BN_bin2bn(request->op_result.pData,
-                                      request->op_result.dataLenInBytes,
-                                      (BIGNUM*)request->op_output);
-		if (NULL == r) 
-                   request->request_status = HE_QAT_STATUS_FAIL;
-		   
-            } else {
-                request->request_status = HE_QAT_STATUS_FAIL;
-            }
-        }
-        // Make it synchronous and blocking
-        pthread_cond_signal(&request->ready);
-        pthread_mutex_unlock(&request->mutex);
-#ifdef HE_QAT_SYNC_MODE
-        COMPLETE((struct COMPLETION_STRUCT*)&request->callback);
-#endif
-    }
-
-    return;
-}
 
 /// @brief
 /// @function
@@ -1082,7 +1042,8 @@ HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
     }
 
     request->op_type = HE_QAT_OP_MODEXP;
-    request->callback_func = (void*)lnModExpCallback;
+    //request->callback_func = (void*)lnModExpCallback;
+    request->callback_func = (void*)HE_QAT_BIGNUMModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
 
@@ -1269,55 +1230,6 @@ void getBnModExpRequest(unsigned int batch_size) {
     return;
 }
 
-/// @brief
-/// @function
-/// Callback function for HE_QAT_bnModExp. It performs any data processing
-/// required after the modular exponentiation.
-static void HE_QAT_bnModExpCallback(
-    void* pCallbackTag,  // This type can be variable
-    CpaStatus status,
-    void* pOpData,  // This is fixed -- please swap it
-    CpaFlatBuffer* pOut) {
-    HE_QAT_TaskRequest* request = NULL;
- 
-    // Check if input data for the op is available and do something
-    if (NULL != pCallbackTag) {
-        // Read request data
-        request = (HE_QAT_TaskRequest*)pCallbackTag;
-    
-    	pthread_mutex_lock(&response_mutex);
-        // Global track of reponses by accelerator
-        response_count += 1;
-        pthread_mutex_unlock(&response_mutex);
-
-        pthread_mutex_lock(&request->mutex);
-        // Collect the device output in pOut
-        request->op_status = status;
-        if (CPA_STATUS_SUCCESS == status) {
-            if (pOpData == request->op_data) {
-                // Mark request as complete or ready to be used
-                request->request_status = HE_QAT_STATUS_READY;
-                // Copy compute results to output destination
-                memcpy(request->op_output, request->op_result.pData,
-                       request->op_result.dataLenInBytes);
-//		printf("Request ID %llu Completed.\n",request->id);
-#ifdef HE_QAT_PERF
-                gettimeofday(&request->end, NULL);
-#endif
-            } else {
-                request->request_status = HE_QAT_STATUS_FAIL;
-            }
-        }
-        // Make it synchronous and blocking
-        pthread_cond_signal(&request->ready);
-        pthread_mutex_unlock(&request->mutex);
-#ifdef HE_QAT_SYNC_MODE
-        COMPLETE((struct COMPLETION_STRUCT*)&request->callback);
-#endif
-    }
-
-    return;
-}
 
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits) {

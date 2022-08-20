@@ -1,5 +1,7 @@
 
-set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_bn_ops.c 
+set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_cb.c
+	       ${HE_QAT_SRC_DIR}/he_qat_gvars.c
+	       ${HE_QAT_SRC_DIR}/he_qat_bn_ops.c 
 	       ${HE_QAT_SRC_DIR}/he_qat_context.c
 	       ${HE_QAT_SRC_DIR}/he_qat_utils.c
 )
