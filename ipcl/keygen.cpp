@@ -12,31 +12,29 @@ namespace ipcl {
 constexpr int N_BIT_SIZE_MAX = 2048;
 constexpr int N_BIT_SIZE_MIN = 200;
 
-BigNumber getPrimeBN(int maxBitSize) {
-  int PrimeSize;
-  ippsPrimeGetSize(maxBitSize, &PrimeSize);
-  auto primeGen = std::vector<Ipp8u>(PrimeSize);
-  ippsPrimeInit(maxBitSize, reinterpret_cast<IppsPrimeState*>(primeGen.data()));
+BigNumber getPrimeBN(int max_bits) {
+  int prime_size;
+  ippsPrimeGetSize(max_bits, &prime_size);
+  auto prime_ctx = std::vector<Ipp8u>(prime_size);
+  ippsPrimeInit(max_bits, reinterpret_cast<IppsPrimeState*>(prime_ctx.data()));
 
-  // default seed bit size
-  constexpr int seedBitSize = 160;
-  BigNumber seed = getRandomBN(seedBitSize);
+#if defined(IPCL_RNG_INSTR_RDSEED) || defined(IPCL_RNG_INSTR_RDRAND)
+  bool rand_param = NULL;
+#else
+  auto buff = std::vector<Ipp8u>(prime_size);
+  auto rand_param = buff.data();
+  ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(rand_param));
+#endif
 
-  auto rand = std::vector<Ipp8u>(PrimeSize);
-  ippsPRNGInit(seedBitSize, reinterpret_cast<IppsPRNGState*>(rand.data()));
-
-  ippsPRNGSetSeed(seed, reinterpret_cast<IppsPRNGState*>(rand.data()));
-
-  // generate maxBit prime
-  BigNumber pBN(0, maxBitSize / 8);
+  BigNumber prime_bn(0, max_bits / 8);
   while (ippStsNoErr !=
-         ippsPrimeGen_BN(pBN, maxBitSize, 10,
-                         reinterpret_cast<IppsPrimeState*>(primeGen.data()),
-                         ippsPRNGen,
-                         reinterpret_cast<IppsPRNGState*>(rand.data()))) {
+         ippsPrimeGen_BN(prime_bn, max_bits, 10,
+                         reinterpret_cast<IppsPrimeState*>(prime_ctx.data()),
+                         ippGenRandom,
+                         reinterpret_cast<IppsPRNGState*>(rand_param))) {
   }
 
-  return pBN;
+  return prime_bn;
 }
 
 static BigNumber getPrimeDistance(int64_t key_size) {
