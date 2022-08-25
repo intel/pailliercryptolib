@@ -10,9 +10,8 @@
 #include "he_qat_types.h"
 
 // Global variables
-extern volatile unsigned long request_count; // = 0;
-extern volatile unsigned long response_count; // = 0;
-extern pthread_mutex_t response_mutex;
+static pthread_mutex_t response_mutex;
+extern volatile unsigned long response_count;
 
 /// @brief
 /// @function
@@ -28,6 +27,11 @@ void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag,
     if (NULL != pCallbackTag) {
         // Read request data
         request = (HE_QAT_TaskRequest*)pCallbackTag;
+    	
+	pthread_mutex_lock(&response_mutex);
+        // Global track of reponses by accelerator
+        response_count += 1;
+        pthread_mutex_unlock(&response_mutex);
 
         pthread_mutex_lock(&request->mutex);
         // Collect the device output in pOut

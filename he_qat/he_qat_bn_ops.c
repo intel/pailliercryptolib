@@ -35,14 +35,11 @@ double time_taken = 0.0;
 HE_QAT_RequestBuffer he_qat_buffer;
 HE_QAT_OutstandingBuffer outstanding;
 
-extern volatile unsigned long request_count; // = 0;
-extern volatile unsigned long response_count; // = 0;
-extern pthread_mutex_t response_mutex;
-
-extern unsigned long request_latency; // = 0; // unused
-extern unsigned long restart_threshold; // = NUM_PKE_SLICES;//48; 
-
-extern unsigned long max_pending; // = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); 
+volatile unsigned long response_count = 0;
+static volatile unsigned long request_count = 0;
+static unsigned long request_latency = 0; // unused
+static unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
+static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); 
 
 // Callback functions
 extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
