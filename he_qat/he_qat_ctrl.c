@@ -1,55 +1,50 @@
+/// @file he_qat_ctrl.c
 
+// QAT-API headers
 #include "cpa.h"
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
 #include "icp_sal_poll.h"
-
 #include "cpa_sample_utils.h"
 
-#include "he_qat_types.h"
-#include "he_qat_bn_ops.h"
-
+// Global variables used to hold measured performance numbers.
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
 struct timeval start_time, end_time;
 double time_taken = 0.0;
 #endif
 
+// C support libraries
 #include <stdio.h>
 #include <pthread.h>
 #include <assert.h>
 #include <openssl/bn.h>
 
+// Loca headers
+#include "he_qat_types.h"
+#include "he_qat_bn_ops.h"
+#include "he_qat_gconst.h"
+
+// Warn user on selected execution mode
 #ifdef HE_QAT_SYNC_MODE
 #pragma message "Synchronous execution mode."
 #else
 #pragma message "Asynchronous execution mode."
 #endif
 
-//#define RESTART_LATENCY_MICROSEC 600
-//#define NUM_PKE_SLICES 6
-
-#include "he_qat_gconst.h"
-
 // Global buffer for the runtime environment
-HE_QAT_RequestBuffer he_qat_buffer;
-HE_QAT_OutstandingBuffer outstanding;
+HE_QAT_RequestBuffer     he_qat_buffer; ///< This the internal buffer that holds and serializes the requests to the accelerator.
+HE_QAT_OutstandingBuffer outstanding; ///< This is the data structure that holds outstanding requests from separate active threads calling the API.
+volatile unsigned long response_count = 0; ///< Counter of processed requests and it is used to help control throttling.
+static volatile unsigned long request_count = 0; ///< Counter of received requests and it is used to help control throttling.
+static unsigned long request_latency = 0; ///< Variable used to hold measured averaged latency of requests (currently unused).
+static unsigned long restart_threshold = NUM_PKE_SLICES; ///< Number of concurrent requests allowed to be sent to accelerator at once. 
+static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); ///< Number of requests sent to the accelerator that are pending completion.
 
-volatile unsigned long response_count = 0;
-static volatile unsigned long request_count = 0;
-static unsigned long request_latency = 0; // unused
-static unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
-static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); 
-
-// Callback functions
-//extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
-//extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
-
-
-/// @brief
-/// @function
-/// Thread-safe producer implementation for the shared request buffer.
-/// Stores requests in a buffer that will be offload to QAT devices.
+/// @brief Populates either internal or outstanding buffer with request.
+/// This function is called inside the API to submit request to a shared internal buffer. It is a thread-safe implementation of the producer for the either the internal buffer or the outstanding buffer to host incoming requests. Depending on the buffer type, the submitted request is either ready to be scheduled or to be processed by the accelerator.
+/// @param[out] _buffer either `he_qat_buffer` or `outstanding` buffer.
+/// @param[in] args work request packaged in a custom data structure.
 void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 #ifdef HE_QAT_DEBUG
     printf("Lock write request\n");
@@ -76,11 +71,14 @@ void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 #endif
 }
 
+/// @brief Populates internal buffer with a list of work request.
+/// This function is called by the request scheduler thread. It is a thread-safe implementation of the producer for the shared internal request buffer. This buffer stores and serializes the offloading of requests that are ready to be processed by the accelerator.
+/// @param[out] _buffer reference pointer to the internal buffer `he_qat_buffer`.
+/// @param[in] _requests list of requests retrieved from the buffer (`outstanding`) holding outstanding requests.
 static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
                                 HE_QAT_TaskRequestList* _requests) {
-//#define HE_QAT_DEBUG
 #ifdef HE_QAT_DEBUG
-//    printf("Lock submit request list\n");
+    printf("Lock submit request list\n");
 #endif
     if (0 == _requests->count) return;
 
@@ -117,70 +115,15 @@ static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
 #endif
 }
 
-/// @brief
-/// @function
-/// Thread-safe producer implementation for the shared outstanding request
-/// buffer that stores request from multiple threads.
-/// Stores requests in a buffer that will be sent to the HE QAT buffer.
-/// @unused
-static void push_request(HE_QAT_RequestBufferList* _outstanding_buffer,
-                         void* args, unsigned int num_requests) {
-#ifdef HE_QAT_DEBUG
-    printf("Lock write outstanding requests\n");
-#endif
-    pthread_mutex_lock(&_outstanding_buffer->mutex);
 
-#ifdef HE_QAT_DEBUG
-    printf("Wait lock write request. [outstanding buffer size: %d]\n",
-           _outstanding_buffer->count);
-#endif
-    // if (NULL == args) pthread_mutex_unlock(&_outstanding_buffer->mutex);
-    unsigned int list_size = _outstanding_buffer->size;
-    unsigned int buffer_size = list_size * HE_QAT_BUFFER_SIZE;
-    // TODO(fdiasmor): Dynamically expand the outstanding buffer
-    //    while (buffer_size < num_requests &&
-    //		    buffer_size < HE_QAT_LIST_SIZE * HE_QAT_BUFFER_SIZE) {
-    //	_outstanding_buffer->data[list_size] =
-    // malloc(sizeof(HE_QAT_TaskRequest)*HE_QAT_BUFFER_SIZE); 	if
-    //(_outstanding_buffer)
-    //        buffer_size = ++list_size * HE_QAT_BUFFER_SIZE;
-    //    }
-    // Create more space, if required, to a certain extent
-    // For now, it assumes maximum number of requests per thread and per call is
-    // equal to HE_QAT_BUFFER_SIZE and maximum number of threads is
-    // HE_QAT_BUFFER_COUNT
-    while (_outstanding_buffer->count >= buffer_size ||
-           (buffer_size - _outstanding_buffer->count + 1 < num_requests))
-        pthread_cond_wait(&_outstanding_buffer->any_free_slot,
-                          &_outstanding_buffer->mutex);
-
-    assert(_outstanding_buffer->count < buffer_size);
-    assert(buffer_size - _outstanding_buffer->count + 1 >= num_requests);
-
-    HE_QAT_TaskRequestList* requests = (HE_QAT_TaskRequestList*)args;
-    for (unsigned int i = 0; i < requests->count; i++) {
-        unsigned int index = _outstanding_buffer->next_free_slot / buffer_size;
-        unsigned int slot = _outstanding_buffer->next_free_slot % buffer_size;
-        _outstanding_buffer->data[index][slot] = requests->request[i];
-        _outstanding_buffer->next_free_slot++;
-        _outstanding_buffer->next_free_slot %= buffer_size;
-        _outstanding_buffer->count++;
-    }
-
-    pthread_cond_signal(&_outstanding_buffer->any_more_data);
-    pthread_mutex_unlock(&_outstanding_buffer->mutex);
-#ifdef HE_QAT_DEBUG
-    printf("Unlocked write request. [outstanding buffer count: %d]\n",
-           _outstanding_buffer->count);
-#endif
-}
-
-/// @brief
-/// @function
+/// @brief Read requests from internal buffer.
 /// Thread-safe consumer implementation for the shared request buffer.
-/// Read requests from a buffer to finally offload the work to QAT devices.
+/// Read requests from internal buffer `he_qat_buffer` to finally offload the request to be processed by QAT devices.
 /// Supported in single-threaded or multi-threaded mode.
-static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
+/// @param[in] _buffer buffer of type HE_QAT_RequestBuffer, typically the internal buffer in current implementation.
+/// @retval single work request in HE_QAT_TaskRequest data structure.
+static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) 
+{
     void* item = NULL;
     static unsigned int counter = 0;
     pthread_mutex_lock(&_buffer->mutex);
@@ -210,11 +153,13 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) {
     return (HE_QAT_TaskRequest*)(item);
 }
 
-/// @brief
-/// @function
-/// Thread-safe consumer implementation for the shared request buffer.
-/// Read requests from a buffer to finally offload the work to QAT devices.
-/// @future: Meant for multi-threaded mode.
+/// @brief Read requests from the outstanding buffer.
+/// Thread-safe consumer implementation for the outstanding request buffer.
+/// Read requests from outstanding buffer (requests ready to be scheduled) to later pass them to the internal buffer `he_qat_buffer`. As those requests move from the outstanding buffer into the internal buffer, their state changes from ready-to-be-scheduled to ready-to-be-processed.
+/// Supported in single-threaded or multi-threaded mode.
+/// @param[out] _requests list of requests retrieved from internal buffer.
+/// @param[in] _buffer buffer of type HE_QAT_RequestBuffer, typically the internal buffer in current implementation.
+/// @param[in] max_requests maximum number of requests to retrieve from internal buffer, if available.
 static void read_request_list(HE_QAT_TaskRequestList* _requests,
                               HE_QAT_RequestBuffer* _buffer, unsigned int max_requests) {
     if (NULL == _requests) return;
@@ -246,61 +191,15 @@ static void read_request_list(HE_QAT_TaskRequestList* _requests,
     return;
 }
 
-/// @brief
-/// @function
-/// Thread-safe consumer implementation for the shared request buffer.
-/// Read requests from a buffer to finally offload the work to QAT devices.
-/// @deprecated
-//[[deprecated("Replaced by pull_outstanding_requests() in schedule_requests().")]]
-static void pull_request(HE_QAT_TaskRequestList* _requests,
-                         // HE_QAT_OutstandingBuffer *_outstanding_buffer,
-                         HE_QAT_RequestBufferList* _outstanding_buffer,
-                         unsigned int max_num_requests) {
-    if (NULL == _requests) return;
-
-    pthread_mutex_lock(&_outstanding_buffer->mutex);
-
-    unsigned int list_size = _outstanding_buffer->size;
-    unsigned int buffer_size = list_size * HE_QAT_BUFFER_SIZE;
-
-    // Wait while buffer is empty
-    while (_outstanding_buffer->count <= 0)
-        pthread_cond_wait(&_outstanding_buffer->any_more_data,
-                          &_outstanding_buffer->mutex);
-
-    assert(_outstanding_buffer->count > 0);
-
-    unsigned int num_requests = (_outstanding_buffer->count <= max_num_requests)
-                                    ? _outstanding_buffer->count
-                                    : max_num_requests;
-
-    assert(num_requests <= HE_QAT_BUFFER_SIZE);
-
-    //_requests->count = 0;
-    for (unsigned int i = 0; i < num_requests; i++) {
-        unsigned int index = _outstanding_buffer->next_data_slot / buffer_size;
-        unsigned int slot = _outstanding_buffer->next_data_slot % buffer_size;
-
-        _requests->request[i] = _outstanding_buffer->data[index][slot];
-        //_requests->count++;
-
-        _outstanding_buffer->next_data_slot++;
-        _outstanding_buffer->next_data_slot %= buffer_size;
-        //_outstanding_buffer->count--;
-    }
-    _requests->count = num_requests;
-    _outstanding_buffer->count -= num_requests;
-
-    pthread_cond_signal(&_outstanding_buffer->any_free_slot);
-    pthread_mutex_unlock(&_outstanding_buffer->mutex);
-
-    return;
-}
-
-static void pull_outstanding_requests(
-    HE_QAT_TaskRequestList* _requests,
-    HE_QAT_OutstandingBuffer* _outstanding_buffer,
-    unsigned int max_num_requests) {
+/// @brief Read requests from the outstanding buffer.
+/// Thread-safe consumer implementation for the outstanding request buffer.
+/// Retrieve work requests from outstanding buffer (requests ready to be scheduled) to later on pass them to the internal buffer `he_qat_buffer`. As those requests move from the outstanding buffer into the internal buffer, their state changes from ready-to-be-scheduled to ready-to-be-processed.
+/// This function is supported in single-threaded or multi-threaded mode.
+/// @param[out] _requests list of work requests retrieved from outstanding buffer.
+/// @param[in] _outstanding_buffer outstanding buffer holding requests in ready-to-be-scheduled state.
+/// @param[in] max_requests maximum number of requests to retrieve from outstanding buffer if available.
+static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_OutstandingBuffer* _outstanding_buffer, unsigned int max_num_requests) 
+{
     if (NULL == _requests) return;
     _requests->count = 0;
 
@@ -380,9 +279,9 @@ static void pull_outstanding_requests(
     return;
 }
 
-/// @brief
-///  Schedule outstanding requests from outstanding buffers to the internal buffer 
-///  from which requests are ready to be submitted to the device for processing.
+/// @brief Schedule outstanding requests to the internal buffer and be ready for processing.
+/// Schedule outstanding requests from outstanding buffers to the internal buffer,
+/// from which requests are ready to be submitted to the device for processing.
 /// @function schedule_requests
 /// @param[in] state normally an volatile integer variable to activates(val>0) and disactives(0) the scheduler.
 void* schedule_requests(void* state) {
@@ -415,10 +314,9 @@ void* schedule_requests(void* state) {
     pthread_exit(NULL);
 }
 
-/// @brief
+/// @brief Poll responses from a specific QAT instance.
 /// @function start_inst_polling
-/// @param[in] HE_QAT_InstConfig Parameter values to start and poll instances.
-///
+/// @param[in] HE_QAT_InstConfig Parameter values to start and to poll instances.
 static void* start_inst_polling(void* _inst_config) {
     if (NULL == _inst_config) {
         printf(
@@ -443,8 +341,6 @@ static void* start_inst_polling(void* _inst_config) {
 
     pthread_exit(NULL);
 }
-
-
 
 void* start_instances(void* _config) {
 //    static unsigned int request_count = 0;
