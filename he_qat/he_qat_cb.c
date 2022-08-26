@@ -1,26 +1,29 @@
-// qatlib headers
+/// @file he_qat_cb.c
+
+// QAT-API headers
 #include <cpa.h>
 #include <cpa_sample_utils.h>
 
-// C library
+// C support libraries
 #include <pthread.h>
 #include <openssl/bn.h>
 
-// local headers
+// Local headers
 #include "he_qat_types.h"
 
 // Global variables
-static pthread_mutex_t response_mutex;
-extern volatile unsigned long response_count;
+static pthread_mutex_t response_mutex; ///< It protects against race condition on response_count due to concurrent callback events.
+extern volatile unsigned long response_count; ///< It counts the number of requests completed by the accelerator.
 
-/// @brief
-/// @function
-/// Callback function for lnModExpPerformOp. It performs any data processing
-/// required after the modular exponentiation.
-void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag,  
-                             CpaStatus status,
-                             void* pOpData,  
-                             CpaFlatBuffer* pOut) {
+/// @brief Callback implementation for the API HE_QAT_BIGNUMModExp(...) 
+/// Callback function for the interface HE_QAT_BIGNUMModExp(). It performs 
+/// any data post-processing required after the modular exponentiation.
+/// @param[in] pCallbackTag work request package containing the original input data and other resources for post-processing.
+/// @param[in] status CPA_STATUS of the performed operation, e.g. CyLnModExp().
+/// @param[in] pOpData original input data passed to accelerator to perform the target operation (cannot be NULL).
+/// @param[out] pOut output returned by the accelerator after executing the target operation.
+void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut) 
+{
     HE_QAT_TaskRequest* request = NULL;
 
     // Check if input data for the op is available and do something
@@ -46,7 +49,9 @@ void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag,
                                       (BIGNUM*)request->op_output);
 		if (NULL == r) 
                    request->request_status = HE_QAT_STATUS_FAIL;
-		   
+#ifdef HE_QAT_PERF
+                gettimeofday(&request->end, NULL);
+#endif		   
             } else {
                 request->request_status = HE_QAT_STATUS_FAIL;
             }
@@ -62,16 +67,15 @@ void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag,
     return;
 }
 
-
-/// @brief
-/// @function
-/// Callback function for HE_QAT_bnModExp. It performs any data processing
-/// required after the modular exponentiation.
-void HE_QAT_bnModExpCallback(
-    void* pCallbackTag,  // This type can be variable
-    CpaStatus status,
-    void* pOpData,  // This is fixed -- please swap it
-    CpaFlatBuffer* pOut) {
+/// @brief Callback implementation for the API HE_QAT_bnModExp(...) 
+/// Callback function for the interface HE_QAT_bnModExp(). It performs 
+/// any data post-processing required after the modular exponentiation.
+/// @param[in] pCallbackTag work request package containing the original input data and other resources for post-processing.
+/// @param[in] status CPA_STATUS of the performed operation, e.g. CyLnModExp().
+/// @param[in] pOpData original input data passed to accelerator to perform the target operation (cannot be NULL).
+/// @param[out] pOut output returned by the accelerator after executing the target operation.
+void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut) 
+{
     HE_QAT_TaskRequest* request = NULL;
  
     // Check if input data for the op is available and do something
@@ -94,7 +98,6 @@ void HE_QAT_bnModExpCallback(
                 // Copy compute results to output destination
                 memcpy(request->op_output, request->op_result.pData,
                        request->op_result.dataLenInBytes);
-//		printf("Request ID %llu Completed.\n",request->id);
 #ifdef HE_QAT_PERF
                 gettimeofday(&request->end, NULL);
 #endif
