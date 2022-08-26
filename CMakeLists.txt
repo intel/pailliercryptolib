@@ -150,8 +150,6 @@ find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-#set(OPENSSL_INC_DIR /opt/openssl/include) 
-#set(OPENSSL_LIB_DIR /opt/openssl/lib)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
 include(heqat-util)
@@ -200,6 +198,3 @@ endif()
 if(HE_QAT_DOCS)
   add_subdirectory(docs)
 endif()
-
-
-
