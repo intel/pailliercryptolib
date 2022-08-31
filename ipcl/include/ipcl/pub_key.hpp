@@ -82,7 +82,8 @@ class PublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  std::vector<BigNumber> applyObfuscator(size_t sz) const;
+  std::vector<BigNumber> applyObfuscator(
+      std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Set the Random object for ISO/IEC 18033-6 compliance check
@@ -137,9 +138,9 @@ class PublicKey {
   std::vector<BigNumber> raw_encrypt(const std::vector<BigNumber>& pt,
                                      bool make_secure = true) const;
 
-  std::vector<BigNumber> applyDjnObfuscator(size_t sz) const;
+  std::vector<BigNumber> getDJNObfuscator(std::size_t sz) const;
 
-  std::vector<BigNumber> applyNormalObfuscator(size_t sz) const;
+  std::vector<BigNumber> getNormalObfuscator(std::size_t sz) const;
 };
 
 }  // namespace ipcl

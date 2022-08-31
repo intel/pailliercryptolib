@@ -54,7 +54,7 @@ void PublicKey::enableDJN() {
   m_enable_DJN = true;
 }
 
-std::vector<BigNumber> PublicKey::applyDjnObfuscator(std::size_t sz) const {
+std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
   std::vector<BigNumber> r(sz);
   std::vector<BigNumber> base(sz, m_hs);
   std::vector<BigNumber> sq(sz, m_nsquare);
@@ -69,7 +69,7 @@ std::vector<BigNumber> PublicKey::applyDjnObfuscator(std::size_t sz) const {
   return ipcl::ippModExp(base, r, sq);
 }
 
-std::vector<BigNumber> PublicKey::applyNormalObfuscator(std::size_t sz) const {
+std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
   std::vector<BigNumber> r(sz);
   std::vector<BigNumber> sq(sz, m_nsquare);
   std::vector<BigNumber> pown(sz, m_n);
@@ -85,12 +85,15 @@ std::vector<BigNumber> PublicKey::applyNormalObfuscator(std::size_t sz) const {
   return ipcl::ippModExp(r, pown, sq);
 }
 
-std::vector<BigNumber> PublicKey::applyObfuscator(std::size_t sz) const {
-  if (m_enable_DJN) {
-    return applyDjnObfuscator(sz);
-  } else {
-    return applyNormalObfuscator(sz);
-  }
+std::vector<BigNumber> PublicKey::applyObfuscator(
+    std::vector<BigNumber>& ciphertext) const {
+  std::size_t sz = ciphertext.size();
+  std::vector<BigNumber> obfuscator =
+      m_enable_DJN ? getDJNObfuscator(sz) : getNormalObfuscator(sz);
+  BigNumber sq = m_nsquare;
+
+  for (std::size_t i = 0; i < sz; ++i)
+    ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
 }
 
 void PublicKey::setRandom(const std::vector<BigNumber>& r) {
@@ -105,17 +108,17 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
   std::size_t pt_size = pt.size();
 
   std::vector<BigNumber> ct(pt_size);
-  BigNumber sq = m_nsquare;
 
   for (std::size_t i = 0; i < pt_size; i++) {
     ct[i] = (m_n * pt[i] + 1) % m_nsquare;
   }
 
   if (make_secure) {
-    std::vector<BigNumber> obfuscator = applyObfuscator(pt_size);
+    applyObfuscator(ct);
+    // std::vector<BigNumber> obfuscator = applyObfuscator(pt_size);
 
-    for (std::size_t i = 0; i < pt_size; i++)
-      ct[i] = sq.ModMul(ct[i], obfuscator[i]);
+    // for (std::size_t i = 0; i < pt_size; i++)
+    //   ct[i] = sq.ModMul(ct[i], obfuscator[i]);
   }
   return ct;
 }
