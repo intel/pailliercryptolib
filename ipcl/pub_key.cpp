@@ -85,8 +85,7 @@ std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
   return ipcl::ippModExp(r, pown, sq);
 }
 
-std::vector<BigNumber> PublicKey::applyObfuscator(
-    std::vector<BigNumber>& ciphertext) const {
+void PublicKey::applyObfuscator(std::vector<BigNumber>& ciphertext) const {
   std::size_t sz = ciphertext.size();
   std::vector<BigNumber> obfuscator =
       m_enable_DJN ? getDJNObfuscator(sz) : getNormalObfuscator(sz);

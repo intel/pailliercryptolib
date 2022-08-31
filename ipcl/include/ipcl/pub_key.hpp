@@ -82,8 +82,7 @@ class PublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  std::vector<BigNumber> applyObfuscator(
-      std::vector<BigNumber>& ciphertext) const;
+  void applyObfuscator(std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Set the Random object for ISO/IEC 18033-6 compliance check
