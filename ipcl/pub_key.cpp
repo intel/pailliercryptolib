@@ -54,11 +54,10 @@ void PublicKey::enableDJN() {
   m_enable_DJN = true;
 }
 
-void PublicKey::applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const {
-  std::size_t obf_size = obfuscator.size();
-  std::vector<BigNumber> r(obf_size);
-  std::vector<BigNumber> base(obf_size, m_hs);
-  std::vector<BigNumber> sq(obf_size, m_nsquare);
+std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
+  std::vector<BigNumber> r(sz);
+  std::vector<BigNumber> base(sz, m_hs);
+  std::vector<BigNumber> sq(sz, m_nsquare);
 
   if (m_testv) {
     r = m_r;
@@ -67,33 +66,33 @@ void PublicKey::applyDjnObfuscator(std::vector<BigNumber>& obfuscator) const {
       r_ = getRandomBN(m_randbits);
     }
   }
-  obfuscator = ipcl::ippModExp(base, r, sq);
+  return ipcl::ippModExp(base, r, sq);
 }
 
-void PublicKey::applyNormalObfuscator(
-    std::vector<BigNumber>& obfuscator) const {
-  std::size_t obf_size = obfuscator.size();
-  std::vector<BigNumber> r(obf_size);
-  std::vector<BigNumber> sq(obf_size, m_nsquare);
-  std::vector<BigNumber> pown(obf_size, m_n);
+std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
+  std::vector<BigNumber> r(sz);
+  std::vector<BigNumber> sq(sz, m_nsquare);
+  std::vector<BigNumber> pown(sz, m_n);
 
   if (m_testv) {
     r = m_r;
   } else {
-    for (int i = 0; i < obf_size; i++) {
+    for (int i = 0; i < sz; i++) {
       r[i] = getRandomBN(m_bits);
       r[i] = r[i] % (m_n - 1) + 1;
     }
   }
-  obfuscator = ipcl::ippModExp(r, pown, sq);
+  return ipcl::ippModExp(r, pown, sq);
 }
 
-void PublicKey::applyObfuscator(std::vector<BigNumber>& obfuscator) const {
-  if (m_enable_DJN) {
-    applyDjnObfuscator(obfuscator);
-  } else {
-    applyNormalObfuscator(obfuscator);
-  }
+void PublicKey::applyObfuscator(std::vector<BigNumber>& ciphertext) const {
+  std::size_t sz = ciphertext.size();
+  std::vector<BigNumber> obfuscator =
+      m_enable_DJN ? getDJNObfuscator(sz) : getNormalObfuscator(sz);
+  BigNumber sq = m_nsquare;
+
+  for (std::size_t i = 0; i < sz; ++i)
+    ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
 }
 
 void PublicKey::setRandom(const std::vector<BigNumber>& r) {
@@ -108,25 +107,18 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
   std::size_t pt_size = pt.size();
 
   std::vector<BigNumber> ct(pt_size);
-  BigNumber sq = m_nsquare;
 
-  for (std::size_t i = 0; i < pt_size; i++) {
+  for (std::size_t i = 0; i < pt_size; i++)
     ct[i] = (m_n * pt[i] + 1) % m_nsquare;
-  }
 
-  if (make_secure) {
-    std::vector<BigNumber> obfuscator(pt_size);
-    applyObfuscator(obfuscator);
+  if (make_secure) applyObfuscator(ct);
 
-    for (std::size_t i = 0; i < pt_size; i++)
-      ct[i] = sq.ModMul(ct[i], obfuscator[i]);
-  }
   return ct;
 }
 
 CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   std::size_t pt_size = pt.getSize();
-  ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt emtpy PlainText");
+  ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt empty PlainText");
   std::vector<BigNumber> ct_bn_v(pt_size);
 
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
