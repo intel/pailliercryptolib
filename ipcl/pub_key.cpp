@@ -108,17 +108,11 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
 
   std::vector<BigNumber> ct(pt_size);
 
-  for (std::size_t i = 0; i < pt_size; i++) {
+  for (std::size_t i = 0; i < pt_size; i++)
     ct[i] = (m_n * pt[i] + 1) % m_nsquare;
-  }
 
-  if (make_secure) {
-    applyObfuscator(ct);
-    // std::vector<BigNumber> obfuscator = applyObfuscator(pt_size);
+  if (make_secure) applyObfuscator(ct);
 
-    // for (std::size_t i = 0; i < pt_size; i++)
-    //   ct[i] = sq.ModMul(ct[i], obfuscator[i]);
-  }
   return ct;
 }
 
