@@ -6,10 +6,10 @@ set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_cb.c
 
 if(HE_QAT_EXPERIMENTAL)
 	message(STATUS "Using refactored source code.")
-	list(APPEND ${HE_QAT_SRC_DIR}/he_qat_ops.c
+	list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_ops.c
                	    ${HE_QAT_SRC_DIR}/he_qat_ctrl.c)
 else()
-	list(APPEND ${HE_QAT_SRC_DIR}/he_qat_bn_ops.c)
+	list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_bn_ops.c)
 endif()
 
 if(HE_QAT_SHARED)
