@@ -20,11 +20,7 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-// Local Constants
-#define HE_QAT_NUM_ACTIVE_INSTANCES 8
-#define HE_QAT_BUFFER_SIZE 1024
-#define HE_QAT_BUFFER_COUNT HE_QAT_NUM_ACTIVE_INSTANCES
-#define HE_QAT_MAX_RETRY 100
+#include "he_qat_gconst.h"
 
 // Type definitions
 typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
@@ -51,35 +47,34 @@ typedef struct {
     // for all the request to complete processing
     unsigned int next_data_out;
     pthread_mutex_t mutex;         //
-    pthread_cond_t any_more_data;  // more
-    pthread_cond_t any_free_slot;  // less
+    pthread_cond_t any_more_data;  ///< Conditional variable used to synchronize the consumption of data in buffer (wait until more data is available to be consumed)
+    pthread_cond_t any_free_slot;  ///< Conditional variable used to synchronize the provision of free slots in buffer (wait until enough slots are available to add more data in buffer)
 } HE_QAT_RequestBuffer;
 
-typedef struct {
-    void* data[HE_QAT_BUFFER_COUNT][HE_QAT_BUFFER_SIZE];  //
-    unsigned int count;
-    unsigned int size;
-    unsigned int
-        next_free_slot;  // nextin index of the next free slot for a request
-    unsigned int
-        next_data_slot;     // nextout index of next request to be processed
-    pthread_mutex_t mutex;  //
-    pthread_cond_t any_more_data;  // more
-    pthread_cond_t any_free_slot;  // less
-} HE_QAT_RequestBufferList;
+// Unused type. Intention to remove it.
+//typedef struct {
+//    void* data[HE_QAT_BUFFER_COUNT][HE_QAT_BUFFER_SIZE];  //
+//    unsigned int count;
+//    unsigned int size;
+//    unsigned int
+//        next_free_slot;  // nextin index of the next free slot for a request
+//    unsigned int
+//        next_data_slot;     // nextout index of next request to be processed
+//    pthread_mutex_t mutex;  //
+//    pthread_cond_t any_more_data;  // more
+//    pthread_cond_t any_free_slot;  // less
+//} HE_QAT_RequestBufferList;
 
 typedef struct {
-    HE_QAT_RequestBuffer buffer[HE_QAT_BUFFER_COUNT];  //
-    unsigned int busy_count;
-    unsigned int
-        next_free_buffer;  // nextin index of the next free slot for a request
-    int free_buffer[HE_QAT_BUFFER_COUNT];
-    unsigned int
-        next_ready_buffer;  // nextout index of next request to be processed
-    int ready_buffer[HE_QAT_BUFFER_COUNT];
-    pthread_mutex_t mutex;            //
-    pthread_cond_t any_ready_buffer;  // more
-    pthread_cond_t any_free_buffer;   // less
+    HE_QAT_RequestBuffer buffer[HE_QAT_BUFFER_COUNT];  ///< Buffers to support concurrent threads with less sync overhead
+    unsigned int busy_count; ///< Counts number of currently occupied buffers
+    unsigned int next_free_buffer; ///< Next in: index of the next free slot for a request
+    int free_buffer[HE_QAT_BUFFER_COUNT]; ///< Keeps track of buffers that are available (any value > 0 means the buffer at index i is available).  The next_free_buffer does not necessarily mean that the buffer is already released from usage.
+    unsigned int next_ready_buffer;  ///< Next out: index of next request to be processed
+    int ready_buffer[HE_QAT_BUFFER_COUNT]; ///< Keeps track of buffers that are ready (any value > 0 means the buffer at index i is ready). The next_ready_buffer does not necessarily mean that the buffer is not busy at any time instance.
+    pthread_mutex_t mutex;            ///< Used for synchronization of concurrent access of an object of the type
+    pthread_cond_t any_ready_buffer;  ///< Conditional variable used to synchronize the consumption of the contents in buffers
+    pthread_cond_t any_free_buffer;   ///< Conditional variable used to synchronize the provision of buffers
 } HE_QAT_OutstandingBuffer;
 
 typedef struct {

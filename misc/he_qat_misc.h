@@ -2,6 +2,7 @@
 #ifndef HE_QAT_MISC_H_
 #define HE_QAT_MISC_H_
 
+#include "he_qat_gconst.h" 
 #include "he_qat_types.h"
 #include "bignum.h"
 #include <openssl/bn.h>
