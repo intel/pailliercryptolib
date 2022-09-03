@@ -283,7 +283,8 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 /// Schedule outstanding requests from outstanding buffers to the internal buffer,
 /// from which requests are ready to be submitted to the device for processing.
 /// @function schedule_requests
-/// @param[in] state normally an volatile integer variable to activates(val>0) and disactives(0) the scheduler.
+/// @param[in] state A volatile integer variable used to activate (val>0) or 
+///		     disactive (val=0) the scheduler.
 void* schedule_requests(void* state) {
     if (NULL == state) {
         printf("Failed at buffer_manager: argument is NULL.\n");
@@ -316,7 +317,8 @@ void* schedule_requests(void* state) {
 
 /// @brief Poll responses from a specific QAT instance.
 /// @function start_inst_polling
-/// @param[in] HE_QAT_InstConfig Parameter values to start and to poll instances.
+/// @param[in] _inst_config Instance configuration containing the parameter 
+/// 			    values to start and poll responses from the accelerator.
 static void* start_inst_polling(void* _inst_config) {
     if (NULL == _inst_config) {
         printf(
@@ -342,8 +344,27 @@ static void* start_inst_polling(void* _inst_config) {
     pthread_exit(NULL);
 }
 
+/// @brief
+///	Initialize and start multiple instances, their polling thread, 
+///	and a single processing thread.
+/// 
+/// @function start_instances
+/// 	It initializes multiple QAT instances and launches their respective independent 
+///	polling threads that will listen to responses to requests sent to the accelerators
+///	concurrently. Then, it becomes the thread that collect the incoming requests stored 
+///	in a shared buffer and send them to the accelerator for processing. This is the only 
+///	processing thread for requests handled by multiple instances -- unlike when using 
+///     multiple instances with the `start_perform_op` function, in which case each instance 
+///	has a separate processing thread. The implementation of the multiple instance support 
+///	using `start_perform_op` is obsolete and slower. The way is using this function, which 
+///	delivers better performance. The scheduling of request offloads uses a 
+///	round-robin approach. It collects multiple requests from the internal buffer and then 
+///	send them to the multiple accelerator instances to process in a round-robin fashion. 
+///	It was designed to support processing requests of different operation types but 
+///	currently only supports Modular Exponentiation. 
+///
+/// @param[in] _config Data structure containing the configuration of multiple instances.
 void* start_instances(void* _config) {
-//    static unsigned int request_count = 0;
     static unsigned int instance_count = 0;
     static unsigned int next_instance = 0;
     
@@ -556,13 +577,19 @@ void* start_instances(void* _config) {
 }
 
 /// @brief
-/// @function perform_op
-/// Offload operation to QAT endpoints; for example, large number modular
-/// exponentiation.
-/// @param[in] HE_QAT_InstConfig *: contains the handle to CPA instance, pointer
-/// the global buffer of requests.
+/// 	Start independent processing and polling threads for an instance.
+/// 
+/// @function start_perform_op
+/// 	It initializes a QAT instance and launches its polling thread to listen 
+///     to responses (request outputs) from the accelerator. It is also reponsible 
+///	to collect requests from the internal buffer and send them to the accelerator 
+///	periodiacally. It was designed to extend to receiving and offloading 
+///	requests of different operation types but currently only supports Modular 
+///	Exponentiation. 
+///
+/// @param[in] _inst_config Data structure containing the configuration of a single 
+///			    instance.
 void* start_perform_op(void* _inst_config) {
-//    static unsigned int request_count = 0;
     if (NULL == _inst_config) {
         printf("Failed in start_perform_op: _inst_config is NULL.\n");
         pthread_exit(NULL);
@@ -738,18 +765,20 @@ void* start_perform_op(void* _inst_config) {
     pthread_exit(NULL);
 }
 
-/// @brief
-/// @function
-/// Stop first 'num_inst' number of cpaCyInstance(s), including their polling
-/// and running threads.
-/// @param[in] HE_QAT_InstConfig config Vector of created instances with their
-/// configuration setup.
+/// @brief 
+/// 	Stop specified number of instances from running.
+/// 
+/// @function stop_perform_op
+/// 	Stop first 'num_inst' number of cpaCyInstance(s), including their polling
+/// 	and running threads.
+///
+/// @details
+/// 	Stop runnning and polling instances. Release QAT instances handles.
+///
+/// @param[in] config List of all created QAT instances and their configurations.
 /// @param[in] num_inst Unsigned integer number indicating first number of
-/// instances to be terminated.
+/// 			instances to be terminated.
 void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
-    // if () {
-    // Stop runnning and polling instances
-    // Release QAT instances handles
     if (NULL == config) return;
 
     CpaStatus status = CPA_STATUS_FAIL;
@@ -788,6 +817,12 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
     return;
 }
 
+/// @brief Stop all running instances. 
+/// @function stop_instances
+/// @details
+/// 	Stop all running instances after calling `start_instances()`.
+///	It will set the states of the instances to terminate gracefully. 
+/// @param[in] _config All QAT instances configurations holding their states.
 void stop_instances(HE_QAT_Config* _config) {
     if (NULL == _config) return;
     if (_config->active) _config->active = 0;

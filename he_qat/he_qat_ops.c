@@ -26,25 +26,15 @@ double time_taken = 0.0;
 #pragma message "Asynchronous execution mode."
 #endif
 
-//#define RESTART_LATENCY_MICROSEC 600
-//#define NUM_PKE_SLICES 6
-
 #include "he_qat_gconst.h"
 
 // Global buffer for the runtime environment
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
 
-//volatile unsigned long response_count = 0;
-//static volatile unsigned long request_count = 0;
-//static unsigned long request_latency = 0; // unused
-//static unsigned long restart_threshold = NUM_PKE_SLICES;//48; 
-//static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); 
-
 // Callback functions
 extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
 extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
-
 
 /// @brief
 /// @function
@@ -87,8 +77,7 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     return HE_QAT_STATUS_SUCCESS;
 }
 
-HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
-                                int nbits) {
+HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits) {
     // Unpack data and copy to QAT friendly memory space
     int len = (nbits + 7) >> 3;  // nbits / 8;
 
