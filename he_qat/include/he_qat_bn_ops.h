@@ -59,7 +59,7 @@ extern "C" {
 /// @param e    [in] Exponent number of the modular exponentiation operation.
 /// @param m    [in] Modulus number of the modular exponentiation operation.
 /// @param nbits[in] Number of bits (bit precision) of input/output big numbers.
-HE_QAT_STATUS HE_QAT_BIGUMbnModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
+HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
 
 /// @brief
 ///
