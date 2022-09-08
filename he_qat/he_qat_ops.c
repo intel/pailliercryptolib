@@ -484,8 +484,6 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 #endif
 
     while (j < _batch_size) {
-        // Buffer read may be safe for single-threaded blocking calls only.
-        // Note: Not tested on multithreaded environment.
         HE_QAT_TaskRequest* task =
             (HE_QAT_TaskRequest*)outstanding.buffer[_buffer_id]
                 .data[next_data_out];
@@ -498,9 +496,8 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 #endif
 
         // Block and synchronize: Wait for the most recently offloaded request
-        // to complete processing
-        pthread_mutex_lock(
-            &task->mutex);  // mutex only needed for the conditional variable
+        // to complete processing. Mutex only needed for the conditional variable.
+        pthread_mutex_lock(&task->mutex); 
         while (HE_QAT_STATUS_READY != task->request_status)
             pthread_cond_wait(&task->ready, &task->mutex);
 
@@ -532,11 +529,10 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 #endif
         // outstanding.buffer[_buffer_id].count--;
 
-        // Fix segmentation fault?
         free(outstanding.buffer[_buffer_id].data[next_data_out]);
         outstanding.buffer[_buffer_id].data[next_data_out] = NULL;
 
-        // update for next thread on the next external iteration
+        // Update for next thread on the next external iteration
         next_data_out = (next_data_out + 1) % HE_QAT_BUFFER_SIZE;
 
         j++;
