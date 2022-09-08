@@ -59,7 +59,7 @@ extern "C" {
 /// @param e    [in] Exponent number of the modular exponentiation operation.
 /// @param m    [in] Modulus number of the modular exponentiation operation.
 /// @param nbits[in] Number of bits (bit precision) of input/output big numbers.
-HE_QAT_STATUS bnModExpPerformOp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
+HE_QAT_STATUS HE_QAT_BIGUMbnModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
 
 /// @brief
 ///
@@ -102,8 +102,6 @@ void getBnModExpRequest(unsigned int num_requests);
  *
  **/
 
-HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
-
 /// @brief
 ///
 /// @function
@@ -123,6 +121,7 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
 HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
                                  unsigned char* b, unsigned char* e, unsigned char* m, int nbits);
 
+HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size);
 
 #ifdef __cplusplus

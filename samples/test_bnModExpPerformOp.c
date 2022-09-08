@@ -82,7 +82,7 @@ int main(int argc, const char** argv) {
         BIGNUM* qat_res = BN_new();
         start = clock();
         for (unsigned int j = 0; j < BATCH_SIZE; j++)
-            status = bnModExpPerformOp(qat_res, bn_base, bn_exponent, bn_mod,
+            status = HE_QAT_BIGNUMModExp(qat_res, bn_base, bn_exponent, bn_mod,
                                        bit_length);
         getBnModExpRequest(BATCH_SIZE);
         qat_elapsed = clock() - start;

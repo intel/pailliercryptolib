@@ -41,8 +41,12 @@ static unsigned long request_latency = 0; ///< Variable used to hold measured av
 static unsigned long restart_threshold = NUM_PKE_SLICES; ///< Number of concurrent requests allowed to be sent to accelerator at once. 
 static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); ///< Number of requests sent to the accelerator that are pending completion.
 
-/// @brief Populates either internal or outstanding buffer with request.
-/// This function is called inside the API to submit request to a shared internal buffer. It is a thread-safe implementation of the producer for the either the internal buffer or the outstanding buffer to host incoming requests. Depending on the buffer type, the submitted request is either ready to be scheduled or to be processed by the accelerator.
+/// @brief Populate internal buffer with incoming requests from API calls.
+/// @details This function is called from the main APIs to submit requests to 
+/// a shared internal buffer for processing on QAT. It is a thread-safe implementation 
+/// of the producer for the either the internal buffer or the outstanding buffer to 
+/// host incoming requests. Depending on the buffer type, the submitted request 
+/// is either ready to be scheduled or to be processed by the accelerator.
 /// @param[out] _buffer either `he_qat_buffer` or `outstanding` buffer.
 /// @param[in] args work request packaged in a custom data structure.
 void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
@@ -66,6 +70,7 @@ void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
+
 #ifdef HE_QAT_DEBUG
     printf("Unlocked write request. [buffer size: %d]\n", _buffer->count);
 #endif
@@ -116,9 +121,9 @@ static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
 }
 
 
-/// @brief Read requests from internal buffer.
-/// Thread-safe consumer implementation for the shared request buffer.
-/// Read requests from internal buffer `he_qat_buffer` to finally offload the request to be processed by QAT devices.
+/// @brief Retrive single request from internal buffer.
+/// @details Thread-safe consumer implementation for the shared request buffer.
+/// Read request from internal buffer `he_qat_buffer` to finally offload the request to be processed by QAT devices.
 /// Supported in single-threaded or multi-threaded mode.
 /// @param[in] _buffer buffer of type HE_QAT_RequestBuffer, typically the internal buffer in current implementation.
 /// @retval single work request in HE_QAT_TaskRequest data structure.
@@ -126,8 +131,9 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer)
 {
     void* item = NULL;
     static unsigned int counter = 0;
+
     pthread_mutex_lock(&_buffer->mutex);
-//#define HE_QAT_DEBUG
+
 #ifdef HE_QAT_DEBUG
     printf("Wait lock read request. [internal buffer size: %d] Request #%u\n",
            _buffer->count, counter++);
@@ -145,6 +151,7 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer)
 
     pthread_cond_signal(&_buffer->any_free_slot);
     pthread_mutex_unlock(&_buffer->mutex);
+
 #ifdef HE_QAT_DEBUG
     printf("Unlocked read request. [internal buffer count: %d]\n",
            _buffer->count);
@@ -153,10 +160,12 @@ static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer)
     return (HE_QAT_TaskRequest*)(item);
 }
 
-/// @brief Read requests from the outstanding buffer.
-/// Thread-safe consumer implementation for the outstanding request buffer.
-/// Read requests from outstanding buffer (requests ready to be scheduled) to later pass them to the internal buffer `he_qat_buffer`. As those requests move from the outstanding buffer into the internal buffer, their state changes from ready-to-be-scheduled to ready-to-be-processed.
-/// Supported in single-threaded or multi-threaded mode.
+/// @brief Retrieve multiple requests from the outstanding buffer.
+/// @details Thread-safe consumer implementation for the outstanding request buffer.
+/// Read requests from outstanding buffer (requests ready to be scheduled) to later pass 
+/// them to the internal buffer `he_qat_buffer`. As those requests move from the outstanding 
+/// buffer into the internal buffer, their state changes from ready-to-be-scheduled to 
+/// ready-to-be-processed. This function is supported both in single-threaded or multi-threaded mode.
 /// @param[out] _requests list of requests retrieved from internal buffer.
 /// @param[in] _buffer buffer of type HE_QAT_RequestBuffer, typically the internal buffer in current implementation.
 /// @param[in] max_requests maximum number of requests to retrieve from internal buffer, if available.
@@ -192,7 +201,7 @@ static void read_request_list(HE_QAT_TaskRequestList* _requests,
 }
 
 /// @brief Read requests from the outstanding buffer.
-/// Thread-safe consumer implementation for the outstanding request buffer.
+/// @details Thread-safe consumer implementation for the outstanding request buffer.
 /// Retrieve work requests from outstanding buffer (requests ready to be scheduled) to later on pass them to the internal buffer `he_qat_buffer`. As those requests move from the outstanding buffer into the internal buffer, their state changes from ready-to-be-scheduled to ready-to-be-processed.
 /// This function is supported in single-threaded or multi-threaded mode.
 /// @param[out] _requests list of work requests retrieved from outstanding buffer.
@@ -231,12 +240,11 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 
     if (!any_ready) return;
 
-    // printf("Buffer #%u is Ready\n",index);
-
     // Extract outstanding requests from outstanding buffer
-    // (this is the only function that reads from outstanding buffer, from a
-    // single thread)
+    // (this is the only function that reads from outstanding buffer, 
+    // from a single thread)
     pthread_mutex_lock(&_outstanding_buffer->buffer[index].mutex);
+    
     // This conditional waiting may not be required
     // Wait while buffer is empty
     while (_outstanding_buffer->buffer[index].count <= 0) {
@@ -244,7 +252,6 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
                           &_outstanding_buffer->buffer[index].mutex);
     }
     assert(_outstanding_buffer->buffer[index].count > 0);
-    //
 
     unsigned int num_requests =
         (_outstanding_buffer->buffer[index].count < max_num_requests)
@@ -280,7 +287,7 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 }
 
 /// @brief Schedule outstanding requests to the internal buffer and be ready for processing.
-/// Schedule outstanding requests from outstanding buffers to the internal buffer,
+/// @details Schedule outstanding requests from outstanding buffers to the internal buffer,
 /// from which requests are ready to be submitted to the device for processing.
 /// @function schedule_requests
 /// @param[in] state A volatile integer variable used to activate (val>0) or 
@@ -301,15 +308,11 @@ void* schedule_requests(void* state) {
 
     // this thread should receive signal from context to exit
     while (*active) {
-        // collect a set of requests from the outstanding buffer
+        // Collect a set of requests from the outstanding buffer
         pull_outstanding_requests(&outstanding_requests, &outstanding,
                                   HE_QAT_BUFFER_SIZE);
-        //	printf("Pulled %u outstanding
-        //requests\n",outstanding_requests.count);
-        // submit them to the HE QAT buffer for offloading
+        // Submit them to the HE QAT buffer for offloading
         submit_request_list(&he_qat_buffer, &outstanding_requests);
-        //	printf("Submitted %u outstanding
-        //requests\n",outstanding_requests.count);
     }
 
     pthread_exit(NULL);
@@ -437,13 +440,11 @@ void* start_instances(void* _config) {
     
     } // for loop
     
-    /* NEW CODE */
     HE_QAT_TaskRequestList outstanding_requests;
     for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
         outstanding_requests.request[i] = NULL;
     }
     outstanding_requests.count = 0;
-    /* END NEW CODE */
 
     config->running = 1;
     config->active = 1;
@@ -451,7 +452,6 @@ void* start_instances(void* _config) {
 #ifdef HE_QAT_DEBUG
         printf("Try reading request from buffer. Inst #%d\n", config->inst_id);
 #endif
-	/* NEW CODE */
 	unsigned long pending = request_count - response_count;
 	unsigned long available = max_pending - ((pending < max_pending)?pending:max_pending);
 #ifdef HE_QAT_DEBUG
@@ -466,26 +466,20 @@ void* start_instances(void* _config) {
 	   OS_SLEEP(RESTART_LATENCY_MICROSEC);
            pending = request_count - response_count;
 	   available = max_pending - ((pending < max_pending)?pending:max_pending);
-//           printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
-//          			request_count,response_count,pending,available);
+#ifdef HE_QAT_DEBUG
+           printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+          			request_count,response_count,pending,available);
+#endif
 	}
 #ifdef HE_QAT_DEBUG
 	printf("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
 			request_count,response_count,pending,available);
 #endif
 	unsigned int max_requests = available;
+
 	// Try consume maximum amount of data from butter to perform requested operation
         read_request_list(&outstanding_requests, &he_qat_buffer, max_requests);
-	/* END NEW CODE  */
 
-//	// Try consume data from butter to perform requested operation
-//        HE_QAT_TaskRequest* request =
-//            (HE_QAT_TaskRequest*)read_request(&he_qat_buffer);
-//
-//        if (NULL == request) {
-//            pthread_cond_signal(&config->ready);
-//            continue;
-//        }
 #ifdef HE_QAT_DEBUG
         printf("Offloading %u requests to the accelerator.\n", outstanding_requests.count);
 #endif
@@ -537,14 +531,13 @@ void* start_instances(void* _config) {
 	    // Global tracking of number of requests 
 	    request_count += 1;
 	    request_count_per_instance[next_instance] += 1;
-//            printf("Instance %d Count %u\n",next_instance,request_count_per_instance[next_instance]);
             next_instance = (next_instance + 1) % instance_count;
-//		printf("retry_count = %d\n",retry_count);
-//            printf("SUCCESS Next Instance = %d\n",next_instance);
-	// Wake up any blocked call to stop_perform_op, signaling that now it is
-        // safe to terminate running instances. Check if this detereorate
-        // performance.
-        pthread_cond_signal(&config->inst_config[next_instance].ready);  // Prone to the lost wake-up problem
+
+	    // Wake up any blocked call to stop_perform_op, signaling that now it is
+            // safe to terminate running instances. Check if this detereorate
+            // performance.
+            pthread_cond_signal(&config->inst_config[next_instance].ready);  // Prone to the lost wake-up problem
+
 #ifdef HE_QAT_SYNC_MODE
             // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
@@ -632,13 +625,11 @@ void* start_perform_op(void* _inst_config) {
         pthread_exit(NULL);
     }
     
-    /* NEW CODE */
     HE_QAT_TaskRequestList outstanding_requests;
     for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
         outstanding_requests.request[i] = NULL;
     }
     outstanding_requests.count = 0;
-    /* END NEW CODE */
 
     config->running = 1;
     config->active = 1;
@@ -646,7 +637,6 @@ void* start_perform_op(void* _inst_config) {
 #ifdef HE_QAT_DEBUG
         printf("Try reading request from buffer. Inst #%d\n", config->inst_id);
 #endif
-	/* NEW CODE */
 	unsigned long pending = request_count - response_count;
 	unsigned long available = max_pending - ((pending < max_pending)?pending:max_pending);
 #ifdef HE_QAT_DEBUG
@@ -669,7 +659,6 @@ void* start_perform_op(void* _inst_config) {
 	unsigned int max_requests = available;
 	// Try consume maximum amount of data from butter to perform requested operation
         read_request_list(&outstanding_requests, &he_qat_buffer, max_requests);
-	/* END NEW CODE  */
 
 //	// Try consume data from butter to perform requested operation
 //        HE_QAT_TaskRequest* request =
