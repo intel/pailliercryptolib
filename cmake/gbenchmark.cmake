@@ -32,6 +32,7 @@ ExternalProject_Add(
 add_library(libgbenchmark INTERFACE)
 add_dependencies(libgbenchmark ext_gbenchmark)
 
+message(STATUS "DEBUG -- libdir: ${CMAKE_INSTALL_LIBDIR}")
 ExternalProject_Get_Property(ext_gbenchmark SOURCE_DIR BINARY_DIR)
 file(STRINGS /etc/os-release LINUX_ID REGEX "^ID=")
 string(REGEX REPLACE "ID=\(.*)" "\\1" LINUX_ID "${LINUX_ID}")
