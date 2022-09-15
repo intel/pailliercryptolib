@@ -32,6 +32,8 @@ For increased security, typically the key length is at least 1024 bits, but reco
 For best performance, especially due to the multi-buffer modular exponentiation function, the library is to be used on AVX512IFMA enabled systems, as listed below in Intel CPU codenames:
  - Intel Cannon Lake
  - Intel Ice Lake
+ - Intel Tiger Lake
+ - Intel Rocket Lake
 
 The library can be built and used without AVX512IFMA, as if the instruction set is not detected on the system, it will automatically switch to non multi-buffer modular exponentiation.
 
@@ -51,7 +53,7 @@ g++ >= 7.0 or clang >= 10.0
 
 The following libraries and tools are also required,
 ```
-nasm >= 2.15
+nasm >= 2.14.02
 OpenSSL >= 1.1.0
 numa >= 2.0.12
 ```
