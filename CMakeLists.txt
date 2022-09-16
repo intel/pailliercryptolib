@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.15.1)
 
-project(IPCL VERSION 1.1.3 LANGUAGES C CXX)
+project(IPCL VERSION 1.1.4 LANGUAGES C CXX)
 
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
@@ -113,6 +113,23 @@ else()
     message(STATUS "Support AVX512IFMA: True")
     add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
   endif()
+endif()
+
+# check whether cpu support rdseed or rdrand instruction
+set(CPU_RDSEED_FLAG "rdseed")
+execute_process(COMMAND lscpu COMMAND grep ${CPU_RDSEED_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDSEED)
+if("${CPU_ENABLE_RDSEED}" STREQUAL "")
+  set(CPU_RDRAND_FLAG "rdrand")
+  execute_process(COMMAND lscpu COMMAND grep ${CPU_RDRAND_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDRAND)
+  if("${CPU_ENABLE_RDRAND}" STREQUAL "")
+    message(WARNING "CPU doesn't support RDSEED and RDRAND instruction, using random generator will cause errors.")
+  else ()
+    message(STATUS "Support RDRAND instruction: True")
+    add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
+  endif()
+else()
+  message(STATUS "Support RDSEED instruction: True")
+  add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
 endif()
 
 # find package for OpenSSL and Threads

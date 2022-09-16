@@ -5,7 +5,7 @@ include(ExternalProject)
 MESSAGE(STATUS "Configuring ipp-crypto")
 set(IPPCRYPTO_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_ipp-crypto)
 set(IPPCRYPTO_GIT_REPO_URL https://github.com/intel/ipp-crypto.git)
-set(IPPCRYPTO_GIT_LABEL ipp-crypto_2021_4)
+set(IPPCRYPTO_GIT_LABEL ippcp_2021.6)
 set(IPPCRYPTO_SRC_DIR ${IPPCRYPTO_PREFIX}/src/ext_ipp-crypto/)
 
 set(IPPCRYPTO_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS} -DNONPIC_LIB:BOOL=off -DMERGED_BLD:BOOL=on")

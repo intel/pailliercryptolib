@@ -10,6 +10,7 @@ set(IPCL_SRCS pri_key.cpp
                             plaintext.cpp
                             ciphertext.cpp
                             util.cpp
+                            common.cpp
 )
 
 
