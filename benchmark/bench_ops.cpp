@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 
-#include "ipcl/keygen.hpp"
+#include "ipcl/ipcl.hpp"
 
 #define ADD_SAMPLE_KEY_LENGTH_ARGS Args({1024})->Args({2048})
 #define ADD_SAMPLE_VECTOR_SIZE_ARGS \
