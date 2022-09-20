@@ -47,8 +47,8 @@ static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTA
 /// of the producer for the either the internal buffer or the outstanding buffer to 
 /// host incoming requests. Depending on the buffer type, the submitted request 
 /// is either ready to be scheduled or to be processed by the accelerator.
-/// @param[out] _buffer either `he_qat_buffer` or `outstanding` buffer.
-/// @param[in] args work request packaged in a custom data structure.
+/// @param[out] _buffer Either `he_qat_buffer` or `outstanding` buffer.
+/// @param[in] args Work request packaged in a custom data structure.
 void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 #ifdef HE_QAT_DEBUG
     printf("Lock write request\n");
@@ -77,7 +77,7 @@ void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 }
 
 /// @brief Populates internal buffer with a list of work request.
-/// This function is called by the request scheduler thread. It is a thread-safe implementation of the producer for the shared internal request buffer. This buffer stores and serializes the offloading of requests that are ready to be processed by the accelerator.
+/// @details This function is called by the request scheduler thread. It is a thread-safe implementation of the producer for the shared internal request buffer. This buffer stores and serializes the offloading of requests that are ready to be processed by the accelerator.
 /// @param[out] _buffer reference pointer to the internal buffer `he_qat_buffer`.
 /// @param[in] _requests list of requests retrieved from the buffer (`outstanding`) holding outstanding requests.
 static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
@@ -289,7 +289,6 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 /// @brief Schedule outstanding requests to the internal buffer and be ready for processing.
 /// @details Schedule outstanding requests from outstanding buffers to the internal buffer,
 /// from which requests are ready to be submitted to the device for processing.
-/// @function schedule_requests
 /// @param[in] state A volatile integer variable used to activate (val>0) or 
 ///		     disactive (val=0) the scheduler.
 void* schedule_requests(void* state) {
@@ -319,7 +318,6 @@ void* schedule_requests(void* state) {
 }
 
 /// @brief Poll responses from a specific QAT instance.
-/// @function start_inst_polling
 /// @param[in] _inst_config Instance configuration containing the parameter 
 /// 			    values to start and poll responses from the accelerator.
 static void* start_inst_polling(void* _inst_config) {
@@ -351,7 +349,7 @@ static void* start_inst_polling(void* _inst_config) {
 ///	Initialize and start multiple instances, their polling thread, 
 ///	and a single processing thread.
 /// 
-/// @function start_instances
+/// @details
 /// 	It initializes multiple QAT instances and launches their respective independent 
 ///	polling threads that will listen to responses to requests sent to the accelerators
 ///	concurrently. Then, it becomes the thread that collect the incoming requests stored 
@@ -572,7 +570,7 @@ void* start_instances(void* _config) {
 /// @brief
 /// 	Start independent processing and polling threads for an instance.
 /// 
-/// @function start_perform_op
+/// @details
 /// 	It initializes a QAT instance and launches its polling thread to listen 
 ///     to responses (request outputs) from the accelerator. It is also reponsible 
 ///	to collect requests from the internal buffer and send them to the accelerator 
@@ -757,12 +755,10 @@ void* start_perform_op(void* _inst_config) {
 /// @brief 
 /// 	Stop specified number of instances from running.
 /// 
-/// @function stop_perform_op
-/// 	Stop first 'num_inst' number of cpaCyInstance(s), including their polling
-/// 	and running threads.
-///
 /// @details
-/// 	Stop runnning and polling instances. Release QAT instances handles.
+/// 	Stop first 'num_inst' number of cpaCyInstance(s), including their polling
+/// 	and running threads. Stop runnning and polling instances. 
+///     Release QAT instances handles.
 ///
 /// @param[in] config List of all created QAT instances and their configurations.
 /// @param[in] num_inst Unsigned integer number indicating first number of
@@ -807,7 +803,6 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
 }
 
 /// @brief Stop all running instances. 
-/// @function stop_instances
 /// @details
 /// 	Stop all running instances after calling `start_instances()`.
 ///	It will set the states of the instances to terminate gracefully. 

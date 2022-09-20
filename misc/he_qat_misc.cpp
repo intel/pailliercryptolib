@@ -1,3 +1,5 @@
+/// @file he_qat_misc.cpp
+
 #include "he_qat_misc.h"
 
 //#ifdef __cplusplus

@@ -1,3 +1,4 @@
+/// @file he_qat_types.h
 
 #pragma once
 
@@ -23,7 +24,10 @@ extern "C" {
 #include "he_qat_gconst.h"
 
 // Type definitions
-typedef enum { HE_QAT_SYNC = 1, HE_QAT_ASYNC = 2 } HE_QAT_EXEC_MODE;
+typedef enum { 
+    HE_QAT_SYNC = 1, 
+    HE_QAT_ASYNC = 2 
+} HE_QAT_EXEC_MODE;
 
 typedef enum {
     HE_QAT_STATUS_INVALID_PARAM = 2,
@@ -32,7 +36,10 @@ typedef enum {
     HE_QAT_STATUS_FAIL = -1
 } HE_QAT_STATUS;
 
-typedef enum { HE_QAT_OP_NONE = 0, HE_QAT_OP_MODEXP = 1 } HE_QAT_OP;
+typedef enum { 
+    HE_QAT_OP_NONE = 0,  ///< No Operation (NO OP)
+    HE_QAT_OP_MODEXP = 1 ///< QAT Modular Exponentiation
+} HE_QAT_OP;
 
 typedef pthread_t HE_QAT_Inst;
 
@@ -50,20 +57,6 @@ typedef struct {
     pthread_cond_t any_more_data;  ///< Conditional variable used to synchronize the consumption of data in buffer (wait until more data is available to be consumed)
     pthread_cond_t any_free_slot;  ///< Conditional variable used to synchronize the provision of free slots in buffer (wait until enough slots are available to add more data in buffer)
 } HE_QAT_RequestBuffer;
-
-// Unused type. Intention to remove it.
-//typedef struct {
-//    void* data[HE_QAT_BUFFER_COUNT][HE_QAT_BUFFER_SIZE];  //
-//    unsigned int count;
-//    unsigned int size;
-//    unsigned int
-//        next_free_slot;  // nextin index of the next free slot for a request
-//    unsigned int
-//        next_data_slot;     // nextout index of next request to be processed
-//    pthread_mutex_t mutex;  //
-//    pthread_cond_t any_more_data;  // more
-//    pthread_cond_t any_free_slot;  // less
-//} HE_QAT_RequestBufferList;
 
 typedef struct {
     HE_QAT_RequestBuffer buffer[HE_QAT_BUFFER_COUNT];  ///< Buffers to support concurrent threads with less sync overhead
@@ -91,10 +84,10 @@ typedef struct {
 } HE_QAT_InstConfig;
 
 typedef struct {
-   HE_QAT_InstConfig *inst_config;
-   volatile int active;
-   volatile int running;
-   unsigned int count;
+    HE_QAT_InstConfig *inst_config;
+    volatile int active;
+    volatile int running;
+    unsigned int count;
 } HE_QAT_Config;
 
 // One for each consumer

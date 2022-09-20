@@ -1,3 +1,4 @@
+/// @file he_qat_context.c
 
 #define _GNU_SOURCE
 
@@ -113,7 +114,6 @@ static CpaInstanceHandle get_qat_instance() {
 }
 
 /// @brief
-/// @function acquire_qat_devices
 /// Acquire QAT instances and set up QAT execution environment.
 HE_QAT_STATUS acquire_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
@@ -272,7 +272,6 @@ HE_QAT_STATUS acquire_qat_devices() {
 }
 
 /// @brief
-/// @function release_qat_devices
 /// Release QAT instances and tear down QAT execution environment.
 HE_QAT_STATUS release_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;

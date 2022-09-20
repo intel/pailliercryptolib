@@ -1,7 +1,7 @@
 /**
  * @file he_qat_bn_ops.h
  *
- * @description 
+ * @details 
  * 	In this file, functions for Big Number operations accelerated by the 
  * 	QuickAssist (QAT) co-processor are specified.
  *
@@ -43,9 +43,7 @@ extern "C" {
 #include <openssl/bn.h>
 #include "he_qat_types.h"
 
-/// @brief Modular exponentiation using BIGNUM.
-/// 
-/// @function
+/// @brief Modular exponentiation using BIGNUM data structure.
 /// Perform big number modular exponentiation operation accelerated with QAT for input data 
 /// using OpenSSL BIGNUM data structure.
 /// 
@@ -54,16 +52,14 @@ extern "C" {
 /// Copy data and package into a request and call producer function to submit
 /// request into qat buffer.
 ///
-/// @param r    [out] Remainder number of the modular exponentiation operation.
-/// @param b    [in] Base number of the modular exponentiation operation.
-/// @param e    [in] Exponent number of the modular exponentiation operation.
-/// @param m    [in] Modulus number of the modular exponentiation operation.
-/// @param nbits[in] Number of bits (bit precision) of input/output big numbers.
+/// @param[out] r Remainder number of the modular exponentiation operation.
+/// @param[in] b Base number of the modular exponentiation operation.
+/// @param[in] e Exponent number of the modular exponentiation operation.
+/// @param[in] m Modulus number of the modular exponentiation operation.
+/// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
 HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
 
 /// @brief
-///
-/// @function
 /// Generic big number modular exponentiation for input data in primitive type
 /// format (unsigned char *).
 /// 
@@ -84,8 +80,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
 /// It waits for number of requests sent by HE_QAT_bnModExp or bnModExpPerformOp 
 /// to complete.
 /// 
-/// @function getModExpRequest(unsigned int batch_size)
-///
 /// @details
 /// This function is blocking and works as barrier. The purpose of this function 
 /// is to wait for all outstanding requests to complete processing. It will also 
@@ -103,8 +97,6 @@ void getBnModExpRequest(unsigned int num_requests);
  **/
 
 /// @brief
-///
-/// @function
 /// Generic big number modular exponentiation for input data in primitive type
 /// format (unsigned char *).
 /// 
@@ -113,6 +105,7 @@ void getBnModExpRequest(unsigned int num_requests);
 /// Copy data and package into a request and call producer function to submit
 /// request into qat buffer.
 /// 
+/// @param[in] _buffer_id Buffer ID of the reserved buffer for the caller's thread.
 /// @param[out] r Remainder number of the modular exponentiation operation.
 /// @param[in] b Base number of the modular exponentiation operation.
 /// @param[in] e Exponent number of the modular exponentiation operation.
@@ -121,7 +114,20 @@ void getBnModExpRequest(unsigned int num_requests);
 HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
                                  unsigned char* b, unsigned char* e, unsigned char* m, int nbits);
 
+/// @brief Reserve/acquire buffer for multithreading support.
+/// @details Try to acquire an available buffer to store outstanding work requests sent by caller.  
+///          If none is available, it blocks further processing and waits until another caller's concurrent 
+///          thread releases one. This function must be called before
+///          calling HE_QAT_bnModExp_MT(.).
+/// @param[out] _buffer_id Pointer to memory space allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
+
+/// @brief Wait for request processing to complete and release previously acquired buffer. 
+/// @details Caution: It assumes acquire_bnModExp_buffer(&_buffer_id) to be called first
+/// to secure and be assigned an outstanding buffer for the target thread. 
+/// Equivalent to getBnModExpRequests() for the multithreading support interfaces.
+/// param[in] _buffer_id Buffer ID of the buffer to be released/unlock for reuse by the next concurrent thread.
+/// param[in] _batch_size Total number of requests to wait for completion before releasing the buffer.
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size);
 
 #ifdef __cplusplus

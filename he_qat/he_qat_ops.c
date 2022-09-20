@@ -428,10 +428,11 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
 }
 
 /// @brief Frontend for multithreading support.
-/// @details Try to acquire an outstanding buffer available. 
-///          If none available, it waits until another concurrent 
+/// @details Try to acquire an available buffer to store outstanding work requests sent by caller.  
+///          If none is available, it blocks further processing and waits until another caller's concurrent 
 ///          thread releases one. This function must be called before
-///          calling HE_QAT_bnModExp_MT().
+///          calling HE_QAT_bnModExp_MT(.).
+/// @param[out] Pointer to memory space allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     if (NULL == _buffer_id) return HE_QAT_STATUS_INVALID_PARAM;
 
@@ -471,6 +472,8 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
 /// @details Caution: It assumes acquire_bnModExp_buffer(&_buffer_id) to be called first
 /// to secure and be assigned an outstanding buffer for the target thread. 
 /// Equivalent to getBnModExpRequests() for the multithreading support interfaces.
+/// param[in] _buffer_id Buffer ID of the buffer to be released/unlock for reuse by the next concurrent thread.
+/// param[in] _batch_size Total number of requests to wait for completion before releasing the buffer.
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) {
     unsigned int next_data_out = outstanding.buffer[_buffer_id].next_data_out;
     unsigned int j = 0;

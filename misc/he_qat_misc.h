@@ -1,6 +1,9 @@
+/// @file he_qat_misc.h
 
 #ifndef HE_QAT_MISC_H_
 #define HE_QAT_MISC_H_
+
+#pragma once
 
 #include "he_qat_gconst.h" 
 #include "he_qat_types.h"
@@ -8,7 +11,6 @@
 #include <openssl/bn.h>
 
 /// @brief
-/// @function binToBigNumber
 /// Convert QAT large number into little endian format and encapsulate it into a
 /// BigNumber object.
 /// @param[out] bn   BigNumber object representing multi-precision number in
@@ -19,7 +21,6 @@
 HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
                              int nbits);
 /// @brief
-/// @function bigNumberToBin
 /// Convert BigNumber object into raw data compatible with QAT.
 /// @param[out] data  BigNumber object's raw data in big endian format.
 /// @param[in]  nbits Number of bits. Has to be power of 2, e.g. 1024, 2048,
