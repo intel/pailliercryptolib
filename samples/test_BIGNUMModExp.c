@@ -24,9 +24,8 @@ int main(int argc, const char** argv) {
     double ssl_avg_time = 0.0;
     double qat_avg_time = 0.0;
 
-    clock_t start = CLOCKS_PER_SEC;
-    clock_t ssl_elapsed = CLOCKS_PER_SEC;
-    clock_t qat_elapsed = CLOCKS_PER_SEC;
+    double ssl_elapsed = 0.0 ;
+    double qat_elapsed = 0.0 ;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
