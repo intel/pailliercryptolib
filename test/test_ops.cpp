@@ -7,9 +7,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "ipcl/ciphertext.hpp"
-#include "ipcl/keygen.hpp"
-#include "ipcl/plaintext.hpp"
+#include "ipcl/ipcl.hpp"
 
 constexpr int SELF_DEF_NUM_VALUES = 7;
 
