@@ -43,14 +43,13 @@ extern "C" {
 #include <openssl/bn.h>
 #include "he_qat_types.h"
 
-/// @brief Modular exponentiation using BIGNUM data structure.
-/// Perform big number modular exponentiation operation accelerated with QAT for input data 
-/// using OpenSSL BIGNUM data structure.
+/// @brief Performs modular exponentiation using BIGNUM data structure.
 /// 
 /// @details
-/// Create private buffer for code section. Create QAT contiguous memory space.
-/// Copy data and package into a request and call producer function to submit
-/// request into qat buffer.
+/// Perform big number modular exponentiation operation accelerated with QAT for input data 
+/// using OpenSSL BIGNUM data structure. Create QAT contiguous memory space.
+/// Copy BIGNUM binary data and package it into a request (HE_QAT_Request data structure) and 
+/// call producer function to submit request to the internal buffer.
 ///
 /// @param[out] r Remainder number of the modular exponentiation operation.
 /// @param[in] b Base number of the modular exponentiation operation.
@@ -59,14 +58,14 @@ extern "C" {
 /// @param[in] nbits Number of bits (bit precision) of input/output big numbers.
 HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits);
 
-/// @brief
-/// Generic big number modular exponentiation for input data in primitive type
-/// format (unsigned char *).
+/// @brief Performs big number modular exponentiation for input data (an octet string) 
+/// in primitive type format (unsigned char *).
 /// 
 /// @details
-/// Create private buffer for code section. Create QAT contiguous memory space.
-/// Copy data and package into a request and call producer function to submit
-/// request into qat buffer.
+/// Perform big number modular exponentiation operation accelerated with QAT for 
+/// input data as an octet string of unsigned chars. Create QAT contiguous memory 
+/// space. Upon call it copies input data and package it into a request, then calls 
+/// producer function to submit request to internal buffer.
 /// 
 /// @param[out] r Remainder number of the modular exponentiation operation.
 /// @param[in] b Base number of the modular exponentiation operation.
@@ -77,17 +76,17 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits);
 
 /// @brief 
-/// It waits for number of requests sent by HE_QAT_bnModExp or bnModExpPerformOp 
+/// It waits for number of requests sent by HE_QAT_bnModExp or HE_QAT_BIGNUMModExp 
 /// to complete.
 /// 
 /// @details
-/// This function is blocking and works as barrier. The purpose of this function 
+/// This function is blocking and works as a barrier. The purpose of this function 
 /// is to wait for all outstanding requests to complete processing. It will also 
-/// release all temporary memory allocated to support the requests.
-/// Monitor outstanding request to be complete and then deallocate buffer
-/// holding outstanding request.
+/// release all temporary memory allocated used to support the submission and 
+/// processing of the requests. It monitors outstanding requests to be completed 
+/// and then it deallocates buffer holding outstanding request.
 ///
-/// @param[in] num_requests Number of requests to wait to complete processing.
+/// @param[in] num_requests Number of requests to wait for processing completion.
 void getBnModExpRequest(unsigned int num_requests);
 
 /** 
@@ -96,14 +95,15 @@ void getBnModExpRequest(unsigned int num_requests);
  *
  **/
 
-/// @brief
-/// Generic big number modular exponentiation for input data in primitive type
-/// format (unsigned char *).
+/// @brief Performs big number modular exponentiation for input data (an octet string) 
+/// in primitive type format (unsigned char *). Same as HE_QAT_bnModExp with 
+/// multithreading support.
 /// 
 /// @details
-/// Create private buffer for code section. Create QAT contiguous memory space.
-/// Copy data and package into a request and call producer function to submit
-/// request into qat buffer.
+/// Perform big number modular exponentiation operation accelerated with QAT for 
+/// input data as an octet string of unsigned chars. Create QAT contiguous memory 
+/// space. Upon call it copies input data and package it into a request, then calls 
+/// producer function to submit request to internal buffer.
 /// 
 /// @param[in] _buffer_id Buffer ID of the reserved buffer for the caller's thread.
 /// @param[out] r Remainder number of the modular exponentiation operation.
@@ -115,17 +115,21 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
                                  unsigned char* b, unsigned char* e, unsigned char* m, int nbits);
 
 /// @brief Reserve/acquire buffer for multithreading support.
+///
 /// @details Try to acquire an available buffer to store outstanding work requests sent by caller.  
 ///          If none is available, it blocks further processing and waits until another caller's concurrent 
 ///          thread releases one. This function must be called before
 ///          calling HE_QAT_bnModExp_MT(.).
+///
 /// @param[out] _buffer_id Pointer to memory space allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
 
 /// @brief Wait for request processing to complete and release previously acquired buffer. 
+///
 /// @details Caution: It assumes acquire_bnModExp_buffer(&_buffer_id) to be called first
 /// to secure and be assigned an outstanding buffer for the target thread. 
 /// Equivalent to getBnModExpRequests() for the multithreading support interfaces.
+///
 /// param[in] _buffer_id Buffer ID of the buffer to be released/unlock for reuse by the next concurrent thread.
 /// param[in] _batch_size Total number of requests to wait for completion before releasing the buffer.
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size);
