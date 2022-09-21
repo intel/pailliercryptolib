@@ -17,17 +17,17 @@ install(TARGETS test_context RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # -------------------------------------------------------------------------------------------
 
-add_executable(test_bnModExpPerformOp test_bnModExpPerformOp.c)
+add_executable(test_BIGNUMModExp test_BIGNUMModExp.c)
 
-target_include_directories(test_bnModExpPerformOp PUBLIC ${COMMON_INC_DIR}) # ${HE_QAT_UTILS_INC_DIR})
-#target_include_directories(test_bnModExpPerformOp PUBLIC ${HE_QAT_INC_DIR})
-target_include_directories(test_bnModExpPerformOp PUBLIC ${ICP_INC_DIR})
+target_include_directories(test_BIGNUMModExp PUBLIC ${COMMON_INC_DIR}) # ${HE_QAT_UTILS_INC_DIR})
+#target_include_directories(test_BIGNUMModExp PUBLIC ${HE_QAT_INC_DIR})
+target_include_directories(test_BIGNUMModExp PUBLIC ${ICP_INC_DIR})
 
-target_link_libraries(test_bnModExpPerformOp PUBLIC he_qat)
-target_link_libraries(test_bnModExpPerformOp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-#target_link_libraries(test_bnModExpPerformOp PUBLIC IPPCP::ippcp)
+target_link_libraries(test_BIGNUMModExp PUBLIC he_qat)
+target_link_libraries(test_BIGNUMModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
+#target_link_libraries(test_BIGNUMModExp PUBLIC IPPCP::ippcp)
 
-install(TARGETS test_bnModExpPerformOp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS test_BIGNUMModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # -------------------------------------------------------------------------------------------
 
