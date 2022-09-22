@@ -448,7 +448,7 @@ void* start_instances(void* _config) {
     config->active = 1;
     while (config->running) {
 #ifdef HE_QAT_DEBUG
-        printf("Try reading request from buffer. Inst #%d\n", config->inst_id);
+        printf("Try reading request from buffer. Inst #%d\n", next_instance);
 #endif
 	unsigned long pending = request_count - response_count;
 	unsigned long available = max_pending - ((pending < max_pending)?pending:max_pending);
