@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Refresh
+echo "sudo service restart qat_service"
+sudo service qat_service restart
+
 num_phys_dev=$(lspci -d 8086:4940 | wc -l) 
 if [ $num_phys_dev -eq 0 ]; then
   echo "No QAT Device Found !"
@@ -42,40 +46,108 @@ if [ -n "$2" ]; then
   fi
 fi
 
-start=0
-# If on virtualization mode
-if [ $num_virt_func -gt 0 & $conf_virt_func -gt 0 ]; then 
-  start=$num_phys_dev
-  dev_step=$num_virt_func
-fi
-
-stop=`expr $num_phy_dev \\* $conf_virt_func`
-stop=`expr $start + $stop`
-step=$dev_step
-
-i=$start; 
-n=`expr $start \\* $conf_virt_func`; 
-n=`expr $i + $n`; 
-while [ $i -lt $n ]; 
+# Shutdown QAT PFs
+i=0
+while [ $i -lt $num_phys_dev ]; 
 do 
   echo "sudo adf_ctl qat_dev$i down"; 
   sudo adf_ctl qat_dev$i down; 
   i=`expr $i + 1`; 
 done
 
-while [ $start -lt $stop ];
+# Reconfigure Target QAT PFs
+i=0
+n=$nphysdev
+while [ $i -lt $n ]; 
+do 
+  echo "sudo cp config/4xxx_dev0.conf /etc/4xxx_dev$i.conf"; 
+  sudo cp config/4xxx_dev0.conf /etc/4xxx_dev$i.conf; 
+  echo "sudo adf_ctl qat_dev$i up"; 
+  sudo adf_ctl qat_dev$i up; 
+  i=`expr $i + 1`; 
+done
+
+# Refresh
+echo "sudo service restart qat_service"
+sudo service qat_service restart
+
+# If Virtualization Mode Enabled
+start=0
+if [ $num_virt_func -gt 0 ]; then 
+  if [ $conf_virt_func -gt 0 ]; then 
+    start=$num_phys_dev
+    dev_step=$num_virt_func
+  fi
+fi
+
+# Shutdown QAT VFs
+i=$start
+stop=`expr $num_phys_dev \\* $num_virt_func`
+stop=`expr $start + $stop`
+step=$dev_step
+while [ $i -lt $stop ]; 
+do 
+  echo "sudo adf_ctl qat_dev$i down"; 
+  sudo adf_ctl qat_dev$i down; 
+  i=`expr $i + 1`; 
+done
+
+#i=0
+#while [ $i -lt $total_virt_func ]; 
+#do 
+#  echo "sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$i.conf"; 
+#  sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$i.conf; 
+#  i=`expr $i + 1`; 
+#done
+
+i=0
+while [ $i -lt $nphysdev ]; 
+do 
+  # Reconfigure QAT PF
+  echo "sudo cp config/4xxx_dev0.conf /etc/4xxx_dev$i.conf"; 
+  sudo cp config/4xxx_dev0.conf /etc/4xxx_dev$i.conf; 
+  # Start QAT PF
+  echo "sudo adf_ctl qat_dev$i up"; 
+  sudo adf_ctl qat_dev$i up; 
+  i=`expr $i + 1`; 
+done
+
+start=$num_phys_dev
+i=$start
+stop=`expr $nphysdev \\* $num_virt_func`
+stop=`expr $start + $stop`
+step=$dev_step
+while [ $i -lt $stop ];
 do
-  echo "adf_ctl qat_dev$start up"
-  sudo adf_ctl qat_dev$start up;
-  # start up additional instances mapped to the same physical device
+  k=`expr $i - $start`
+  # Reconfigure QAT VF (must match PF's config)
+  echo "sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$k.conf"; 
+  sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$k.conf; 
+  # Start QAT VF
+  echo "adf_ctl qat_dev$i up"
+  sudo adf_ctl qat_dev$i up;
+  # Start up additional instances mapped to the same physical device
   j=1;
   while [ $j -lt $conf_virt_func ]; 
   do
-    dev_id=`expr $j + $start`;
+    dev_id=`expr $i + $j`;
+    k=`expr $dev_id - $start`;
+    # Reconfigure QAT VF (must match PF's config)
+    echo "sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$k.conf"; 
+    sudo cp config/4xxxvf_dev0.conf /etc/4xxxvf_dev$k.conf; 
+    # Start QAT VF
+    echo "adf_ctl qat_dev$dev_id up"
     sudo adf_ctl qat_dev$dev_id up;
     j=`expr $j + 1`;
   done
-  start=`expr $start + $dev_step`
+  i=`expr $i + $dev_step`
 done
 
-
+# Shutdown Unused QAT PFs
+i=$nphysdev
+while [ $i -lt $num_phys_dev ]; 
+do 
+  echo "sudo adf_ctl qat_dev$i down"; 
+  sudo adf_ctl qat_dev$i down; 
+  i=`expr $i + 1`; 
+done

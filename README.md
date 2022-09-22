@@ -76,7 +76,7 @@ f2:00.0 Co-processor: Intel Corporation Device 4940 (rev 30)
 f7:00.0 Co-processor: Intel Corporation Device 4940 (rev 30)
 ```
 
-In the example above, the platform is a dual-socket Sapphire Rapids (SPR) and it shows 8 QAT endpoints, 4 on each socket.
+In the example above, the platform is a dual-socket server with Sapphire Rapids (SPR) CPU and it shows 8 QAT endpoints, 4 on each socket.
 
 #### Installing Dependencies
 
@@ -138,22 +138,39 @@ sudo service qat_service status
 
 If all checks out, following the instructions below to build the HE QAT library.
 
+#### Setup Environment 
+
+This step is required. Note that if the step [Installing QAT Software Stack](#installing-qat-software-stack) has just been performed, then the exact path of the installation is known, i.e. 
+
+```
+$ export ICP_ROOT=$HOME/QAT
+```
+
+Alternatively, if the system has a ore-built QAT software stack, the script `auto_find_qat_install.sh` can used to help automatically find the path where it was installed (see command below).
+
+```
+$ export ICP_ROOT=$(./auto_find_qat_install.sh)
+```
+
 #### Building the Library
 
-Without `BigNumber` support:
+Execute step []() before building the library. 
+
+- How to build without `BigNumber` support
 
 ```
 $ git clone https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git
 $ git checkout development
-$ export ICP_ROOT=$HOME/QAT
 $ cmake -S . -B build -DHE_QAT_MISC=OFF
 $ cmake --build build
 $ cmake --install build
 ```
 
-The cmake configuration variable `HE_QAT_MISC=ON` enables `BigNumber` resources and samples, requiring IPP Crypto installation as a dependency. If usage of the utility functions that support `BigNumber` data type is needed, follow the building instructions below to install IPP Crypto and then rebuild the library with the cmake flag `HE_QAT_MISC=ON`:
+- How to build with `BigNumber` support
 
-Installing `nasm-2.15`:
+The `cmake` configuration variable `HE_QAT_MISC=ON` enables `BigNumber` resources and samples, requiring IPP Crypto installation as a dependency. If usage of the utility functions that support `BigNumber` data type is needed, follow the building instructions below to install IPP Crypto and then rebuild the library with the cmake flag `HE_QAT_MISC=ON`:
+
+- Installing `nasm-2.15`
 
 ```
 $ wget -c https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.xz
@@ -164,7 +181,7 @@ $ make -j
 $ sudo make install
 ```
 
-Installing `ippcrypto`:
+- Installing `ippcrypto`
 
 ```
 $ cd ~
@@ -177,11 +194,12 @@ $ sudo cmake --install _build
 
 #### Configure QAT endpoints
 
-Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. Examples of configurations can be found in the directory `config`. The configuration that we found to serve us with the best performance is located at `config/1inst1dev`.
+Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. 
+The default configuration provided in this release is the optimal configuration to provide computing acceleration support for IPCL.
+The boilerplate configurations can be found in the directory `config`. 
 
 ```
-$ sudo cp config/1inst1dev/4xxx_dev*.conf /etc/
-$ sudo service qat_service restart
+$ ./setup_devices.sh
 ```
 
 #### Configuration Options
