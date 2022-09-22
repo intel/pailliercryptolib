@@ -1,9 +1,6 @@
 
 #include "he_qat_misc.h"
 #include "he_qat_utils.h"
-#include "he_qat_bn_ops.h"
-#include "he_qat_context.h"
-#include "cpa_sample_utils.h"
 
 #include <time.h>
 #include <openssl/bn.h>
@@ -26,9 +23,6 @@ int main(int argc, const char** argv) {
     double qat_elapsed = 0.0 ;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-
-    // Set up QAT runtime context
-    acquire_qat_devices();
 
     // Set up OpenSSL context (as baseline)
     BN_CTX* ctx = BN_CTX_new();
@@ -56,13 +50,11 @@ int main(int argc, const char** argv) {
         BigNumber big_num((Ipp32u)0);
 
         gettimeofday(&start_time, NULL);        
-        //start = clock();
         status = binToBigNumber(big_num, bn_mod_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
             printf("Failed at binToBigNumber()\n");
             exit(1);
         }
-        //ssl_elapsed = clock() - start;
         gettimeofday(&end_time, NULL);
         time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
         time_taken =
@@ -78,7 +70,6 @@ int main(int argc, const char** argv) {
         printf("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
                bit_len);
 
-//        start = clock();
         gettimeofday(&start_time, NULL);        
         unsigned char* ref_bn_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
@@ -88,7 +79,6 @@ int main(int argc, const char** argv) {
             printf("Failed at bigNumberToBin()\n");
             exit(1);
         }
-//        qat_elapsed = clock() - start;
         gettimeofday(&end_time, NULL);
         time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
         time_taken =
@@ -112,9 +102,6 @@ int main(int argc, const char** argv) {
 
     // Tear down OpenSSL context
     BN_CTX_end(ctx);
-
-    // Tear down QAT runtime context
-    release_qat_devices();
 
     return (int)status;
 }
