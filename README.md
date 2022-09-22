@@ -16,28 +16,29 @@ Intel Homomorphic Encryption Acceleration Library for QAT (HE QAT Lib) is an ope
 
 ## Introduction
 
-This library is underconstruction and currently only offers acceleration of modular exponentiation of multi-precision numbers, i.e. large numbers whose precision range from 1024 to 8192 bits. Current stage of implementation supports modular exponentiation of big numbers encoded with OpenSSL's BIGNUM data type and IPP Crypto's BigNumber class. More details about the modes of operation and characteristics of the execution flow are described below:
+This library currently only offers acceleration of modular exponentiation of multi-precision numbers, i.e. large numbers whose precision range from 1024 to 8192 bits. Current stage of implementation supports modular exponentiation of big numbers encoded with OpenSSL `BIGNUM` data type, `ippcrypto`'s `BigNumber` class and octet strings encoded with `unsigned char`. More details about the modes of operation and characteristics of the execution flow are described below:
 
- - Synchronous: It means that calls will be made to send modular exponentiation work requests to be offloaded to the accelerator and processed in the order they are issued.
+ - Synchronous: API calls will submit requests that will be executed in the order they are first issued by the host caller, i.e. a series of modular exponentiation operation requests will be offloaded for processing by the accelerator in the order they are issued.
  
- - Asynchronous: It means that multiple concurrent modular exponentiation work requests can be offloaded to the accelerator and processed not necessarily in the order they are issued from the host side.
+ - Asynchronous: API calls will submit requests that will NOT necessarily be executed in the order they are first issued by the host caller, i.e. a sequence of multiple requests for the modular exponentiation operation could be scheduled out of order and executed concurrently by the accelerator; thus, completed out of order.
 
- - Blocking: It means that the next buffered work request waits for completion of the processing of the most recent request offloaded to the accelerator, when processing must be currently in progress.
+ - Blocking: API calls will be blocked until work request processing completion. Internally, the next buffered work request waits for completion of the processing of the most recently offloaded request to the accelerator.
+ 
+  - Non-Blocking: API calls will be non-blocking, it does not wait for completion of the work request to return from call. After multiple non-blocking calls to the API, a blocking function to wait for the requests to complete processing must be called. Internally, non-blocking request submissions are scheduled to the accelerator asynchronously. When there are multiple requests from concurrent API callers, the requests are not guaranteed to be processed in order of arrival.
 
- - Batch Support: The internal buffer is set accommodate 256 requests at a time so that the maximum batch size is 256. Therefore, only up to 256 requests can be exercised asynchronously from the application side, be it from a single `for loop` or static code block. Finally, in order to collect the requests, a call to the `getBnModExpRequest()` function must be performed to wait for completion of all submitted asynchronous requests. 
-
- - Single-Threaded: It is currently desinged (and safer) to use it with a single-threaded applications, although multithreading is partially supported (try it at your own risk). Multithreading support is limited to work under restrictive conditions, namely, the total number of incoming requests at any point in time from multiple threads does not exceed the size of the internal buffer from which work requests are taken to be offloaded to QAT devices. Effective multithreading support will relax this condition by relying on a separate buffer that admits outstanding work requests. 
-<!-- can only be supported so long as the internal buffer can fill all the requests submitted by multiple threads, otherwise it will hang (this feature will become reliable in later versions).-->
+ - Batch Support: The internal buffers are set accommodate up to 1024 requests at a time so that the maximum number of non-blocking API calls is 1024 for each concurrent thread caller. Therefore, only up to 1024 requests can be exercised asynchronously from the application side, be it from a single `for loop` or static code block. Finally, in order to collect the requests, a call to the `getBnModExpRequest()` function must be performed to wait for completion of all submitted asynchronous requests. On multithreaded mode, the blocking function to be called at the end of the code block shall be `release_bnModExp_buffer()`.
+ 
+- Multithreading Support: This feature permits the API to be called by concurrently threads running on the host. Effective multithreading support relies on a separate buffer that admits outstanding work requests. This buffer is acquired before an API call to submit work requests to the accelerator. This is accomplished by first calling `acquire_bnModExp_buffer()` to reserve an internal buffer to store outstanding requests from the host API caller.
 
  - Multiple Instances/Devices: The library accesses all logical instances from all visible and configured QAT endpoints at the creation of the QAT runtime context. Therefore, if 8 QAT endpoints are available, it will attempt to use them all, including all the total number of logical instances configured per process. 
 
->> _**Note**_: Current implementation does not verify if the instance/endpoint has the capabilities needed by the library. For example, the library needs access to the _asym_ capabilities like `CyLnModExp`, therefore it the configuration file of an endpoint happens to be configured not offer it, the application will exit with an error at some point during execution.
+>> _**Note**_: Current implementation does not verify if the instance/endpoint has the capabilities needed by the library. For example, the library needs access to the _asym_ capabilities like `CyLnModExp`, therefore if the configuration file of an endpoint happens to be configured to not offer it, the application will exit with an error at some point during execution.
 
 ## Building the HE QAT Library
 
 ### Requirements
 The hardware requirement to use the library is the following:
- - Intel Sapphire Rapids
+ - Intel 4xxx co-processor
 <!-- - Intel C62XX acceleration card -->
 
 As for the operating systems, the library has been tested and confirmed to work on Ubuntu 20.04.
@@ -76,7 +77,7 @@ f2:00.0 Co-processor: Intel Corporation Device 4940 (rev 30)
 f7:00.0 Co-processor: Intel Corporation Device 4940 (rev 30)
 ```
 
-In the example above, the platform is a dual-socket Sapphire Rapids (SPR) and it shows 8 QAT endpoints, 4 on each socket.
+In the example above, the platform is a dual-socket server with Sapphire Rapids (SPR) CPU and it shows 8 QAT endpoints, 4 on each socket.
 
 #### Installing Dependencies
 
@@ -138,22 +139,39 @@ sudo service qat_service status
 
 If all checks out, following the instructions below to build the HE QAT library.
 
+#### Setup Environment 
+
+This step is required. Note that if the step [Installing QAT Software Stack](#installing-qat-software-stack) has just been performed, then the exact path of the installation is known, i.e. 
+
+```
+$ export ICP_ROOT=$HOME/QAT
+```
+
+Alternatively, if the system has a ore-built QAT software stack, the script `auto_find_qat_install.sh` can used to help automatically find the path where it was installed (see command below).
+
+```
+$ export ICP_ROOT=$(./auto_find_qat_install.sh)
+```
+
 #### Building the Library
 
-Without `BigNumber` support:
+Execute step []() before building the library. 
+
+- How to build without `BigNumber` support
 
 ```
 $ git clone https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git
 $ git checkout development
-$ export ICP_ROOT=$HOME/QAT
 $ cmake -S . -B build -DHE_QAT_MISC=OFF
 $ cmake --build build
 $ cmake --install build
 ```
 
-The cmake configuration variable `HE_QAT_MISC=ON` enables `BigNumber` resources and samples, requiring IPP Crypto installation as a dependency. If usage of the utility functions that support `BigNumber` data type is needed, follow the building instructions below to install IPP Crypto and then rebuild the library with the cmake flag `HE_QAT_MISC=ON`:
+- How to build with `BigNumber` support
 
-Installing `nasm-2.15`:
+The `cmake` configuration variable `HE_QAT_MISC=ON` enables `BigNumber` resources and samples, requiring IPP Crypto installation as a dependency. If usage of the utility functions that support `BigNumber` data type is needed, follow the building instructions below to install IPP Crypto and then rebuild the library with the cmake flag `HE_QAT_MISC=ON`:
+
+- Installing `nasm-2.15`
 
 ```
 $ wget -c https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.xz
@@ -164,7 +182,7 @@ $ make -j
 $ sudo make install
 ```
 
-Installing `ippcrypto`:
+- Installing `ippcrypto`
 
 ```
 $ cd ~
@@ -177,23 +195,24 @@ $ sudo cmake --install _build
 
 #### Configure QAT endpoints
 
-Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. Examples of configurations can be found in the directory `config`. The configuration that we found to serve us with the best performance is located at `config/1inst1dev`.
+Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. 
+The default configuration provided in this release is the optimal configuration to provide computing acceleration support for IPCL.
+The boilerplate configurations can be found in the directory `config`. 
 
 ```
-$ sudo cp config/1inst1dev/4xxx_dev*.conf /etc/
-$ sudo service qat_service restart
+$ ./setup_devices.sh
 ```
 
 #### Configuration Options
 
 In addition to the standard CMake configuration options, Intel HE Acceleration Library for QAT supports several cmake options to configure the build. For convenience, they are listed below:
 
-<!-- | CMake option                  | Values                 |                                                                            | -->
-<!-- | ------------------------------| ---------------------- | -------------------------------------------------------------------------- | -->
-| HE_QAT_MISC              | ON / OFF (default OFF) | Set to OFF, enable benchmark suite via Google benchmark                   | -->
-<!-- | HE_QAT_DEBUG             | ON / OFF (default OFF) | Set to OFF, enable debug log at large runtime penalty                      | -->
-<!-- | HE_QAT_SAMPLES                  | ON / OFF (default ON) | Set to ON, enable building of samples.                                  | -->
-<!-- | HE_QAT_DOCS                   | ON / OFF (default OFF) | Set to OFF, enable building of documentation                               | -->
+| CMake option                  | Values                 | Description                                             |
+| ------------------------------| ---------------------- | ------------------------------------------------------- |
+| HE_QAT_MISC                   | ON / OFF (default OFF) | Enable/Disable BigNumber conversion functions.          |
+| HE_QAT_DEBUG                  | ON / OFF (default OFF) | Enable/Disable debug log at large runtime penalty.      |
+| HE_QAT_SAMPLES                | ON / OFF (default ON)  | Enable/Disable building of samples.                     |
+| HE_QAT_DOCS                   | ON / OFF (default ON)  | Enable/Disable building of documentation.               |
 
 #### Running Samples
 

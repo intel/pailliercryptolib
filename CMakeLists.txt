@@ -66,7 +66,7 @@ option(HE_QAT_TEST "Enable testing" OFF)
 option(HE_QAT_OMP "Enable tests using OpenMP" ON)
 option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
-option(HE_QAT_DOCS "Enable document building" OFF)
+option(HE_QAT_DOCS "Enable document building" ON)
 option(HE_QAT_SHARED "Build shared library" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -149,8 +149,6 @@ find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-#set(OPENSSL_INC_DIR /opt/openssl/include) 
-#set(OPENSSL_LIB_DIR /opt/openssl/lib)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
 include(heqat-util)
@@ -197,8 +195,15 @@ if(HE_QAT_BENCHMARK)
 endif()
 
 if(HE_QAT_DOCS)
-  add_subdirectory(docs)
+  # sudo apt-get install doxygen
+  find_package(Doxygen)
+  option(BUILD_DOCS "Create and install the HTML based API docs (requires Doxygen)" ${DOXYGEN_FOUND})
+  if(BUILD_DOCS)
+    if(NOT DOXYGEN_FOUND)
+      message(FATAL_ERROR "Doxygen was not found (Required)")
+    else()
+      add_subdirectory(doc)
+    endif()
+  endif()
 endif()
-
-
 

@@ -14,12 +14,6 @@ set(ICP_OSAL_DIR         ${ICP_ROOT}/quickassist/utilities/oasl)
 set(ICP_ADF_DIR          ${ICP_ROOT}/quickassist/lookaside/access_layer/src/qat_direct) 
 set(CMN_ROOT             ${ICP_ROOT}/quickassist/utilities/libusdm_drv)
 
-#list(APPEND COMMON_INC_DIR ${ICP_API_DIR}/include 
-#                           ${ICP_LAC_DIR}/include 
-#                           ${ICP_ADF_DIR}/include
-#                           ${CMN_ROOT}
-#)
-
 set(ICP_INC_DIR ${ICP_API_DIR}/include 
                 ${ICP_LAC_DIR}/include 
                 ${ICP_ADF_DIR}/include

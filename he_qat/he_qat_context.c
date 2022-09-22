@@ -1,3 +1,4 @@
+/// @file he_qat_context.c
 
 #define _GNU_SOURCE
 
@@ -24,15 +25,15 @@
 #define MAX_INSTANCES 1
 #endif
 
-volatile int context_state = 0;
+static volatile int context_state = 0;
 
 // Global variable declarations
-pthread_t         buffer_manager;
-pthread_t         he_qat_runner;
-HE_QAT_Inst       he_qat_instances[HE_QAT_NUM_ACTIVE_INSTANCES];
-pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
-HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
-HE_QAT_Config*    he_qat_config = NULL;
+static pthread_t         buffer_manager;
+static pthread_t         he_qat_runner;
+static HE_QAT_Inst       he_qat_instances[HE_QAT_NUM_ACTIVE_INSTANCES];
+static pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
+static HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
+static HE_QAT_Config*    he_qat_config = NULL;
 
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
@@ -51,7 +52,7 @@ extern void stop_perform_op(void* _inst_config, unsigned num_inst);
 // WARNING: Deprecated when "start_instances" becomes default.
 extern void* start_perform_op(void* _inst_config);
 
-CpaInstanceHandle handle = NULL;
+static CpaInstanceHandle handle = NULL;
 
 static CpaInstanceHandle get_qat_instance() {
     static CpaInstanceHandle cyInstHandles[MAX_INSTANCES];
@@ -113,7 +114,6 @@ static CpaInstanceHandle get_qat_instance() {
 }
 
 /// @brief
-/// @function acquire_qat_devices
 /// Acquire QAT instances and set up QAT execution environment.
 HE_QAT_STATUS acquire_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
@@ -272,7 +272,6 @@ HE_QAT_STATUS acquire_qat_devices() {
 }
 
 /// @brief
-/// @function release_qat_devices
 /// Release QAT instances and tear down QAT execution environment.
 HE_QAT_STATUS release_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;

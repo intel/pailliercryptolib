@@ -24,15 +24,11 @@ using namespace std::chrono;
 
 int main(int argc, const char** argv) {
     const int bit_length = 4096;
-    const size_t num_trials = 10000;
+    const size_t num_trials = 100;
 
     double avg_speed_up = 0.0;
     double ssl_avg_time = 0.0;
     double qat_avg_time = 0.0;
-
-    //    clock_t start = CLOCKS_PER_SEC;
-    //    clock_t ssl_elapsed = CLOCKS_PER_SEC;
-    //    clock_t qat_elapsed = CLOCKS_PER_SEC;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
@@ -69,16 +65,13 @@ int main(int argc, const char** argv) {
         // Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
         auto start = high_resolution_clock::now();
-        // start = clock();
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
         auto stop = high_resolution_clock::now();
         auto ssl_duration = duration_cast<microseconds>(stop - start);
-        // ssl_elapsed = clock() - start;
 
         int len_ = (bit_length + 7) >> 3;
 
         // Start QAT timer (including data conversion overhead)
-        //        start = clock();
         start = high_resolution_clock::now();
         unsigned char* bn_base_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
@@ -97,7 +90,6 @@ int main(int argc, const char** argv) {
         if (NULL == bn_remainder_data_) exit(1);
         stop = high_resolution_clock::now();
         auto cvt_duration = duration_cast<microseconds>(stop - start);
-        //	clock_t cvt_elapsed = clock() - start;
 
         // Simulate input number in BigNumber representation
         BigNumber big_num_base((Ipp32u)0);
@@ -131,7 +123,6 @@ int main(int argc, const char** argv) {
             exit(1);
         }
 
-        // start = clock();
         start = high_resolution_clock::now();
         status = bigNumberToBin(bn_base_data_, bit_length, big_num_base);
         if (HE_QAT_STATUS_SUCCESS != status) {
@@ -149,13 +140,10 @@ int main(int argc, const char** argv) {
             printf("bn_base_data_: failed at bignumbertobin()\n");
             exit(1);
         }
-        // cvt_elapsed += (clock() - start);
         cvt_duration +=
             duration_cast<microseconds>(high_resolution_clock::now() - start);
 
         // Perform BigNumber modular exponentiation on QAT
-        // start = clock();
-
         start = high_resolution_clock::now();
         for (unsigned int b = 0; b < BATCH_SIZE; b++)
             status =
@@ -174,19 +162,11 @@ int main(int argc, const char** argv) {
                         (ssl_duration.count() /
                          (double)(qat_duration.count() / BATCH_SIZE))) /
                        (mod + 1);
-        // qat_elapsed = clock() - start;
-
-        // printf("BigNumber data conversion overhead: %.1lfus.\n",
-        //       (cvt_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
-        // printf("BigNumber modular exponentiation on QAT: %.1lfus.\n",
-        //       (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
-        // qat_elapsed += cvt_elapsed;
         printf("Request #%u\t", mod + 1);
         printf("Overhead: %.1luus", cvt_duration.count());
         printf("\tOpenSSL: %.1lfus", ssl_avg_time);
         printf("\tQAT: %.1lfus", qat_avg_time);
         printf("\tSpeed-up: %.1lfx", avg_speed_up);
-        // qat_elapsed += cvt_elapsed;
 
         BIGNUM* qat_res = BN_new();
         BN_bin2bn(bn_remainder_data_, len_, qat_res);
@@ -200,16 +180,12 @@ int main(int argc, const char** argv) {
         }
 #endif
 
-        // start = clock();
         BigNumber big_num((Ipp32u)0);
         status = binToBigNumber(big_num, bn_remainder_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
             printf("bn_remainder_data_: Failed at bigNumberToBin()\n");
             exit(1);
         }
-        // qat_elapsed += (clock() - start);
-        // printf("BigNumber ModExp total time: %.1lfus.\n",
-        //       (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
 
 #ifdef _DESTINY_DEBUG_VERBOSE
         bn_str = BN_bn2hex(qat_res);
@@ -238,8 +214,6 @@ int main(int argc, const char** argv) {
         BN_free(bn_exponent);
         BN_free(qat_res);
         BN_free(ssl_res);
-
-        //	OPENSSL_free(bn_str);
 
         free(bn_mod_data_);
         free(bn_base_data_);

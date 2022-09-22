@@ -1,9 +1,6 @@
 
 #include "he_qat_misc.h"
 #include "he_qat_utils.h"
-#include "he_qat_bn_ops.h"
-#include "he_qat_context.h"
-#include "cpa_sample_utils.h"
 
 #include <time.h>
 #include <openssl/bn.h>
@@ -14,18 +11,18 @@
 
 #include <iomanip>
 
+#include <sys/time.h>
+struct timeval start_time, end_time;
+double time_taken = 0.0;
+
 int main(int argc, const char** argv) {
     const int bit_length = 1024;
     const size_t num_trials = 4;
 
-    clock_t start = CLOCKS_PER_SEC;
-    clock_t ssl_elapsed = CLOCKS_PER_SEC;
-    clock_t qat_elapsed = CLOCKS_PER_SEC;
+    double ssl_elapsed = 0.0 ;
+    double qat_elapsed = 0.0 ;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-
-    // Set up QAT runtime context
-    acquire_qat_devices();
 
     // Set up OpenSSL context (as baseline)
     BN_CTX* ctx = BN_CTX_new();
@@ -52,15 +49,19 @@ int main(int argc, const char** argv) {
 
         BigNumber big_num((Ipp32u)0);
 
-        start = clock();
+        gettimeofday(&start_time, NULL);        
         status = binToBigNumber(big_num, bn_mod_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
             printf("Failed at binToBigNumber()\n");
             exit(1);
         }
-        ssl_elapsed = clock() - start;
+        gettimeofday(&end_time, NULL);
+        time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
+        time_taken =
+            (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+        ssl_elapsed = time_taken;
         printf("Conversion to BigNumber has completed in %.1lfus.\n",
-               (ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+               (ssl_elapsed));
 
         int bit_len = 0;
         ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
@@ -69,7 +70,7 @@ int main(int argc, const char** argv) {
         printf("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
                bit_len);
 
-        start = clock();
+        gettimeofday(&start_time, NULL);        
         unsigned char* ref_bn_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
         if (NULL == ref_bn_data_) exit(1);
@@ -78,9 +79,13 @@ int main(int argc, const char** argv) {
             printf("Failed at bigNumberToBin()\n");
             exit(1);
         }
-        qat_elapsed = clock() - start;
+        gettimeofday(&end_time, NULL);
+        time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
+        time_taken =
+            (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+        qat_elapsed = time_taken;
         printf("Conversion from BigNumber has completed %.1lfus.\n",
-               (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)));
+               (qat_elapsed));
 
         BIGNUM* ref_bin_ = BN_new();
         BN_bin2bn(ref_bn_data_, len_, ref_bin_);
@@ -97,9 +102,6 @@ int main(int argc, const char** argv) {
 
     // Tear down OpenSSL context
     BN_CTX_end(ctx);
-
-    // Tear down QAT runtime context
-    release_qat_devices();
 
     return (int)status;
 }

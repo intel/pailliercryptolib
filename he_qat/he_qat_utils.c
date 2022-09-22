@@ -51,7 +51,7 @@ void showHexBN(BIGNUM* bn, int nbits) {
     unsigned char* bin = (unsigned char*)OPENSSL_zalloc(len);
     if (!bin) return;
     if (BN_bn2binpad(bn, bin, len)) {
-        for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
+        for (size_t i = 0; i < len; i++) printf("%2.2x", bin[i]);
         printf("\n");
     }
     OPENSSL_free(bin);
@@ -60,7 +60,7 @@ void showHexBN(BIGNUM* bn, int nbits) {
 
 void showHexBin(unsigned char* bin, int len) {
     if (!bin) return;
-    for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
+    for (size_t i = 0; i < len; i++) printf("%2.2x", bin[i]);
     printf("\n");
     return;
 }

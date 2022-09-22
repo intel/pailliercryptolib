@@ -1,6 +1,7 @@
 
 #include "he_qat_bn_ops.h"
 #include "he_qat_context.h"
+#include "he_qat_utils.h"
 #include "cpa_sample_utils.h"
 
 #include <time.h>
@@ -16,67 +17,9 @@
 #define ODD_RND_NUM 1
 #define BATCH_SIZE 1
 
-BIGNUM* generateTestBNData(int nbits) {
-    if (!RAND_status()) return NULL;
-#ifdef _DESTINY_DEBUG_VERBOSE
-    printf("PRNG properly seeded.\n");
-#endif
-
-    BIGNUM* bn = BN_new();
-
-    if (!BN_rand(bn, nbits, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY)) {
-        BN_free(bn);
-        printf("Error while generating BN random number: %lu\n",
-               ERR_get_error());
-        return NULL;
-    }
-
-    return bn;
-}
-
-unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
-    if (!bn) return NULL;
-
-    // Returns same address if it fails
-    int num_bytes = BN_num_bytes(bn);
-    int bytes_left = nbits / 8 - num_bytes;
-    if (bytes_left <= 0) return NULL;
-
-    // Returns same address if it fails
-    unsigned char* bin = NULL;
-    int len = bytes_left + num_bytes;
-    if (!(bin = OPENSSL_zalloc(len))) return NULL;
-
-#ifdef _DESTINY_DEBUG_VERBOSE
-    printf("Padding bn with %d bytes to total %d bytes\n", bytes_left, len);
-#endif
-    BN_bn2binpad(bn, bin, len);
-    if (ERR_get_error()) {
-        OPENSSL_free(bin);
-        return NULL;
-    }
-
-    return bin;
-}
-
-void showHexBN(BIGNUM* bn, int nbits) {
-    int len = nbits / 8;
-    unsigned char* bin = OPENSSL_zalloc(len);
-    if (!bin) return;
-    if (BN_bn2binpad(bn, bin, len)) {
-        for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
-        printf("\n");
-    }
-    OPENSSL_free(bin);
-    return;
-}
-
-void showHexBin(unsigned char* bin, int len) {
-    if (!bin) return;
-    for (size_t i = 0; i < len; i++) printf("%d", bin[i]);
-    printf("\n");
-    return;
-}
+#include <sys/time.h>
+struct timeval start_time, end_time;
+double time_taken = 0.0;
 
 int main(int argc, const char** argv) {
     const int bit_length = 4096;  // 1024;
@@ -86,9 +29,8 @@ int main(int argc, const char** argv) {
     double ssl_avg_time = 0.0;
     double qat_avg_time = 0.0;
 
-    clock_t start = CLOCKS_PER_SEC;
-    clock_t ssl_elapsed = CLOCKS_PER_SEC;
-    clock_t qat_elapsed = CLOCKS_PER_SEC;
+    double ssl_elapsed = 0.0;
+    double qat_elapsed = 0.0;
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
 
@@ -121,9 +63,13 @@ int main(int argc, const char** argv) {
 
         // Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
-        start = clock();
+        gettimeofday(&start_time, NULL);        
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
-        ssl_elapsed = clock() - start;
+        gettimeofday(&end_time, NULL);
+        time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
+        time_taken =
+            (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+        ssl_elapsed = time_taken;
 
         if (!ERR_get_error()) {
 #ifdef _DESTINY_DEBUG_VERBOSE
@@ -141,41 +87,31 @@ int main(int argc, const char** argv) {
         PRINT_DBG("\nStarting QAT bnModExp...\n");
 #endif
 
-        //        printf("OpenSSL: %.1lfus\t", ssl_elapsed / (CLOCKS_PER_SEC /
-        //        1000000.0));
-
         // Perform QAT ModExp Op
         BIGNUM* qat_res = BN_new();
-        start = clock();
+        gettimeofday(&start_time, NULL);        
         for (unsigned int j = 0; j < BATCH_SIZE; j++)
             status = bnModExpPerformOp(qat_res, bn_base, bn_exponent, bn_mod,
                                        bit_length);
         getBnModExpRequest(BATCH_SIZE);
-        qat_elapsed = clock() - start;
+        gettimeofday(&end_time, NULL);
+        time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
+        time_taken =
+            (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+        qat_elapsed = time_taken;
 
-        ssl_avg_time = (mod * ssl_avg_time +
-                        (ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0))) /
-                       (mod + 1);
+        ssl_avg_time = (mod * ssl_avg_time + ssl_elapsed) / (mod + 1);
         qat_avg_time =
-            (mod * qat_avg_time +
-             (qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)) / BATCH_SIZE) /
-            (mod + 1);
+            (mod * qat_avg_time + qat_elapsed / BATCH_SIZE) / (mod + 1);
         avg_speed_up =
             (mod * avg_speed_up +
-             (ssl_elapsed / (CLOCKS_PER_SEC / 1000000.0)) /
-                 ((qat_elapsed / (CLOCKS_PER_SEC / 1000000.0)) / BATCH_SIZE)) /
-            (mod + 1);
+             (ssl_elapsed) / (qat_elapsed/BATCH_SIZE)) / (mod + 1);
 
         printf(
             "Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
             (mod + 1), ssl_avg_time, qat_avg_time, avg_speed_up);
 
-        //        printf("QAT: %.1lfus\t", qat_elapsed / (CLOCKS_PER_SEC /
-        //        1000000.0)); printf("Speed Up: %.1lfx\t", (ssl_elapsed /
-        //        (CLOCKS_PER_SEC / 1000000.0) / BATCH_SIZE) / (qat_elapsed /
-        //        (CLOCKS_PER_SEC / 1000000.0) / BATCH_SIZE) );
-
-        if (HE_QAT_STATUS_SUCCESS != status) {
+	if (HE_QAT_STATUS_SUCCESS != status) {
             PRINT_ERR("\nQAT bnModExpOp failed\n");
         }
 #ifdef _DESTINY_DEBUG_VERBOSE
