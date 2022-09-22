@@ -4,13 +4,8 @@ set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_cb.c
 	       ${HE_QAT_SRC_DIR}/he_qat_utils.c
 )
 
-if(HE_QAT_EXPERIMENTAL)
-	message(STATUS "Using refactored source code.")
-	list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_ops.c
-               	    ${HE_QAT_SRC_DIR}/he_qat_ctrl.c)
-else()
-	list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_bn_ops.c)
-endif()
+list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_ops.c
+                       ${HE_QAT_SRC_DIR}/he_qat_ctrl.c)
 
 if(HE_QAT_SHARED)
 	add_library(he_qat SHARED ${HE_QAT_SRC})

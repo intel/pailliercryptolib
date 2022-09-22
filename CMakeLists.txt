@@ -68,7 +68,6 @@ option(HE_QAT_SAMPLES "Enable examples" ON)
 option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
 option(HE_QAT_DOCS "Enable document building" ON)
 option(HE_QAT_SHARED "Build shared library" ON)
-option(HE_QAT_EXPERIMENTAL "Refactored code" OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(HE_QAT_DEBUG ON)
