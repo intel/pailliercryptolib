@@ -207,12 +207,12 @@ $ ./setup_devices.sh
 
 In addition to the standard CMake configuration options, Intel HE Acceleration Library for QAT supports several cmake options to configure the build. For convenience, they are listed below:
 
-<!-- | CMake option                  | Values                 |                                                                            | -->
-<!-- | ------------------------------| ---------------------- | -------------------------------------------------------------------------- | -->
-| HE_QAT_MISC              | ON / OFF (default OFF) | Set to OFF, enable benchmark suite via Google benchmark                   | -->
-<!-- | HE_QAT_DEBUG             | ON / OFF (default OFF) | Set to OFF, enable debug log at large runtime penalty                      | -->
-<!-- | HE_QAT_SAMPLES                  | ON / OFF (default ON) | Set to ON, enable building of samples.                                  | -->
-<!-- | HE_QAT_DOCS                   | ON / OFF (default OFF) | Set to OFF, enable building of documentation                               | -->
+| CMake option                  | Values                 | Description                                             |
+| ------------------------------| ---------------------- | ------------------------------------------------------- |
+| HE_QAT_MISC                   | ON / OFF (default OFF) | Enable/Disable BigNumber conversion functions.          |
+| HE_QAT_DEBUG                  | ON / OFF (default OFF) | Enable/Disable debug log at large runtime penalty.      |
+| HE_QAT_SAMPLES                | ON / OFF (default ON)  | Enable/Disable building of samples.                     |
+| HE_QAT_DOCS                   | ON / OFF (default ON)  | Enable/Disable building of documentation.               |
 
 #### Running Samples
 
