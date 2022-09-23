@@ -2,14 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
+include(GNUInstallDirs)
+if(NOT ${CMAKE_INSTALL_PREFIX})
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
+set(GTEST_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gtest)
 set(GTEST_GIT_REPO_URL https://github.com/google/googletest.git)
 set(GTEST_GIT_LABEL release-1.10.0)
 set(GTEST_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS} -fPIC")
 
 ExternalProject_Add(
   ext_gtest
-  PREFIX ext_gtest
+  PREFIX ${GTEST_PREFIX}
   GIT_REPOSITORY ${GTEST_GIT_REPO_URL}
   GIT_TAG ${GTEST_GIT_LABEL}
   CMAKE_ARGS ${GTEST_CXX_FLAGS} -DCMAKE_BUILD_TYPE=Release

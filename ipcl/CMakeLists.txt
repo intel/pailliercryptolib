@@ -56,6 +56,7 @@ endif()
 
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto)
+	target_link_libraries(ipcl PRIVATE libcpu_features)
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 else()
 	ipcl_create_archive(ipcl libippcrypto::ippcp)

@@ -145,6 +145,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
+include(cmake/cpufeatures.cmake)
 
 if(IPCL_TEST)
   include(cmake/gtest.cmake)
@@ -152,6 +153,8 @@ endif()
 if(IPCL_BENCHMARK)
   include(cmake/gbenchmark.cmake)
 endif()
+
+
 
 add_subdirectory(ipcl)
 
