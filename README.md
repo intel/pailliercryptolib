@@ -213,6 +213,12 @@ In addition to the standard CMake configuration options, Intel HE Acceleration L
 | HE_QAT_DEBUG                  | ON / OFF (default OFF) | Enable/Disable debug log at large runtime penalty.      |
 | HE_QAT_SAMPLES                | ON / OFF (default ON)  | Enable/Disable building of samples.                     |
 | HE_QAT_DOCS                   | ON / OFF (default ON)  | Enable/Disable building of documentation.               |
+| HE_QAT_SYNC                   | ON / OFF (default OFF) | Enable/Disable synchronous mode execution.              |
+| HE_QAT_MT                     | ON / OFF (default ON)  | Enable/Disable interfaces for multithreaded programs.   |
+| HE_QAT_PERF                   | ON / OFF (default OFF) | Enable/Disable display of measured request performance. |
+| HE_QAT_TEST                   | ON / OFF (default OFF) | Enable/Disable testing.                                 |
+| HE_QAT_OMP                    | ON / OFF (default ON)  | Enable/Disable tests using OpenMP.                      |
+| HE_QAT_SHARED                 | ON / OFF (default ON)  | Enable/Disable building shared library.                 |
 
 #### Running Samples
 
