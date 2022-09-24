@@ -73,9 +73,15 @@ For RHEL, ```OpenSSL``` needs to be built and installed from source as the stati
 sudo yum install numactl-devel
 ```
 ### Downloading
-Pull source code from git repository with all submodules.
+Pull source code from git repository with all submodules. There are two ways to do it:
+- Clone source code with all submodules at once
 ```
 git clone --recursive https://github.com/intel/pailliercryptolib.git
+cd pailliercryptolib
+```
+- Clone source code, then pull submodules
+```
+git clone https://github.com/intel/pailliercryptolib.git
 cd pailliercryptolib
 git submodule update --init
 ```
