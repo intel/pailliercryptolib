@@ -30,7 +30,7 @@ This library currently only offers acceleration of modular exponentiation of mul
  
 - Multithreading Support: This feature permits the API to be called by concurrently threads running on the host. Effective multithreading support relies on a separate buffer that admits outstanding work requests. This buffer is acquired before an API call to submit work requests to the accelerator. This is accomplished by first calling `acquire_bnModExp_buffer()` to reserve an internal buffer to store outstanding requests from the host API caller.
 
- - Multiple Instances/Devices: The library accesses all logical instances from all visible and configured QAT endpoints at the creation of the QAT runtime context. Therefore, if 8 QAT endpoints are available, it will attempt to use them all, including all the total number of logical instances configured per process. 
+ - Multiple Instances: The library accesses all logical instances from all visible and configured QAT endpoints at the creation of the QAT runtime context. Therefore, if 8 QAT endpoints are available, it will attempt to use them all, including all the total number of logical instances configured per process. 
 
 >> _**Note**_: Current implementation does not verify if the instance/endpoint has the capabilities needed by the library. For example, the library needs access to the _asym_ capabilities like `CyLnModExp`, therefore if the configuration file of an endpoint happens to be configured to not offer it, the application will exit with an error at some point during execution.
 
