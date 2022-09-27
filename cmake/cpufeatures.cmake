@@ -22,10 +22,22 @@ ExternalProject_Add(
   EXCLUDE_FROM_ALL TRUE)
 
 
-add_library(libcpu_features INTERFACE)
-add_dependencies(libcpu_features ext_cpufeatures)
+set(CPUFEATURES_INC_DIR ${CPUFEATURES_PREFIX}/include)
 
-target_include_directories(libcpu_features SYSTEM
-                           INTERFACE ${CPUFEATURES_PREFIX}/include)
-target_link_libraries(libcpu_features
-                      INTERFACE ${CPUFEATURES_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libcpu_features.a)
+if(IPCL_SHARED)
+  add_library(libcpu_features INTERFACE)
+  add_dependencies(libcpu_features ext_cpufeatures)
+
+  target_include_directories(libcpu_features SYSTEM
+                            INTERFACE ${CPUFEATURES_PREFIX}/include)
+  target_link_libraries(libcpu_features
+                        INTERFACE ${CPUFEATURES_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libcpu_features.a)
+
+else()
+  add_library(libcpu_features STATIC IMPORTED GLOBAL)
+  add_dependencies(libcpu_features ext_cpufeatures)
+
+  set_target_properties(libcpu_features PROPERTIES
+      IMPORTED_LOCATION ${CPUFEATURES_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libcpu_features.a
+      INCLUDE_DIRECTORIES ${CPUFEATURES_PREFIX}/include)
+endif()
