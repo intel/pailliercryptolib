@@ -4,7 +4,9 @@
 #ifndef IPCL_INCLUDE_IPCL_UTIL_HPP_
 #define IPCL_INCLUDE_IPCL_UTIL_HPP_
 
+#ifdef IPCL_RUNTIME_MOD_EXP
 #include <cpu_features/cpuinfo_x86.h>
+#endif  // IPCL_RUNTIME_MOD_EXP
 
 #include <cstdlib>
 #include <exception>
