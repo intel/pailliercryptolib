@@ -131,7 +131,7 @@ include(ipcl-util)
 include(cmake/ippcrypto.cmake)
 
 if(IPCL_ENABLE_QAT)
-  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/heqat/heqat.cmake)
+  include(module/heqat.cmake)
 endif()
 
 if(IPCL_TEST)

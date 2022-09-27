@@ -1,26 +1,23 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
 MESSAGE(STATUS "Configuring HE QAT")
 set(HEQAT_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_he_qat)
-set(HEQAT_GIT_REPO_URL git@github.com:intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git)
-set(HEQAT_GIT_LABEL v1.0-pre-release)
-set(HEQAT_SRC_DIR ${HEQAT_PREFIX}/src/ext_he_qat/)
-
+set(HEQAT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/module/heqat)
 set(HEQAT_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS}")
 
 ExternalProject_Add(
   ext_he_qat
-  GIT_REPOSITORY ${HEQAT_GIT_REPO_URL}
-  GIT_TAG ${HEQAT_GIT_LABEL}
+  SOURCE_DIR ${HEQAT_SRC_DIR}
   PREFIX ${HEQAT_PREFIX}
   INSTALL_DIR ${HEQAT_PREFIX}
   CMAKE_ARGS ${HEQAT_CXX_FLAGS}
              -DCMAKE_INSTALL_PREFIX=${HEQAT_PREFIX}
 	     -DHE_QAT_MISC=OFF
+	     -DHE_QAT_DOCS=${IPCL_DOCS}
 	     -DIPPCP_PREFIX_PATH=${IPPCRYPTO_PREFIX}/lib/cmake
-       -DHE_QAT_SHARED=${IPCL_SHARED}
+             -DHE_QAT_SHARED=${IPCL_SHARED}
 	     -DCMAKE_BUILD_TYPE=Release
   UPDATE_COMMAND ""
 )
@@ -29,7 +26,7 @@ add_dependencies(ext_he_qat ext_ipp-crypto)
 set(HEQAT_INC_DIR ${HEQAT_PREFIX}/include)
 
 # Bring up CPA variables
-include(${CMAKE_CURRENT_LIST_DIR}/icp/CMakeLists.txt)
+include(${HEQAT_SRC_DIR}/icp/CMakeLists.txt)
 list(APPEND HEQAT_INC_DIR ${ICP_INC_DIR})
 
 if(IPCL_SHARED)

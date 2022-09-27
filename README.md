@@ -9,6 +9,7 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
   - [Building the Library](#building-the-library)
     - [Prerequisites](#prerequisites)
     - [Dependencies](#dependencies)
+    - [Downloading](#downloading)
     - [Instructions](#instructions)
   - [Testing and Benchmarking](#testing-and-benchmarking)
 - [Python Extension](#python-extension)
@@ -71,7 +72,19 @@ For RHEL, ```OpenSSL``` needs to be built and installed from source as the stati
 ```
 sudo yum install numactl-devel
 ```
-
+### Downloading
+Pull source code from git repository with all submodules. There are two ways to do it:
+- Clone source code with all submodules at once
+```
+git clone --recursive https://github.com/intel/pailliercryptolib.git
+cd pailliercryptolib
+```
+- Clone source code, then pull submodules
+```
+git clone https://github.com/intel/pailliercryptolib.git
+cd pailliercryptolib
+git submodule update --init
+```
 ### Instructions
 The library can be built using the following commands:
 ```bash
