@@ -8,6 +8,7 @@ project(IPCL VERSION 1.1.4 LANGUAGES C CXX)
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
+include(GNUInstallDirs)
 
 if(CMAKE_BUILD_TYPE)
   set(RELEASE_TYPES
@@ -34,16 +35,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
-set(CMAKE_INSTALL_RPATH "\$ORIGIN")
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/opt/intel/ipcl")
+endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
-
-if(NOT CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
-include(GNUInstallDirs)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
@@ -105,6 +104,7 @@ set(IPCL_FORWARD_CMAKE_ARGS
 
 if(IPCL_DETECT_IFMA_RUNTIME)
   add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cpufeatures")
 else()
   # check whether cpu support avx512 flag
   if(IPCL_DEBUG_DISABLE_AVX512IFMA)
@@ -139,7 +139,7 @@ else()
 endif()
 
 # find package for OpenSSL and Threads
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+# set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 
@@ -151,7 +151,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
-include(cmake/cpufeatures.cmake)
+if(IPCL_DETECT_IFMA_RUNTIME)
+  include(cmake/cpufeatures.cmake)
+endif()
 
 if(IPCL_TEST)
   include(cmake/gtest.cmake)

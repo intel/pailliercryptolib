@@ -4,9 +4,6 @@
 include(ExternalProject)
 include(GNUInstallDirs)
 
-if (NOT ${CMAKE_INSTALL_PREFIX})
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
-endif()
 set(GBENCHMARK_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gbenchmark)
 
 set(GBENCHMARK_SRC_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark/)
