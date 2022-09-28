@@ -42,6 +42,7 @@ endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
+message(STATUS "-------------IPCLIPCL CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH}")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
