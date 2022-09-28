@@ -3,10 +3,9 @@
 
 #include <climits>
 #include <iostream>
+#include <ipcl/ipcl.hpp>
 #include <random>
 #include <vector>
-
-#include "ipcl/ipcl.hpp"
 
 int main() {
   const uint32_t num_values = 9;
