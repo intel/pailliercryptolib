@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
-MESSAGE(STATUS "Configuring ipp-crypto")
+message(STATUS "Configuring ipp-crypto")
+
 set(IPPCRYPTO_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_ipp-crypto)
+set(IPPCRYPTO_DESTDIR ${IPPCRYPTO_PREFIX}/ippcrypto_install)
 set(IPPCRYPTO_GIT_REPO_URL https://github.com/intel/ipp-crypto.git)
 set(IPPCRYPTO_GIT_LABEL ippcp_2021.6)
 set(IPPCRYPTO_SRC_DIR ${IPPCRYPTO_PREFIX}/src/ext_ipp-crypto/)
@@ -29,20 +31,29 @@ ExternalProject_Add(
              -DARCH=${IPPCRYPTO_ARCH}
              -DCMAKE_ASM_NASM_COMPILER=nasm
              -DCMAKE_BUILD_TYPE=Release
+             -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
   UPDATE_COMMAND ""
+  INSTALL_COMMAND make DESTDIR=${IPPCRYPTO_DESTDIR} install
 )
 
-set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_PREFIX}/include)
-
+set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
+set(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${IPPCRYPTO_ARCH})
 if(IPCL_SHARED)
   add_library(libippcrypto INTERFACE)
   add_dependencies(libippcrypto ext_ipp-crypto)
 
   ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libippcrypto INTERFACE ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a)
-  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_PREFIX}/include)
+  target_link_libraries(libippcrypto INTERFACE
+  ${IPPCRYPTO_LIB_DIR}/libippcp.so
+  ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so)
+  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
 
+  install(
+    DIRECTORY ${IPPCRYPTO_LIB_DIR}/
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto"
+    USE_SOURCE_PERMISSIONS
+  )
 else()
 
   add_library(libippcrypto::ippcp STATIC IMPORTED GLOBAL)
@@ -54,12 +65,12 @@ else()
   find_package(OpenSSL REQUIRED)
 
   set_target_properties(libippcrypto::ippcp PROPERTIES
-            IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libippcp.a
+            IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libippcp.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )
 
   set_target_properties(libippcrypto::crypto_mb PROPERTIES
-            IMPORTED_LOCATION ${IPPCRYPTO_PREFIX}/lib/${IPPCRYPTO_ARCH}/libcrypto_mb.a
+            IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )
 endif()

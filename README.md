@@ -9,6 +9,7 @@ Intel Paillier Cryptosystem Library is an open-source library which provides acc
     - [Prerequisites](#prerequisites)
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
+    - [Installing and Using Example](#installing-and-using-example)
   - [Testing and Benchmarking](#testing-and-benchmarking)
 - [Python Extension](#python-extension)
 - [Standardization](#standardization)
@@ -72,21 +73,27 @@ sudo yum install numactl-devel
 ### Instructions
 The library can be built using the following commands:
 ```bash
-export IPCL_DIR=$(pwd)
+export IPCL_ROOT=$(pwd)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
 It is possible to pass additional options to enable more features. The following table contains the current CMake options, default values are in bold.
 
-| CMake options           | Values    | Default | Comments                            |
-|-------------------------|-----------|---------|-------------------------------------|
-|`IPCL_TEST`              | ON/OFF    | ON      | unit-test                           |
-|`IPCL_BENCHMARK`         | ON/OFF    | ON      | benchmark                           |
-|`IPCL_ENABLE_OMP`        | ON/OFF    | ON      | enables OpenMP functionalities      |
-|`IPCL_THREAD_COUNT`      | Integer   | OFF     | The max number of threads           |
-|`IPCL_DOCS`              | ON/OFF    | OFF     | build doxygen documentation         |
-|`IPCL_SHARED`            | ON/OFF    | ON      | build shared library                |
+| CMake options            | Values    | Default | Comments                            |
+|--------------------------|-----------|---------|-------------------------------------|
+|`IPCL_TEST`               | ON/OFF    | ON      | unit-test                           |
+|`IPCL_BENCHMARK`          | ON/OFF    | ON      | benchmark                           |
+|`IPCL_ENABLE_OMP`         | ON/OFF    | ON      | enables OpenMP functionalities      |
+|`IPCL_THREAD_COUNT`       | Integer   | OFF     | explicitly set max number of threads|
+|`IPCL_DOCS`               | ON/OFF    | OFF     | build doxygen documentation         |
+|`IPCL_SHARED`             | ON/OFF    | ON      | build shared library                |
+|`IPCL_DETECT_IFMA_RUNTIME`| ON/OFF    | OFF     | detects AVX512IFMA during runtime   |
+
+If ```IPCL_DETECT_IFMA_RUNTIME``` flag is set to ```ON```, it will determine whether the system supports the AVX512IFMA instructions on runtime. It is still possible to disable IFMA exclusive feature (multi-buffer modular exponentiation) during runtime by setting up the environment variable ```IPCL_DISABLE_AVX512IFMA=1```.
+
+### Installing and Using Example
+For installing and using the library externally, see [example/README.md]](./example/README.md).
 
 ## Testing and Benchmarking
 To run a set of unit tests via [Googletest](https://github.com/google/googletest), configure and build library with `-DIPCL_TEST=ON` (see [Instructions](#instructions)).
@@ -102,7 +109,7 @@ cmake --build build --target benchmark
 ```
 Setting the CMake flag ```-DIPCL_ENABLE_OMP=ON``` during configuration will use OpenMP for acceleration. Setting the value of `-DIPCL_THREAD_COUNT` will limit the maximum number of threads used by OpenMP (If set to OFF or 0, its actual value will be determined at run time).
 
-The executables are located at `${IPCL_DIR}/build/test/unittest_ipcl` and `${IPCL_DIR}/build/benchmark/bench_ipcl`.
+The executables are located at `${IPCL_ROOT}/build/test/unittest_ipcl` and `${IPCL_ROOT}/build/benchmark/bench_ipcl`.
 
 # Python Extension
 Alongside the Intel Paillier Cryptosystem Library, we provide a Python extension package utilizing this library as a backend. For installation and usage detail, refer to [Intel Paillier Cryptosystem Library - Python](https://github.com/intel/pailliercryptolib_python).
