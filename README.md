@@ -90,6 +90,8 @@ It is possible to pass additional options to enable more features. The following
 |`IPCL_SHARED`             | ON/OFF    | ON      | build shared library                |
 |`IPCL_DETECT_IFMA_RUNTIME`| ON/OFF    | OFF     | detects AVX512IFMA during runtime   |
 
+If ```IPCL_DETECT_IFMA_RUNTIME``` flag is set to ```ON```, it will determine whether the system supports the AVX512IFMA instructions on runtime. It is still possible to disable IFMA exclusive feature (multi-buffer modular exponentiation) during runtime by setting up the environment variable ```IPCL_DISABLE_AVX512IFMA=1```.
+
 ### Installing and Using Example
 For installing and using the library externally, see [example/README.md]](./example/README.md).
 
