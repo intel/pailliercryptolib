@@ -43,7 +43,7 @@ repos:
           entry: cpplint
           language: system
           files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
-          exclude: ipcl/bignum.cpp|ipcl/include/ipcl/bignum.h
+          exclude: ipcl/bignum.cpp|ipcl/include/ipcl/bignum.h|example/test.cpp
           args:
             - --recursive
             - --filter=-runtime/references,-whitespace/comments,-whitespace/indent

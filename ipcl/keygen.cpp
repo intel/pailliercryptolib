@@ -1,11 +1,9 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/keygen.hpp"
-
 #include <vector>
 
-#include "ipcl/util.hpp"
+#include "ipcl/ipcl.hpp"
 
 namespace ipcl {
 

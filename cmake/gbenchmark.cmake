@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
+include(GNUInstallDirs)
 
 set(GBENCHMARK_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gbenchmark)
 
@@ -32,15 +33,7 @@ ExternalProject_Add(
 add_library(libgbenchmark INTERFACE)
 add_dependencies(libgbenchmark ext_gbenchmark)
 
-ExternalProject_Get_Property(ext_gbenchmark SOURCE_DIR BINARY_DIR)
-file(STRINGS /etc/os-release LINUX_ID REGEX "^ID=")
-string(REGEX REPLACE "ID=\(.*)" "\\1" LINUX_ID "${LINUX_ID}")
-if(${LINUX_ID} STREQUAL "ubuntu")
-  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
-else()
-  # non debian systems install gbenchmark lib under lib64
-  target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib64/libbenchmark.a)
-endif()
+target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libbenchmark.a)
 
 target_include_directories(libgbenchmark SYSTEM
                                     INTERFACE ${GBENCHMARK_PREFIX}/include)
