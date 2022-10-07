@@ -12,8 +12,6 @@
 
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
-struct timeval start_time, end_time;
-double time_taken = 0.0;
 #endif
 
 #include <stdio.h>
@@ -255,6 +253,8 @@ void getBnModExpRequest(unsigned int batch_size) {
     unsigned int j = 0;
 
 #ifdef HE_QAT_PERF
+    struct timeval start_time, end_time;
+    double time_taken = 0.0;
     gettimeofday(&start_time, NULL);
 #endif
 //    while (j < batch_size) {
@@ -477,12 +477,14 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) {
     unsigned int next_data_out = outstanding.buffer[_buffer_id].next_data_out;
     unsigned int j = 0;
-
+    
 #ifdef HE_QAT_DEBUG
     printf("release_bnModExp_buffer #%u\n", _buffer_id);
 #endif
 
 #ifdef HE_QAT_PERF
+    struct timeval start_time, end_time;
+    double time_taken = 0.0;
     gettimeofday(&start_time, NULL);
 #endif
 
