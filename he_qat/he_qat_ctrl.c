@@ -38,8 +38,8 @@ HE_QAT_OutstandingBuffer outstanding; ///< This is the data structure that holds
 volatile unsigned long response_count = 0; ///< Counter of processed requests and it is used to help control throttling.
 static volatile unsigned long request_count = 0; ///< Counter of received requests and it is used to help control throttling.
 static unsigned long request_latency = 0; ///< Variable used to hold measured averaged latency of requests (currently unused).
-static unsigned long restart_threshold = NUM_PKE_SLICES; ///< Number of concurrent requests allowed to be sent to accelerator at once. 
-static unsigned long max_pending = (NUM_PKE_SLICES * 2 * HE_QAT_NUM_ACTIVE_INSTANCES); ///< Number of requests sent to the accelerator that are pending completion.
+static unsigned long restart_threshold = NUM_PKE_SLICES * HE_QAT_NUM_ACTIVE_INSTANCES; ///< Number of concurrent requests allowed to be sent to accelerator at once. 
+static unsigned long max_pending = (2 * NUM_PKE_SLICES * HE_QAT_NUM_ACTIVE_INSTANCES); ///< Number of requests sent to the accelerator that are pending completion.
 
 /// @brief Populate internal buffer with incoming requests from API calls.
 /// @details This function is called from the main APIs to submit requests to 
