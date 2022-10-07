@@ -96,7 +96,6 @@ extern "C" {
 #ifdef DO_CRYPTO
 #include "cpa_cy_sym.h"
 #endif
-#include "cpa_sample_cnv_utils.h"
 
 #ifdef USER_SPACE
 /* User space utils */
