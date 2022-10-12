@@ -2,14 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(IPCL_SRCS pri_key.cpp
-							pub_key.cpp
-							keygen.cpp
-							bignum.cpp
-							mod_exp.cpp
-                            base_text.cpp
-                            plaintext.cpp
-                            ciphertext.cpp
-                            util.cpp
+              pub_key.cpp
+              keygen.cpp
+              bignum.cpp
+              mod_exp.cpp
+	      context.cpp
+              base_text.cpp
+              plaintext.cpp
+              ciphertext.cpp
+              util.cpp
 )
 
 
