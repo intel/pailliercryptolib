@@ -14,7 +14,6 @@ else()
 endif()
 
 add_library(HE_QAT::he_qat ALIAS he_qat)
-#add_library(he_qat SHARED ${HE_QAT_SRC})
 
 target_include_directories(he_qat 
 	PUBLIC $<BUILD_INTERFACE:${COMMON_INC_DIR}> #Public headers 
