@@ -6,12 +6,6 @@
 #include "he_qat_context.h"
 
 #include <pthread.h>
-
-//#include <sched.h>
-
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <assert.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -25,7 +19,7 @@
 #define MAX_INSTANCES 1
 #endif
 
-static volatile int context_state = 0;
+static volatile HE_QAT_STATUS context_state = HE_QAT_STATUS_INACTIVE;
 
 // Global variable declarations
 static pthread_t         buffer_manager;
@@ -35,9 +29,9 @@ static pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
 static HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
 static HE_QAT_Config*    he_qat_config = NULL;
 
+// External global variables
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
-
 
 /***********           Internal Services          ***********/
 // Start scheduler of work requests (consumer)
@@ -248,7 +242,7 @@ HE_QAT_STATUS acquire_qat_devices() {
 #endif
 
     // Set context state to active
-    context_state = 1;
+    context_state = HE_QAT_STATUS_ACTIVE;
 
     // Launch buffer manager thread to schedule incoming requests
     if (0 != pthread_create(&buffer_manager, NULL, schedule_requests,
@@ -276,7 +270,8 @@ HE_QAT_STATUS acquire_qat_devices() {
 HE_QAT_STATUS release_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
 
-    if (0 == context_state) return HE_QAT_STATUS_SUCCESS;
+    if (HE_QAT_STATUS_INACTIVE == context_state) 
+        return HE_QAT_STATUS_SUCCESS;
 
     stop_instances(he_qat_config);
     //stop_perform_op(he_qat_inst_config, HE_QAT_NUM_ACTIVE_INSTANCES);
@@ -286,7 +281,7 @@ HE_QAT_STATUS release_qat_devices() {
 
     // Deactivate context (this will cause the buffer manager thread to be
     // terminated)
-    context_state = 0;
+    context_state = HE_QAT_STATUS_INACTIVE;
 
     // Stop QAT SSL service
     icp_sal_userStop();
@@ -302,3 +297,8 @@ HE_QAT_STATUS release_qat_devices() {
 
     return HE_QAT_STATUS_SUCCESS;
 }
+
+HE_QAT_STATUS get_qat_context_state() {
+  return context_state;
+}
+

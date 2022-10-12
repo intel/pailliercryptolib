@@ -291,13 +291,13 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 /// from which requests are ready to be submitted to the device for processing.
 /// @param[in] state A volatile integer variable used to activate (val>0) or 
 ///		     disactive (val=0) the scheduler.
-void* schedule_requests(void* state) {
+void* schedule_requests(void* context_state) {
     if (NULL == state) {
         printf("Failed at buffer_manager: argument is NULL.\n");
         pthread_exit(NULL);
     }
 
-    int* active = (int*)state;
+    HE_QAT_STATUS* active = (HE_QAT_STATUS*)context_state;
 
     HE_QAT_TaskRequestList outstanding_requests;
     for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
@@ -306,7 +306,8 @@ void* schedule_requests(void* state) {
     outstanding_requests.count = 0;
 
     // this thread should receive signal from context to exit
-    while (*active) {
+    *active = HE_QAT_STATUS_RUNNING;
+    while (HE_QAT_STATUS_INACTIVE != *active) {
         // Collect a set of requests from the outstanding buffer
         pull_outstanding_requests(&outstanding_requests, &outstanding,
                                   HE_QAT_BUFFER_SIZE);

@@ -30,10 +30,13 @@ typedef enum {
 } HE_QAT_EXEC_MODE;
 
 typedef enum {
+    HE_QAT_STATUS_ACTIVE = 3,
+    HE_QAT_STATUS_RUNNING = 4,
     HE_QAT_STATUS_INVALID_PARAM = 2,
     HE_QAT_STATUS_READY = 1,
     HE_QAT_STATUS_SUCCESS = 0,
-    HE_QAT_STATUS_FAIL = -1
+    HE_QAT_STATUS_FAIL = -1,
+    HE_QAT_STATUS_INACTIVE = -2
 } HE_QAT_STATUS;
 
 typedef enum { 
