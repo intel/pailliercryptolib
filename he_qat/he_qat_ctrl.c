@@ -292,7 +292,7 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 /// @param[in] state A volatile integer variable used to activate (val>0) or 
 ///		     disactive (val=0) the scheduler.
 void* schedule_requests(void* context_state) {
-    if (NULL == state) {
+    if (NULL == context_state) {
         printf("Failed at buffer_manager: argument is NULL.\n");
         pthread_exit(NULL);
     }
