@@ -21,6 +21,13 @@ namespace ipcl {
     {"HYBRID",RuntimeValue::HYBRID}, {"hybrid",RuntimeValue::HYBRID}
   };
 
+  enum class FeatureValue { AVX512IFMA, QAT4XXX };
+  std::map<std::string, FeatureValue> hasFeatureMap = { 
+    {"avx512",FeatureValue::AVX512IFMA}, {"avx512ifma",FeatureValue::AVX512IFMA},
+    {"4xxx",FeatureValue::QAT4XXX}, {"qat_4xxx",FeatureValue::QAT4XXX} 
+  }
+
+  bool hasQAT = false;
   static bool isUsingQAT = false;
   static bool initializeQATContext() {
     if (HE_QAT_STATUS_SUCCESS == acquire_qat_devices())
@@ -30,6 +37,8 @@ namespace ipcl {
 
   bool initializeContext(std::string runtime_choice) {   
 #ifdef IPCL_USE_QAT
+    hasQAT = true;
+
     switch (runtimeMap[runtime_choice]) {
       case RuntimeValue::QAT:
 	   return initializeQATContext();
@@ -54,6 +63,14 @@ namespace ipcl {
 #else // Default behavior: CPU choice
     return true;
 #endif  // IPCL_USE_QAT
+  }
+
+  bool isQATRunning() {
+    return (HE_QAT_STATUS_RUNNING == get_qat_context_state());
+  }
+  
+  bool isQATActive() {
+    return (HE_QAT_STATUS_ACTIVE == get_qat_context_state());
   }
 
 }  // namespace ipcl

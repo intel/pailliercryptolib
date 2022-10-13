@@ -24,5 +24,18 @@ bool initializeContext(std::string runtime_choice);
  */
 bool terminateContext(void);
 
+
+/**
+ * Determine if QAT instances are running for IPCL.
+ * @return true if QAT instances are active and running, false otherwise.
+ */
+bool isQATRunning(void);
+
+/**
+ * Determine if QAT instances are active for IPCL.
+ * @return true if QAT instances are active, false otherwise.
+ */
+bool isQATActive(void);
+
 }  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_CONTEXT_HPP_
