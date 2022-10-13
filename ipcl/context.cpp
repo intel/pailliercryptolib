@@ -25,7 +25,7 @@ namespace ipcl {
   std::map<std::string, FeatureValue> hasFeatureMap = { 
     {"avx512",FeatureValue::AVX512IFMA}, {"avx512ifma",FeatureValue::AVX512IFMA},
     {"4xxx",FeatureValue::QAT4XXX}, {"qat_4xxx",FeatureValue::QAT4XXX} 
-  }
+  };
 
   bool hasQAT = false;
   static bool isUsingQAT = false;
