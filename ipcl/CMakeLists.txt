@@ -6,11 +6,12 @@ set(IPCL_SRCS pri_key.cpp
               keygen.cpp
               bignum.cpp
               mod_exp.cpp
-	      context.cpp
+              context.cpp
               base_text.cpp
               plaintext.cpp
               ciphertext.cpp
               util.cpp
+              common.cpp
 )
 
 
@@ -34,27 +35,47 @@ target_include_directories(ipcl
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+if(IPCL_DETECT_IFMA_RUNTIME)
+	target_include_directories(ipcl
+		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+		PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
+		PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	)
+	install(DIRECTORY ${CPUFEATURES_INC_DIR}/
+		DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+		FILES_MATCHING
+		PATTERN "*.hpp"
+		PATTERN "*.h")
+
+endif()
+
 install(DIRECTORY ${IPCL_INC_DIR}/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING
         PATTERN "*.hpp"
         PATTERN "*.h")
 
 install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING
         PATTERN "*.hpp"
         PATTERN "*.h")
 
+find_package(OpenSSL REQUIRED)
+find_package(Threads REQUIRED)
 target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads -lnuma)
 
 if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
-  target_link_libraries(ipcl PRIVATE OpenMP::OpenMP_CXX)
+  target_link_libraries(ipcl PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto)
+	if(IPCL_DETECT_IFMA_RUNTIME)
+		target_link_libraries(ipcl PRIVATE libcpu_features)
+		target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
+	endif()
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 	if(IPCL_ENABLE_QAT)
 	    target_link_libraries(ipcl PRIVATE libhe_qat udev z)
@@ -64,25 +85,21 @@ else()
 
 	ipcl_create_archive(ipcl libippcrypto::ippcp)
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
+
 	if(IPCL_ENABLE_QAT)
 	    ipcl_create_archive(ipcl libhe_qat)
 		message(STATUS "HEQAT_PREFIX_INCLUDE  : ${HEQAT_PREFIX}/include")
 		message(STATUS "HEQAT_INC_DIR         : ${HEQAT_INC_DIR}")
 		target_include_directories(ipcl PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>")
 		target_link_libraries(ipcl PRIVATE udev z)
+    endif()
+
+	if(IPCL_DETECT_IFMA_RUNTIME)
+		ipcl_create_archive(ipcl libcpu_features)
+		target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
 	endif()
+
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
-endif()
-
-
-# check whether cpu support avx512 flag
-set(CPU_AVX512_FLAG "avx512ifma")
-execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
-if("${CPU_ENABLE_AVX512}" STREQUAL "")
-	message(STATUS "Support AVX512IFMA: False")
-else()
-	message(STATUS "Support AVX512IFMA: True")
-	add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
 endif()
 
 set_target_properties(ipcl PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -92,14 +109,6 @@ if(IPCL_DEBUG)
 else()
 	set_target_properties(ipcl PROPERTIES OUTPUT_NAME "ipcl")
 endif()
-
-
-install(DIRECTORY ${IPCL_INC_DIR}/
-				DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
-				FILES_MATCHING
-				PATTERN "*.hpp"
-				PATTERN "*.h"
-)
 
 install(TARGETS ipcl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

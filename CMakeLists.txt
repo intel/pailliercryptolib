@@ -8,6 +8,7 @@ project(IPCL VERSION 2.0.0 LANGUAGES C CXX)
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
+include(GNUInstallDirs)
 
 if(CMAKE_BUILD_TYPE)
   set(RELEASE_TYPES
@@ -34,16 +35,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
-set(CMAKE_INSTALL_RPATH "\$ORIGIN")
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/opt/intel/ipcl")
+endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
-
-if(NOT CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
-include(GNUInstallDirs)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
@@ -68,6 +67,9 @@ if(IPCL_ENABLE_QAT)
     message(STATUS "QAT Lite disabled - IPCL_USE_QAT_LITE set to OFF")
   endif()
 endif()
+
+option(IPCL_DETECT_IFMA_RUNTIME "Detect AVX512/IFMA instructions during runtime" OFF)
+option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
@@ -100,6 +102,7 @@ else()
 endif()
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
+message(STATUS "IPCL_DETECT_IFMA_RUNTIME:   ${IPCL_DETECT_IFMA_RUNTIME}")
 
 set(IPCL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(IPCL_SRC_DIR ${IPCL_ROOT_DIR}/ipcl)
@@ -117,9 +120,47 @@ set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
+if(IPCL_DETECT_IFMA_RUNTIME)
+  add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cpufeatures")
+else()
+  # check whether cpu support avx512 flag
+  if(IPCL_DEBUG_DISABLE_AVX512IFMA)
+    message(STATUS "Support AVX512IFMA: False")
+  else()
+    set(CPU_AVX512_FLAG "avx512ifma")
+    execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
+    if("${CPU_ENABLE_AVX512}" STREQUAL "")
+      message(STATUS "Support AVX512IFMA: False")
+    else()
+      message(STATUS "Support AVX512IFMA: True")
+      add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+    endif()
+  endif()
+endif()
+
+# check whether cpu support rdseed or rdrand instruction
+set(CPU_RDSEED_FLAG "rdseed")
+execute_process(COMMAND lscpu COMMAND grep ${CPU_RDSEED_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDSEED)
+if("${CPU_ENABLE_RDSEED}" STREQUAL "")
+  set(CPU_RDRAND_FLAG "rdrand")
+  execute_process(COMMAND lscpu COMMAND grep ${CPU_RDRAND_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDRAND)
+  if("${CPU_ENABLE_RDRAND}" STREQUAL "")
+    message(WARNING "CPU doesn't support RDSEED and RDRAND instruction, using random generator will cause errors.")
+  else ()
+    message(STATUS "Support RDRAND instruction: True")
+    add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
+  endif()
+else()
+  message(STATUS "Support RDSEED instruction: True")
+  add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
+endif()
+
 # find package for OpenSSL and Threads
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 # set(THREADS_PREFER_PTHREAD_FLAG ON)
+# set(OPENSSL_USE_STATIC_LIBS TRUE)
+
 find_package(Threads REQUIRED)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
@@ -129,6 +170,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
+if(IPCL_DETECT_IFMA_RUNTIME)
+  include(cmake/cpufeatures.cmake)
+endif()
 
 if(IPCL_ENABLE_QAT)
   include(module/heqat.cmake)
@@ -140,6 +184,8 @@ endif()
 if(IPCL_BENCHMARK)
   include(cmake/gbenchmark.cmake)
 endif()
+
+
 
 add_subdirectory(ipcl)
 

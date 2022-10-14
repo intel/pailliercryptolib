@@ -82,13 +82,15 @@ class PublicKey {
    * Apply obfuscator for ciphertext
    * @param[out] obfuscator output of obfuscator with random value
    */
-  void applyObfuscator(std::vector<BigNumber>& obfuscator) const;
+  void applyObfuscator(std::vector<BigNumber>& ciphertext) const;
 
   /**
    * Set the Random object for ISO/IEC 18033-6 compliance check
    * @param[in] r
    */
   void setRandom(const std::vector<BigNumber>& r);
+
+  void setHS(const BigNumber& hs);
 
   /**
    * Check if using DJN scheme
@@ -127,13 +129,6 @@ class PublicKey {
   bool m_testv;
 
   /**
-   * Get random value
-   * @param[in] size size of random
-   * @return addr of random of type Ipp32u vector
-   */
-  std::vector<Ipp32u> randIpp32u(int size) const;
-
-  /**
    * Big number vector multi buffer encryption
    * @param[in] pt plaintext of BigNumber vector type
    * @param[in] make_secure apply obfuscator(default value is true)
@@ -142,12 +137,9 @@ class PublicKey {
   std::vector<BigNumber> raw_encrypt(const std::vector<BigNumber>& pt,
                                      bool make_secure = true) const;
 
-  /**
-   * Get random value
-   * @param[in] length bit length
-   * @return the random value of type BigNumber
-   */
-  BigNumber getRandom(int length) const;
+  std::vector<BigNumber> getDJNObfuscator(std::size_t sz) const;
+
+  std::vector<BigNumber> getNormalObfuscator(std::size_t sz) const;
 };
 
 }  // namespace ipcl
