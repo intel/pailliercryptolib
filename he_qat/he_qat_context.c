@@ -20,6 +20,7 @@
 #endif
 
 static volatile HE_QAT_STATUS context_state = HE_QAT_STATUS_INACTIVE;
+static pthread_mutex_t context_lock;
 
 // Global variable declarations
 static pthread_t         buffer_manager;
@@ -47,11 +48,11 @@ extern void stop_perform_op(void* _inst_config, unsigned num_inst);
 extern void* start_perform_op(void* _inst_config);
 
 static CpaInstanceHandle handle = NULL;
+static Cpa16U numInstances = 0;
+static Cpa16U nextInstance = 0;
 
 static CpaInstanceHandle get_qat_instance() {
     static CpaInstanceHandle cyInstHandles[MAX_INSTANCES];
-    static Cpa16U numInstances = 0;
-    static Cpa16U nextInstance = 0;
     CpaStatus status = CPA_STATUS_SUCCESS;
     CpaInstanceInfo2 info = {0};
 
@@ -65,28 +66,39 @@ static CpaInstanceHandle get_qat_instance() {
             numInstances = HE_QAT_NUM_ACTIVE_INSTANCES;
         }
 
+	if (CPA_STATUS_SUCCESS != status) {
+#ifdef HE_QAT_DEBUG
+            printf("No CyInstances Found.\n", numInstances);
+#endif
+	    return NULL;
+	}
+#ifdef HE_QAT_DEBUG
         printf("Found %d CyInstances.\n", numInstances);
-
+#endif
         if ((status == CPA_STATUS_SUCCESS) && (numInstances > 0)) {
             status = cpaCyGetInstances(numInstances, cyInstHandles);
 	    // List instances and their characteristics
 	    for (unsigned int i = 0; i < numInstances; i++) {
 	       status = cpaCyInstanceGetInfo2(cyInstHandles[i],&info);
-	       if (CPA_STATUS_SUCCESS == status) {
-                  printf("Vendor Name: %s\n",info.vendorName);
-                  printf("Part Name: %s\n",info.partName);
-                  printf("Inst Name: %s\n",info.instName);
-                  printf("Inst ID: %s\n",info.instID);
-                  printf("Node Affinity: %u\n",info.nodeAffinity);
-                  printf("Physical Instance:\n");
-                  printf("\tpackageId: %d\n",info.physInstId.packageId);
-                  printf("\tacceleratorId: %d\n",info.physInstId.acceleratorId);
-                  printf("\texecutionEngineId: %d\n",info.physInstId.executionEngineId);
-                  printf("\tbusAddress: %d\n",info.physInstId.busAddress);
-                  printf("\tkptAcHandle: %d\n",info.physInstId.kptAcHandle);
-	       }
+	       if (CPA_STATUS_SUCCESS != status) 
+	          return NULL;
+#ifdef HE_QAT_DEBUG	       
+               printf("Vendor Name: %s\n",info.vendorName);
+               printf("Part Name: %s\n",info.partName);
+               printf("Inst Name: %s\n",info.instName);
+               printf("Inst ID: %s\n",info.instID);
+               printf("Node Affinity: %u\n",info.nodeAffinity);
+               printf("Physical Instance:\n");
+               printf("\tpackageId: %d\n",info.physInstId.packageId);
+               printf("\tacceleratorId: %d\n",info.physInstId.acceleratorId);
+               printf("\texecutionEngineId: %d\n",info.physInstId.executionEngineId);
+               printf("\tbusAddress: %d\n",info.physInstId.busAddress);
+               printf("\tkptAcHandle: %d\n",info.physInstId.kptAcHandle);
+#endif
 	    }
+#ifdef HE_QAT_DEBUG
 	    printf("Next Instance: %d.\n", nextInstance);
+#endif
             if (status == CPA_STATUS_SUCCESS)
                 return cyInstHandles[nextInstance];
             //*pCyInstHandle = cyInstHandles[0];
@@ -103,7 +115,9 @@ static CpaInstanceHandle get_qat_instance() {
     }
 
     nextInstance = ((nextInstance + 1) % numInstances);
+#ifdef HE_QAT_DEBUG
     printf("Next Instance: %d.\n", nextInstance);
+#endif
     return cyInstHandles[nextInstance];
 }
 
@@ -112,13 +126,22 @@ static CpaInstanceHandle get_qat_instance() {
 HE_QAT_STATUS acquire_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
 
+    pthread_mutex_lock(&context_lock);
+
+    // Handle cases where acquire_qat_devices() is called when already active and running
+    if (HE_QAT_STATUS_ACTIVE == context_state) {       
+       pthread_mutex_unlock(&context_lock);
+       return HE_QAT_STATUS_SUCCESS;
+    }
+
     // Initialize QAT memory pool allocator
     status = qaeMemInit();
     if (CPA_STATUS_SUCCESS != status) {
+        pthread_mutex_unlock(&context_lock);
         printf("Failed to initialized memory driver.\n");
         return HE_QAT_STATUS_FAIL;  // HEQAT_STATUS_ERROR
     }
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("QAT memory successfully initialized.\n");
 #endif
 
@@ -126,11 +149,12 @@ HE_QAT_STATUS acquire_qat_devices() {
     // "SSL1"
     status = icp_sal_userStartMultiProcess("SSL", CPA_FALSE);
     if (CPA_STATUS_SUCCESS != status) {
+        pthread_mutex_unlock(&context_lock);
         printf("Failed to start SAL user process SSL\n");
         qaeMemDestroy();
         return HE_QAT_STATUS_FAIL;  // HEQAT_STATUS_ERROR
     }
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("SAL user process successfully started.\n");
 #endif
 
@@ -141,6 +165,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     for (unsigned int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
         _inst_handle[i] = get_qat_instance();
         if (_inst_handle[i] == NULL) {
+            pthread_mutex_unlock(&context_lock);
             printf("Failed to find QAT endpoints.\n");
             return HE_QAT_STATUS_FAIL;
         }
@@ -151,7 +176,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     //    printf("Failed to find QAT endpoints.\n");
     //    return HE_QAT_STATUS_FAIL;
     //}
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Found QAT endpoints.\n");
 #endif
 
@@ -226,7 +251,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Work on this
  //   pthread_create(&he_qat_instances[0], NULL, start_instances, (void*)he_qat_config);
     pthread_create(&he_qat_runner, NULL, start_instances, (void*)he_qat_config);
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Created processing threads.\n");
 #endif
 
@@ -237,7 +262,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Dispatch all QAT instances in a single thread 
 //    pthread_detach(he_qat_instances[0]);
     pthread_detach(he_qat_runner);
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Detached processing threads.\n");
 #endif
 
@@ -247,6 +272,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Launch buffer manager thread to schedule incoming requests
     if (0 != pthread_create(&buffer_manager, NULL, schedule_requests,
                             (void*)&context_state)) {
+        pthread_mutex_unlock(&context_lock);
         release_qat_devices();
         printf(
             "Failed to complete QAT initialization while creating buffer "
@@ -255,12 +281,15 @@ HE_QAT_STATUS acquire_qat_devices() {
     }
 
     if (0 != pthread_detach(buffer_manager)) {
+        pthread_mutex_unlock(&context_lock);
         release_qat_devices();
         printf(
             "Failed to complete QAT initialization while launching buffer "
             "manager thread.\n");
         return HE_QAT_STATUS_FAIL;
     }
+    
+    pthread_mutex_unlock(&context_lock);
 
     return HE_QAT_STATUS_SUCCESS;
 }
@@ -270,12 +299,16 @@ HE_QAT_STATUS acquire_qat_devices() {
 HE_QAT_STATUS release_qat_devices() {
     CpaStatus status = CPA_STATUS_FAIL;
 
-    if (HE_QAT_STATUS_INACTIVE == context_state) 
-        return HE_QAT_STATUS_SUCCESS;
+    pthread_mutex_lock(&context_lock);
+    
+    if (HE_QAT_STATUS_INACTIVE == context_state) {
+       pthread_mutex_unlock(&context_lock);
+       return HE_QAT_STATUS_SUCCESS;
+    }
 
     stop_instances(he_qat_config);
     //stop_perform_op(he_qat_inst_config, HE_QAT_NUM_ACTIVE_INSTANCES);
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Stopped polling and processing threads.\n");
 #endif
 
@@ -285,15 +318,20 @@ HE_QAT_STATUS release_qat_devices() {
 
     // Stop QAT SSL service
     icp_sal_userStop();
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Stopped SAL user process.\n");
 #endif
 
     // Release QAT allocated memory
     qaeMemDestroy();
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
     printf("Release QAT memory.\n");
 #endif
+
+    numInstances = 0;
+    nextInstance = 0;
+
+    pthread_mutex_unlock(&context_lock);
 
     return HE_QAT_STATUS_SUCCESS;
 }
