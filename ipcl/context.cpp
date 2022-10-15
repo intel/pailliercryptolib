@@ -27,6 +27,7 @@ namespace ipcl {
     {"4xxx",FeatureValue::QAT4XXX}, {"qat_4xxx",FeatureValue::QAT4XXX} 
   };
 
+#ifdef IPCL_USE_QAT
   bool hasQAT = false;
   static bool isUsingQAT = false;
   static bool initializeQATContext() {
@@ -34,6 +35,7 @@ namespace ipcl {
       return (isUsingQAT = true);
     return false;
   }
+#endif
 
   bool initializeContext(std::string runtime_choice) {   
 #ifdef IPCL_USE_QAT
@@ -66,11 +68,19 @@ namespace ipcl {
   }
 
   bool isQATRunning() {
+#ifdef IPCL_USE_QAT
     return (HE_QAT_STATUS_RUNNING == get_qat_context_state());
+#else
+    return false;
+#endif
   }
   
   bool isQATActive() {
+#ifdef IPCL_USE_QAT
     return (HE_QAT_STATUS_ACTIVE == get_qat_context_state());
+#else
+    return false;
+#endif
   }
 
 }  // namespace ipcl
