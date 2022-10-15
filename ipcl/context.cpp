@@ -31,7 +31,8 @@ namespace ipcl {
   bool hasQAT = false;
   static bool isUsingQAT = false;
   static bool initializeQATContext() {
-    if (HE_QAT_STATUS_SUCCESS == acquire_qat_devices())
+    if (!isUsingQAT && 
+		    HE_QAT_STATUS_SUCCESS == acquire_qat_devices())
       return (isUsingQAT = true);
     return false;
   }
@@ -40,7 +41,6 @@ namespace ipcl {
   bool initializeContext(std::string runtime_choice) {   
 #ifdef IPCL_USE_QAT
     hasQAT = true;
-
     switch (runtimeMap[runtime_choice]) {
       case RuntimeValue::QAT:
 	   return initializeQATContext();
@@ -58,8 +58,10 @@ namespace ipcl {
   bool terminateContext() {  
 #ifdef IPCL_USE_QAT
     if (isUsingQAT) {
-      if (HE_QAT_STATUS_SUCCESS == release_qat_devices()) 
-        return true;
+      if (HE_QAT_STATUS_SUCCESS == release_qat_devices()) { 
+         isUsingQAT = false;
+         return true;
+      }
       return false;
     } return true;
 #else // Default behavior: CPU choice
