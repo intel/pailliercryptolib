@@ -5,7 +5,8 @@
 
 BIGNUM* generateTestBNData(int nbits) {
     if (!RAND_status()) return NULL;
-#ifdef _DESTINY_DEBUG_VERBOSE
+
+#ifdef HE_QAT_DEBUG
     printf("PRNG properly seeded.\n");
 #endif
 
@@ -34,9 +35,10 @@ unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
     int len = bytes_left + num_bytes;
     if (!(bin = (unsigned char*)OPENSSL_zalloc(len))) return NULL;
 
-#ifdef _DESTINY_DEBUG_VERBOSE
-    printf("Padding bn with %d bytes to total %d bytes\n", bytes_left, len);
+#ifdef HE_QAT_DEBUG
+    PRINT("Padding bn with %d bytes to total %d bytes\n", bytes_left, len);
 #endif
+
     BN_bn2binpad(bn, bin, len);
     if (ERR_get_error()) {
         OPENSSL_free(bin);
