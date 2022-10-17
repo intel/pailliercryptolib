@@ -1,3 +1,6 @@
+///< @file he_qat_utils.h
+
+#pragma once
 
 #ifndef HE_QAT_UTILS_H_
 #define HE_QAT_UTILS_H_
@@ -9,8 +12,11 @@ extern "C" {
 #include <openssl/bn.h>
 
 BIGNUM* generateTestBNData(int nbits);
+
 unsigned char* paddingZeros(BIGNUM* bn, int nbits);
+
 void showHexBN(BIGNUM* bn, int nbits);
+
 void showHexBin(unsigned char* bin, int len);
 
 #ifdef __cplusplus

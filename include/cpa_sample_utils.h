@@ -121,6 +121,19 @@ typedef pthread_t sampleThread;
      (CPA_CY_API_VERSION_NUM_MAJOR == major &&                                 \
       CPA_CY_API_VERSION_NUM_MINOR >= minor))
 
+#ifdef HE_QAT_DEBUG
+#define HE_QAT_PRINT_DBG(args...)                                              \
+    do                                                                         \
+    {                                                                          \
+        {                                                                      \
+            printf("%s(): ", __func__);                                        \
+            printf(args);                                                      \
+            fflush(stdout);                                                    \
+        }                                                                      \
+    } while (0)
+#else
+#define HE_QAT_PRINT_DBG(args...) { } 
+#endif
 /* Printing */
 /**< Prints the name of the function and the arguments only if gDebugParam is
  * CPA_TRUE.

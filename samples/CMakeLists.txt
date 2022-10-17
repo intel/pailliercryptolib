@@ -1,6 +1,6 @@
 
 if(HE_QAT_DEBUG)
-    add_definitions(-D_DESTINY_DEBUG_VERBOSE) 
+  add_definitions(-DHE_QAT_DEBUG) 
 endif()
 
 # -------------------------------------------------------------------------------------------
@@ -25,7 +25,6 @@ target_include_directories(test_BIGNUMModExp PUBLIC ${ICP_INC_DIR})
 
 target_link_libraries(test_BIGNUMModExp PUBLIC he_qat)
 target_link_libraries(test_BIGNUMModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-#target_link_libraries(test_BIGNUMModExp PUBLIC IPPCP::ippcp)
 
 install(TARGETS test_BIGNUMModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

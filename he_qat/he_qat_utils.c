@@ -1,3 +1,4 @@
+#include "cpa_sample_utils.h"
 #include "he_qat_utils.h"
 
 #include <openssl/err.h>

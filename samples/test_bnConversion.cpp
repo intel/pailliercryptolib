@@ -34,8 +34,7 @@ int main(int argc, const char** argv) {
         if (!bn_mod) continue;
 
         char* bn_str = BN_bn2hex(bn_mod);
-        printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
-               BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
+        PRINT("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str, BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
         OPENSSL_free(bn_str);
 
         int len_ = (bit_length + 7) >> 3;
@@ -52,7 +51,7 @@ int main(int argc, const char** argv) {
         gettimeofday(&start_time, NULL);        
         status = binToBigNumber(big_num, bn_mod_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("Failed at binToBigNumber()\n");
+            PRINT("Failed at binToBigNumber()\n");
             exit(1);
         }
         gettimeofday(&end_time, NULL);
@@ -60,14 +59,14 @@ int main(int argc, const char** argv) {
         time_taken =
             (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
         ssl_elapsed = time_taken;
-        printf("Conversion to BigNumber has completed in %.1lfus.\n",
+        PRINT("Conversion to BigNumber has completed in %.1lfus.\n",
                (ssl_elapsed));
 
         int bit_len = 0;
         ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
         std::string str;
         big_num.num2hex(str);
-        printf("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
+        PRINT("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
                bit_len);
 
         gettimeofday(&start_time, NULL);        
@@ -76,7 +75,7 @@ int main(int argc, const char** argv) {
         if (NULL == ref_bn_data_) exit(1);
         status = bigNumberToBin(ref_bn_data_, bit_length, big_num);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("Failed at bigNumberToBin()\n");
+            PRINT("Failed at bigNumberToBin()\n");
             exit(1);
         }
         gettimeofday(&end_time, NULL);
@@ -84,15 +83,14 @@ int main(int argc, const char** argv) {
         time_taken =
             (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
         qat_elapsed = time_taken;
-        printf("Conversion from BigNumber has completed %.1lfus.\n",
+        PRINT("Conversion from BigNumber has completed %.1lfus.\n",
                (qat_elapsed));
 
         BIGNUM* ref_bin_ = BN_new();
         BN_bin2bn(ref_bn_data_, len_, ref_bin_);
         bn_str = BN_bn2hex(ref_bin_);
-        printf("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
-               BN_num_bytes(ref_bin_), BN_num_bits(ref_bin_));
-        printf("-----------------------\n");
+        PRINT("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str, BN_num_bytes(ref_bin_), BN_num_bits(ref_bin_));
+        PRINT("-----------------------\n");
 
         OPENSSL_free(bn_str);
         free(bn_mod_data_);
