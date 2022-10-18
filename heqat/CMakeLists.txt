@@ -1,33 +1,29 @@
 
-set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_cb.c
-	       ${HE_QAT_SRC_DIR}/he_qat_context.c
-	       ${HE_QAT_SRC_DIR}/he_qat_utils.c
+set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c
+	       ${HE_QAT_SRC_DIR}/context.c
+	       ${HE_QAT_SRC_DIR}/ctrl.c
+	       ${HE_QAT_SRC_DIR}/bnops.c
 )
 
-list(APPEND HE_QAT_SRC ${HE_QAT_SRC_DIR}/he_qat_ops.c
-                       ${HE_QAT_SRC_DIR}/he_qat_ctrl.c)
+add_subdirectory(common)
+
+if(HE_QAT_MISC)
+  add_subdirectory(misc)
+endif()
 
 if(HE_QAT_SHARED)
-	add_library(he_qat SHARED ${HE_QAT_SRC})
+  add_library(he_qat SHARED ${HE_QAT_SRC})
 else()
-	add_library(he_qat STATIC ${HE_QAT_SRC})
+  add_library(he_qat STATIC ${HE_QAT_SRC})
 endif()
 
 add_library(HE_QAT::he_qat ALIAS he_qat)
 
 target_include_directories(he_qat 
-	PUBLIC $<BUILD_INTERFACE:${COMMON_INC_DIR}> #Public headers 
 	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers 
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> #Public headers
-	PRIVATE ${COMMON_INC_DIR} #Private headers 
 	PRIVATE ${ICP_INC_DIR} #Private headers 
 )
-
-install(DIRECTORY ${COMMON_INC_DIR}/
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
-	FILES_MATCHING 
-	PATTERN "*.hpp"
-	PATTERN "*.h")
 
 install(DIRECTORY ${HE_QAT_INC_DIR}/
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
@@ -36,29 +32,42 @@ install(DIRECTORY ${HE_QAT_INC_DIR}/
 	PATTERN "*.h")
 
 target_link_directories(he_qat PUBLIC ${ICP_BUILDOUTPUT_PATH})
-target_link_libraries(he_qat PRIVATE OpenSSL::SSL Threads::Threads)
-target_link_libraries(he_qat PRIVATE udev z)
 
-if(HE_QAT_MISC)
-	target_link_libraries(he_qat PRIVATE he_qat_misc)
+target_link_libraries(he_qat PRIVATE udev z)
+target_link_libraries(he_qat PRIVATE OpenSSL::SSL)
+target_link_libraries(he_qat PRIVATE Threads::Threads)
+if(HE_QAT_SHARED)
+  target_link_libraries(he_qat PRIVATE qat_s)
+  target_link_libraries(he_qat PRIVATE usdm_drv_s)
+else()
+  heqat_create_archive(he_qat OpenSSL::SSL)
+  heqat_create_archive(he_qat Threads::Threads)
+  heqat_create_archive(he_qat libadf_static)
+  heqat_create_archive(he_qat libosal_static)
+  heqat_create_archive(he_qat libqat_static)
+  heqat_create_archive(he_qat libusdm_drv_static)
 endif()
 
-if(HE_QAT_SHARED)
-	target_link_libraries(he_qat PRIVATE qat_s usdm_drv_s)
-	target_link_libraries(he_qat PRIVATE cpa_sample_utils)
-else()
-	heqat_create_archive(he_qat cpa_sample_utils)
+if(HE_QAT_MISC)
+  target_include_directories(he_qat PRIVATE ${IPPCP_DIR}/../../../include) 
+  target_link_directories(he_qat PUBLIC ${IPPCP_DIR}/lib/intel64)
+  if(HE_QAT_SHARED)
+    target_link_libraries(he_qat PRIVATE IPPCP::ippcp)
+    #    target_link_libraries(he_qat PRIVATE IPPCP::crypto_mb)
+  else()
+    heqat_create_archive (he_qat IPPCP::ippcp)
+    #    heqat_create_archive (he_qat IPPCP::crypto_mb)
+  endif()
 endif()
 
 set_target_properties(he_qat PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(he_qat PROPERTIES VERSION ${HE_QAT_VERSION})
 
 if(HE_QAT_DEBUG)
-	set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat_debug")
+  set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat_debug")
 else()
-	set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat")
+  set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat")
 endif()
-
 
 install(TARGETS he_qat DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
@@ -78,9 +87,9 @@ install(
 )
 
 write_basic_package_version_file(
-		${HE_QAT_CONFIG_VERSION_FILENAME}
-		VERSION ${HE_QAT_VERSION}
-		COMPATIBILITY ExactVersion
+    ${HE_QAT_CONFIG_VERSION_FILENAME}
+    VERSION ${HE_QAT_VERSION}
+    COMPATIBILITY ExactVersion
 )
 
 configure_package_config_file(

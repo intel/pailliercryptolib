@@ -1,15 +1,10 @@
-/// @file he_qat_misc.cpp
+/// @file heqat/misc/misc.cpp
 
-#include "he_qat_misc.h"
-
-//#ifdef __cplusplus
-//#include "bignum.h"
-//#endif
+#include "heqat/misc.h"
 
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-//#ifdef __cplusplus
 HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
                              int nbits) {
     if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
@@ -43,5 +38,3 @@ HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
     return HE_QAT_STATUS_SUCCESS;
 }
 
-//}  // extern "C" {
-//#endif

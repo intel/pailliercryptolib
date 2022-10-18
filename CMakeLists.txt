@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # The hekat or heqat (transcribed HqA.t) was an ancient Egyptian volume unit 
 # used to measure grain, bread, and beer.
-project(HE_QAT VERSION 0.1.0 LANGUAGES C CXX)
+project(HE_QAT VERSION 1.2.1 LANGUAGES C CXX)
 
 include(CheckCCompilerFlag) 
 include(CheckCXXCompilerFlag) 
@@ -76,11 +76,15 @@ else()
   set(HE_QAT_DEBUG OFF)
 endif()
 
+if(HE_QAT_MISC)
+  add_definitions(-DHE_QAT_MISC)
+endif()
+
 # Why?
 set(HE_QAT_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/he_qat")
 set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}) 
-set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/he_qat) 
-set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/he_qat/include)
+set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/heqat) 
+set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/heqat/include)
 
 if(HE_QAT_OMP)
   find_package(OpenMP REQUIRED)
@@ -153,7 +157,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/he_qat)
 include(heqat-util)
 
-set(COMMON_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+#set(COMMON_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 if(NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR}/install)
 endif()
@@ -162,15 +166,15 @@ endif()
 include(icp/CMakeLists.txt)
 
 #Common utility functions
-add_subdirectory(common)
+#add_subdirectory(common)
 
 # Helper functions for BigNumber
-if(HE_QAT_MISC)
-  add_subdirectory(misc)
-endif()
+#if(HE_QAT_MISC)
+#  add_subdirectory(misc)
+#endif()
 
 # HE_QAT Library
-add_subdirectory(he_qat)
+add_subdirectory(heqat)
 
 if(HE_QAT_TEST)
   include(cmake/gtest.cmake)

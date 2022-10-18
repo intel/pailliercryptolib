@@ -1,6 +1,7 @@
 
-#include "he_qat_misc.h"
-#include "he_qat_utils.h"
+//#include "he_qat_misc.h"
+//#include "he_qat_utils.h"
+#include "heqat/heqat.h"
 
 #include <time.h>
 #include <openssl/bn.h>

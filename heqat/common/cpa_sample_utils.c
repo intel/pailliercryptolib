@@ -72,7 +72,7 @@
  *
  ***************************************************************************/
 
-#include "cpa_sample_utils.h"
+#include "heqat/common/cpa_sample_utils.h"
 #include "cpa_dc.h"
 #include "icp_sal_poll.h"
 

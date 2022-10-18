@@ -1,4 +1,4 @@
-///< @file he_qat_utils.h
+/// @file heqat/common/utils.h
 
 #pragma once
 

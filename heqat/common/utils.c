@@ -1,5 +1,5 @@
-#include "cpa_sample_utils.h"
-#include "he_qat_utils.h"
+#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/utils.h"
 
 #include <openssl/err.h>
 #include <openssl/rand.h>

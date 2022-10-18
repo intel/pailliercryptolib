@@ -1,8 +1,5 @@
 
-#include "cpa_sample_utils.h"
-#include "he_qat_utils.h"
-#include "he_qat_bn_ops.h"
-#include "he_qat_context.h"
+#include "heqat/heqat.h"
 
 #include <time.h>
 #include <openssl/bn.h>
@@ -13,7 +10,6 @@
 struct timeval start_time, end_time;
 double time_taken = 0.0;
 
-//int gDebugParam = 1;  // Active in Debug mode
 const unsigned int BATCH_SIZE = 1;
 
 int main(int argc, const char** argv) {

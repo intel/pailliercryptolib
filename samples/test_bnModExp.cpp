@@ -1,9 +1,5 @@
 
-#include "he_qat_misc.h"
-#include "he_qat_utils.h"
-#include "he_qat_bn_ops.h"
-#include "he_qat_context.h"
-#include "cpa_sample_utils.h"
+#include "heqat/heqat.h"
 
 #include <chrono>
 #include <time.h>
@@ -13,10 +9,6 @@
 
 #include <string>
 #include <iomanip>
-
-#ifdef _DESTINY_DEBUG_VERBOSE
-int gDebugParam = 1;
-#endif
 
 const unsigned int BATCH_SIZE = 48;
 
@@ -46,7 +38,7 @@ int main(int argc, const char** argv) {
         if (!bn_mod) continue;
 
         char* bn_str = BN_bn2hex(bn_mod);
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
         printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
 #endif
@@ -174,7 +166,7 @@ int main(int argc, const char** argv) {
         if (HE_QAT_STATUS_SUCCESS != status) {
             PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
         }
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
         else {
             PRINT_DBG("\nQAT bnModExpOp finished\n");
         }
@@ -187,13 +179,13 @@ int main(int argc, const char** argv) {
             exit(1);
         }
 
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
         bn_str = BN_bn2hex(qat_res);
         printf("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
                BN_num_bytes(qat_res), BN_num_bits(qat_res));
 #endif
 
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
         int bit_len = 0;
         ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
         std::string str;

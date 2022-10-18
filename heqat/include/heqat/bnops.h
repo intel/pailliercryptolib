@@ -39,8 +39,9 @@
 extern "C" {
 #endif
 
+#include "heqat/common/types.h"
+
 #include <openssl/bn.h>
-#include "he_qat_types.h"
 
 /// @brief Performs modular exponentiation using BIGNUM data structure.
 /// 

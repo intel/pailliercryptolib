@@ -1,14 +1,16 @@
-/// @file he_qat_misc.h
+/// @file heqat/misc.h
+
+#pragma once
 
 #ifndef HE_QAT_MISC_H_
 #define HE_QAT_MISC_H_
 
-#pragma once
+#include "heqat/common/consts.h" 
+#include "heqat/common/types.h"
 
-#include "he_qat_gconst.h" 
-#include "he_qat_types.h"
-#include "bignum.h"
-#include <openssl/bn.h>
+#ifdef __cplusplus
+
+#include "heqat/misc/bignum.h"
 
 /// @brief
 /// Convert QAT large number into little endian format and encapsulate it into a
@@ -29,5 +31,6 @@ HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
 /// represented in nbits.
 HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
                              const BigNumber& bn);
+#endif // __cpluscplus
 
 #endif  // HE_QAT_MISC_H_
