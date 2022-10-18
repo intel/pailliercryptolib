@@ -1,12 +1,15 @@
 
+# HEQAT Lib source code
 set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c
 	       ${HE_QAT_SRC_DIR}/context.c
 	       ${HE_QAT_SRC_DIR}/ctrl.c
 	       ${HE_QAT_SRC_DIR}/bnops.c
 )
 
+# Common utility functions, types and constants
 add_subdirectory(common)
 
+# Helper functions for ippcrypto's BigNumber class
 if(HE_QAT_MISC)
   add_subdirectory(misc)
 endif()
@@ -53,10 +56,8 @@ if(HE_QAT_MISC)
   target_link_directories(he_qat PUBLIC ${IPPCP_DIR}/lib/intel64)
   if(HE_QAT_SHARED)
     target_link_libraries(he_qat PRIVATE IPPCP::ippcp)
-    #    target_link_libraries(he_qat PRIVATE IPPCP::crypto_mb)
   else()
     heqat_create_archive (he_qat IPPCP::ippcp)
-    #    heqat_create_archive (he_qat IPPCP::crypto_mb)
   endif()
 endif()
 
