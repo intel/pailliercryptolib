@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # The hekat or heqat (transcribed HqA.t) was an ancient Egyptian volume unit 
 # used to measure grain, bread, and beer.
-project(HE_QAT VERSION 1.3.0 LANGUAGES C CXX)
+project(HE_QAT VERSION 1.3.1 LANGUAGES C CXX)
 
 include(CheckCCompilerFlag) 
 include(CheckCXXCompilerFlag) 

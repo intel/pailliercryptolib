@@ -14,11 +14,14 @@ if(NOT TARGET HE_QAT::he_qat)
   message(FATAL_ERROR "TARGET HE_QAT::he_qat not found")
 endif()
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-DHE_QAT_DEBUG)
 endif()
 
 find_package(OpenSSL REQUIRED)
+find_package(Threads REQUIRED)
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 include(../icp/CMakeLists.txt)
 

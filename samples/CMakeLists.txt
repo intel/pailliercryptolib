@@ -28,10 +28,7 @@ endmacro()
 
 ##############################################################################
 
-set(EXECUTABLE_DEPENDENCIES 
-    OpenSSL::SSL 
-    IPPCP::ippcp
-)
+set(EXECUTABLE_DEPENDENCIES OpenSSL::SSL)
 
 # Sample testing the robustness of the heqatlib context functions
 heqat_create_executable(context c "")
@@ -42,19 +39,13 @@ heqat_create_executable(BIGNUMModExp C EXECUTABLE_DEPENDENCIES)
 if(HE_QAT_MISC)
   add_compile_options(-fpermissive)
 
+  list(APPEND EXECUTABLE_DEPENDENCIES IPPCP::ippcp)
+  
   # Sample showing how to convert from/to BigNumber to/from CpaFlatBuffer
   heqat_create_executable(bnConversion cxx EXECUTABLE_DEPENDENCIES)
 
   # Sample showing how to use bnModExp API
   heqat_create_executable(bnModExp CXX EXECUTABLE_DEPENDENCIES) 
-  # add_executable(sample_bnModExp test_bnModExp.cpp)
-  # 
-  # target_include_directories(sample_bnModExp PUBLIC ${HE_QAT_INC_DIR})
-  # target_include_directories(sample_bnModExp PUBLIC ${ICP_INC_DIR})
-  # 
-  # target_link_libraries(sample_bnModExp PUBLIC he_qat)
-  # target_link_libraries(sample_bnModExp PUBLIC OpenSSL::SSL)
-  # target_link_libraries(sample_bnModExp PUBLIC IPPCP::ippcp)
 
   if(OpenMP_CXX_FOUND) 
     list(APPEND EXECUTABLE_DEPENDENCIES OpenMP::OpenMP_CXX)
