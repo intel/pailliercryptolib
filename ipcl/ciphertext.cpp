@@ -142,14 +142,14 @@ BigNumber CipherText::raw_add(const BigNumber& a, const BigNumber& b) const {
 
 BigNumber CipherText::raw_mul(const BigNumber& a, const BigNumber& b) const {
   const BigNumber& sq = m_pubkey->getNSQ();
-  return ipcl::ippModExp(a, b, sq);
+  return modExp(a, b, sq);
 }
 
 std::vector<BigNumber> CipherText::raw_mul(
     const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
   std::size_t v_size = a.size();
   std::vector<BigNumber> sq(v_size, m_pubkey->getNSQ());
-  return ipcl::ippModExp(a, b, sq);
+  return modExp(a, b, sq);
 }
 
 }  // namespace ipcl

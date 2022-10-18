@@ -595,17 +595,25 @@ static BigNumber ippSBModExp(const BigNumber& base, const BigNumber& exp,
   return res;
 }
 
-std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
+std::vector<BigNumber> qatModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& exp,
                                  const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
   // TODO(fdiasmor): Slice with custom batches, test OMP
   std::size_t worksize = base.size();
   std::vector<BigNumber> remainder(worksize);
-  // remainder = heQatBnModExp(base, pow, m);
+
+  // remainder = heQatBnModExp(base, exp, mod);
   remainder = heQatBnModExp(base, exp, mod, 1024);
   return remainder;
 #else
+  ERROR_CHECK(false, "qatModExp: Need to turn on IPCL_ENABLE_QAT");
+#endif  // IPCL_USE_QAT
+}
+
+std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
+                                 const std::vector<BigNumber>& exp,
+                                 const std::vector<BigNumber>& mod) {
   std::size_t v_size = base.size();
   std::vector<BigNumber> res(v_size);
 
@@ -719,11 +727,27 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 
 #endif  // IPCL_CRYPTO_MB_MOD_EXP
 #endif  // IPCL_RUNTIME_MOD_EXP
+}
+
+std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,
+                              const std::vector<BigNumber>& exp,
+                              const std::vector<BigNumber>& mod) {
+#ifdef IPCL_USE_QAT
+  return qatModExp(base, exp, mod);
+#else
+  return ippModExp(base, exp, mod);
 #endif  // IPCL_USE_QAT
+}
+
+BigNumber modExp(const BigNumber& base, const BigNumber& exp,
+                 const BigNumber& mod) {
+  // QAT mod exp is NOT needed, when there is only 1 BigNumber.
+  return ippModExp(base, exp, mod);
 }
 
 BigNumber ippModExp(const BigNumber& base, const BigNumber& exp,
                     const BigNumber& mod) {
+  // IPP multi buffer mod exp is NOT needed, when there is only 1 BigNumber.
   return ippSBModExp(base, exp, mod);
 }
 

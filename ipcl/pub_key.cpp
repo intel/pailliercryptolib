@@ -48,7 +48,7 @@ void PublicKey::enableDJN() {
   BigNumber rmod_sq = rmod * rmod;
   BigNumber rmod_neg = rmod_sq * -1;
   BigNumber h = rmod_neg % m_n;
-  m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
+  m_hs = modExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
@@ -66,7 +66,7 @@ std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
       r_ = getRandomBN(m_randbits);
     }
   }
-  return ipcl::ippModExp(base, r, sq);
+  return modExp(base, r, sq);
 }
 
 std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
@@ -82,7 +82,7 @@ std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
       r[i] = r[i] % (m_n - 1) + 1;
     }
   }
-  return ipcl::ippModExp(r, pown, sq);
+  return modExp(r, pown, sq);
 }
 
 void PublicKey::applyObfuscator(std::vector<BigNumber>& ciphertext) const {
