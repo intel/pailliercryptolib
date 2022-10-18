@@ -61,6 +61,14 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
         PATTERN "*.hpp"
         PATTERN "*.h")
 
+if(IPCL_ENABLE_QAT)
+    install(DIRECTORY ${HEQAT_INC_DIR}/
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+            FILES_MATCHING
+            PATTERN "*.hpp"
+            PATTERN "*.h")
+endif()
+
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads -lnuma)
@@ -88,11 +96,10 @@ else()
 
 	if(IPCL_ENABLE_QAT)
 	    ipcl_create_archive(ipcl libhe_qat)
-		message(STATUS "HEQAT_PREFIX_INCLUDE  : ${HEQAT_PREFIX}/include")
 		message(STATUS "HEQAT_INC_DIR         : ${HEQAT_INC_DIR}")
 		target_include_directories(ipcl PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>")
 		target_link_libraries(ipcl PRIVATE udev z)
-    endif()
+        endif()
 
 	if(IPCL_DETECT_IFMA_RUNTIME)
 		ipcl_create_archive(ipcl libcpu_features)

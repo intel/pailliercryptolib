@@ -10,8 +10,8 @@
 #include <iostream>
 
 #ifdef IPCL_USE_QAT
-#include <he_qat_bn_ops.h>
-#include <he_qat_types.h>
+#include <heqat/bnops.h>
+#include <heqat/common.h>
 #endif
 
 #include "ipcl/util.hpp"

@@ -7,7 +7,7 @@
 #include <string>
 
 #ifdef IPCL_USE_QAT
-#include <he_qat_context.h>
+#include <heqat/context.h>
 #endif
 
 namespace ipcl {
