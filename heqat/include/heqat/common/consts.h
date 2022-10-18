@@ -1,4 +1,4 @@
-/// @file he_qat_gconst.h
+/// @file heqat/common/consts.h
 
 #pragma once
 

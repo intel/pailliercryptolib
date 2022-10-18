@@ -1,8 +1,5 @@
 
-#include "he_qat_bn_ops.h"
-#include "he_qat_context.h"
-#include "he_qat_utils.h"
-#include "cpa_sample_utils.h"
+#include "heqat/heqat.h"
 
 #include <time.h>
 #include <openssl/bn.h>
@@ -46,9 +43,9 @@ int main(int argc, const char** argv) {
 
         if (!bn_mod) continue;
 
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
         char* bn_str = BN_bn2hex(bn_mod);
-        printf("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
+        PRINT("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
         OPENSSL_free(bn_str);
 #endif
@@ -72,26 +69,25 @@ int main(int argc, const char** argv) {
         ssl_elapsed = time_taken;
 
         if (!ERR_get_error()) {
-#ifdef _DESTINY_DEBUG_VERBOSE
+#ifdef HE_QAT_DEBUG
             bn_str = BN_bn2hex(ssl_res);
-            printf("SSL BN mod exp: %s num_bytes: %d num_bits: %d\n", bn_str,
+            PRINT("SSL BN mod exp: %s num_bytes: %d num_bits: %d\n", bn_str,
                    BN_num_bytes(ssl_res), BN_num_bits(ssl_res));
             showHexBN(ssl_res, bit_length);
             OPENSSL_free(bn_str);
 #endif
         } else {
-            printf("Modular exponentiation failed.\n");
+            PRINT_ERR("Modular exponentiation failed.\n");
+	    exit(1);
         }
 
-#ifdef _DESTINY_DEBUG_VERBOSE
-        PRINT_DBG("\nStarting QAT bnModExp...\n");
-#endif
+        HE_QAT_PRINT_DBG("\nStarting QAT bnModExp...\n");
 
         // Perform QAT ModExp Op
         BIGNUM* qat_res = BN_new();
         gettimeofday(&start_time, NULL);        
         for (unsigned int j = 0; j < BATCH_SIZE; j++)
-            status = bnModExpPerformOp(qat_res, bn_base, bn_exponent, bn_mod,
+            status = HE_QAT_BIGNUMModExp(qat_res, bn_base, bn_exponent, bn_mod,
                                        bit_length);
         getBnModExpRequest(BATCH_SIZE);
         gettimeofday(&end_time, NULL);
@@ -107,23 +103,20 @@ int main(int argc, const char** argv) {
             (mod * avg_speed_up +
              (ssl_elapsed) / (qat_elapsed/BATCH_SIZE)) / (mod + 1);
 
-        printf(
-            "Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
+        PRINT("Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
             (mod + 1), ssl_avg_time, qat_avg_time, avg_speed_up);
 
 	if (HE_QAT_STATUS_SUCCESS != status) {
             PRINT_ERR("\nQAT bnModExpOp failed\n");
+	    exit(1);
         }
-#ifdef _DESTINY_DEBUG_VERBOSE
-        else {
-            PRINT_DBG("\nQAT bnModExpOp finished\n");
-        }
-#endif
-
-        if (BN_cmp(qat_res, ssl_res) != 0)
-            printf("\t** FAIL **\n");
+        
+	if (BN_cmp(qat_res, ssl_res) != 0)
+            PRINT("\t** FAIL **\n");
         else
-            printf("\t** PASS **\n");
+            PRINT("\t** PASS **\n");
+
+        HE_QAT_PRINT_DBG("\nQAT bnModExpOp finished\n");
 
         BN_free(ssl_res);
         BN_free(qat_res);

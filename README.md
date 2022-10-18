@@ -225,13 +225,13 @@ In addition to the standard CMake configuration options, Intel HE Acceleration L
 Test showing creation and teardown of the QAT runtime environment:
 
 ```
-./build/samples/test_context
+./build/samples/sample_context
 ``` 
 
-Test showing functional correctness and performance:
+Test showing functional correctness and performance using BIGNUM data as input:
 
 ```
-./build/samples/test_bnModExpPerformOp
+./build/samples/sample_BIGNUMModExp
 ``` 
 
 If built with `HE_QAT_MISC=ON`, then the following samples below are also available to try. 
@@ -239,14 +239,26 @@ If built with `HE_QAT_MISC=ON`, then the following samples below are also availa
 Test showing data conversion between `BigNumber` and `CpaFlatBuffer` formats:
 
 ```
-./build/samples/test_bnConversion
+./build/samples/sample_bnConversion
 ``` 
 
 Test showing functional correctness and performance using `BigNumber` data types:
 
 ```
-./build/samples/test_bnModExp
+./build/samples/sample_bnModExp
 ```
+
+Test showing functional correctness and performance of multithreading support:
+
+```
+./build/samples/sample_bnModExp_MT
+```
+#### Running All Samples
+
+```
+HEQATLIB_ROOT_DIR=$PWD ./scripts/run.sh
+```
+
 ## Troubleshooting
 
 - **Issue #1** 

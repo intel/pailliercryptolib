@@ -6,7 +6,7 @@ export LD_LIBRARY_PATH=$HEQATLIB_INSTALL_DIR/lib:$ICP_ROOT/build:$LD_LIBRARY_PAT
 
 pushd $HEQATLIB_INSTALL_DIR/bin
 
-for app in $(ls test_*)
+for app in $(ls sample_*)
 do
   echo "*****************************************************************"
   echo "* [START]            RUNNING TEST SAMPLE $app                   *"

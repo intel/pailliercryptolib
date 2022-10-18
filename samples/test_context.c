@@ -1,7 +1,5 @@
 
-#include <stdio.h>
-#include "cpa_sample_utils.h"
-#include "he_qat_context.h"
+#include "heqat/heqat.h"
 
 int main() {
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;

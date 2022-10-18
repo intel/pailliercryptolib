@@ -2,16 +2,16 @@
 
 #define _GNU_SOURCE
 
-#include "he_qat_types.h"
-#include "he_qat_context.h"
+#include "icp_sal_user.h"
+#include "icp_sal_poll.h"
 
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "cpa_sample_utils.h"
-#include "icp_sal_user.h"
-#include "icp_sal_poll.h"
+#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/types.h"
+#include "heqat/context.h"
 
 #ifdef USER_SPACE
 #define MAX_INSTANCES 1024
@@ -57,7 +57,6 @@ static CpaInstanceHandle get_qat_instance() {
     CpaInstanceInfo2 info = {0};
 
     if (0 == numInstances) {
-        //*pCyInstHandle = NULL;
         status = cpaCyGetNumInstances(&numInstances);
         if (numInstances >= MAX_INSTANCES) {
             numInstances = MAX_INSTANCES;

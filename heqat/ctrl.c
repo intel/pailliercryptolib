@@ -1,4 +1,4 @@
-/// @file he_qat_ctrl.c
+/// @file heqat/ctrl.c
 
 // QAT-API headers
 #include "cpa.h"
@@ -20,10 +20,10 @@ double time_taken = 0.0;
 #include <assert.h>
 #include <openssl/bn.h>
 
-// Loca headers
-#include "he_qat_types.h"
-#include "he_qat_bn_ops.h"
-#include "he_qat_gconst.h"
+// Local headers
+#include "heqat/common/consts.h"
+#include "heqat/common/types.h"
+#include "heqat/bnops.h"
 
 // Warn user on selected execution mode
 #ifdef HE_QAT_SYNC_MODE

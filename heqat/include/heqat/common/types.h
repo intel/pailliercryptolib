@@ -1,4 +1,4 @@
-/// @file he_qat_types.h
+/// @file heqat/common/types.h
 
 #pragma once
 
@@ -13,7 +13,7 @@ extern "C" {
 #include "cpa.h"
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
-#include "cpa_sample_utils.h"
+
 
 // C Libraries
 #include <pthread.h>
@@ -21,7 +21,8 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-#include "he_qat_gconst.h"
+#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/consts.h"
 
 // Type definitions
 typedef enum { 

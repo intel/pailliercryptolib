@@ -1,14 +1,14 @@
-/// @file he_qat_ops.c
+/// @file heqat/bnops.c
 
 #include "cpa.h"
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
 #include "icp_sal_poll.h"
 
-#include "cpa_sample_utils.h"
-
-#include "he_qat_types.h"
-#include "he_qat_bn_ops.h"
+#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/consts.h"
+#include "heqat/common/types.h"
+#include "heqat/bnops.h"
 
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
@@ -25,8 +25,6 @@
 #pragma message "Asynchronous execution mode."
 #endif
 
-#include "he_qat_gconst.h"
-
 // Global buffer for the runtime environment
 extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
@@ -39,7 +37,6 @@ extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* 
 /// @details Fill internal or outstanding buffer with incoming work requests. 
 ///          This function is implemented in he_qat_ctrl.c.
 extern void submit_request(HE_QAT_RequestBuffer* _buffer, void* args);
-
 
 /* 
  * **************************************************************************

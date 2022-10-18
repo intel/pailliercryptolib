@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "he_qat_types.h"
+#include "heqat/common/types.h"
 
 /// @brief
 /// Configure and initialize QAT runtime environment.

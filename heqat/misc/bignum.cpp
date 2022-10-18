@@ -14,10 +14,12 @@
  * limitations under the License.
  *******************************************************************************/
 
-#include "bignum.h"
+#include "heqat/misc/bignum.h"
+#include "heqat/misc/utils.h"
+
 #include <cstring>
 #include <cstdlib>
-#include "utils.h"
+
 
 //////////////////////////////////////////////////////////////////////
 //

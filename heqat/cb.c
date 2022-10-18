@@ -1,15 +1,15 @@
-/// @file he_qat_cb.c
+/// @file heqat/cb.c
 
 // QAT-API headers
 #include <cpa.h>
-#include <cpa_sample_utils.h>
 
 // C support libraries
 #include <pthread.h>
 #include <openssl/bn.h>
 
 // Local headers
-#include "he_qat_types.h"
+#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/types.h"
 
 // Global variables
 static pthread_mutex_t response_mutex; ///< It protects against race condition on response_count due to concurrent callback events.

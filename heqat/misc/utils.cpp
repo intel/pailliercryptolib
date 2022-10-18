@@ -14,7 +14,7 @@
  * limitations under the License.
  *******************************************************************************/
 
-#include "utils.h"
+#include "heqat/misc/utils.h"
 
 size_t strlen_safe(const char* dest, size_t dmax) {
     size_t count;

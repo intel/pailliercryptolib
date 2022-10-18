@@ -1,80 +1,66 @@
 
-if(HE_QAT_DEBUG)
-  add_definitions(-DHE_QAT_DEBUG) 
-endif()
+###############################################################################
 
-# -------------------------------------------------------------------------------------------
+macro(heqat_create_executable sample_case language dependencies)
+  if(${language} STREQUAL "C" OR ${language} STREQUAL "c")
+    set(extension "c")
+  elseif(${language} STREQUAL "CXX" OR ${language} STREQUAL "cxx")
+    set(extension "cpp")
+  else()
+    message(FATAL_ERROR "Error language not supported. Options: C or CXX.")
+  endif()
 
-add_executable(test_context test_context.c)
+  set(target sample_${sample_case})
+  add_executable(${target} test_${sample_case}.${extension})
+  
+  target_include_directories(${target} PUBLIC ${HE_QAT_INC_DIR})
+  target_include_directories(${target} PUBLIC ${ICP_INC_DIR})
+  
+  target_link_libraries(${target} PUBLIC he_qat)
+  
+  if(NOT ${dependencies} STREQUAL "")
+    message(STATUS "Target: ${target} Additional Dependencies: ${${dependencies}}")
+    target_link_libraries(${target} PUBLIC ${${dependencies}})
+  endif()
 
-target_include_directories(test_context PUBLIC ${COMMON_INC_DIR})
-#target_include_directories(test_context PUBLIC ${HE_QAT_INC_DIR})
-target_include_directories(test_context PUBLIC ${ICP_INC_DIR})
+  install(TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endmacro()
 
-target_link_libraries(test_context PUBLIC he_qat)
+##############################################################################
 
-install(TARGETS test_context RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+set(EXECUTABLE_DEPENDENCIES 
+    OpenSSL::SSL 
+    IPPCP::ippcp
+)
 
-# -------------------------------------------------------------------------------------------
+# Sample testing the robustness of the heqatlib context functions
+heqat_create_executable(context c "")
 
-add_executable(test_BIGNUMModExp test_BIGNUMModExp.c)
-
-target_include_directories(test_BIGNUMModExp PUBLIC ${COMMON_INC_DIR}) # ${HE_QAT_UTILS_INC_DIR})
-#target_include_directories(test_BIGNUMModExp PUBLIC ${HE_QAT_INC_DIR})
-target_include_directories(test_BIGNUMModExp PUBLIC ${ICP_INC_DIR})
-
-target_link_libraries(test_BIGNUMModExp PUBLIC he_qat)
-target_link_libraries(test_BIGNUMModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-
-install(TARGETS test_BIGNUMModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# -------------------------------------------------------------------------------------------
+# Sample demonstrating how to use API for BIGNUM inputs
+heqat_create_executable(BIGNUMModExp C EXECUTABLE_DEPENDENCIES)
 
 if(HE_QAT_MISC)
   add_compile_options(-fpermissive)
-  
+
   # Sample showing how to convert from/to BigNumber to/from CpaFlatBuffer
-  add_executable(test_bnConversion test_bnConversion.cpp)
-  
-  target_include_directories(test_bnConversion PUBLIC ${COMMON_INC_DIR})
-  target_include_directories(test_bnConversion PUBLIC ${ICP_INC_DIR})
-  target_include_directories(test_bnConversion PUBLIC ${HE_QAT_MISC_INC_DIR})
-  
-  target_link_libraries(test_bnConversion PUBLIC he_qat)
-  target_link_libraries(test_bnConversion PUBLIC he_qat_misc)
-  target_link_libraries(test_bnConversion PUBLIC IPPCP::ippcp) # IPPCP::crypto_mb)
-  target_link_libraries(test_bnConversion PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-  
-  install(TARGETS test_bnConversion RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
- 
-  # Sample demonstrating how to use bnModExp
-  add_executable(test_bnModExp test_bnModExp.cpp)
-  
-  target_include_directories(test_bnModExp PUBLIC ${COMMON_INC_DIR})
-  target_include_directories(test_bnModExp PUBLIC ${ICP_INC_DIR})
-  target_include_directories(test_bnModExp PUBLIC ${HE_QAT_MISC_INC_DIR})
-  
-  target_link_libraries(test_bnModExp PUBLIC he_qat)
-  target_link_libraries(test_bnModExp PUBLIC he_qat_misc)
-  target_link_libraries(test_bnModExp PUBLIC IPPCP::ippcp) # IPPCP::crypto_mb)
-  target_link_libraries(test_bnModExp PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-  
-  install(TARGETS test_bnModExp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
- 
+  heqat_create_executable(bnConversion cxx EXECUTABLE_DEPENDENCIES)
+
+  # Sample showing how to use bnModExp API
+  heqat_create_executable(bnModExp CXX EXECUTABLE_DEPENDENCIES) 
+  # add_executable(sample_bnModExp test_bnModExp.cpp)
+  # 
+  # target_include_directories(sample_bnModExp PUBLIC ${HE_QAT_INC_DIR})
+  # target_include_directories(sample_bnModExp PUBLIC ${ICP_INC_DIR})
+  # 
+  # target_link_libraries(sample_bnModExp PUBLIC he_qat)
+  # target_link_libraries(sample_bnModExp PUBLIC OpenSSL::SSL)
+  # target_link_libraries(sample_bnModExp PUBLIC IPPCP::ippcp)
+
   if(OpenMP_CXX_FOUND) 
-    # Sample demonstrating how to use multithread-supported interface bnModExp_MT 
-    add_executable(test_bnModExp_MT test_bnModExp_MT.cpp)
-    
-    target_include_directories(test_bnModExp_MT PUBLIC ${COMMON_INC_DIR})
-    target_include_directories(test_bnModExp_MT PUBLIC ${ICP_INC_DIR})
-    target_include_directories(test_bnModExp_MT PUBLIC ${HE_QAT_MISC_INC_DIR})
-    
-    target_link_libraries(test_bnModExp_MT PUBLIC he_qat)
-    target_link_libraries(test_bnModExp_MT PUBLIC he_qat_misc)
-    target_link_libraries(test_bnModExp_MT PUBLIC OpenMP::OpenMP_CXX)
-    target_link_libraries(test_bnModExp_MT PUBLIC IPPCP::ippcp) # IPPCP::crypto_mb)
-    target_link_libraries(test_bnModExp_MT PUBLIC OpenSSL::SSL) # OpenSSL::Crypto)
-    
-    install(TARGETS test_bnModExp_MT RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    list(APPEND EXECUTABLE_DEPENDENCIES OpenMP::OpenMP_CXX)
+    # Sample showing how to use bnModExp_MT API for multithreaded applications
+    heqat_create_executable(bnModExp_MT CXX EXECUTABLE_DEPENDENCIES) 
   endif()
 endif()
+
+###############################################################################
