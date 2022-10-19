@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
-include(GNUInstallDirs)
 
 message(STATUS "configuring cpu_features")
 set(CPUFEATURES_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_cpufeatures)
@@ -20,6 +19,7 @@ ExternalProject_Add(
             -DCMAKE_BUILD_TYPE=Release
             -DBUILD_TESTING=OFF
             -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+            -DCMAKE_INSTALL_LIBDIR=lib
   UPDATE_COMMAND ""
   EXCLUDE_FROM_ALL TRUE
   INSTALL_COMMAND make DESTDIR=${CPUFEATURES_DESTDIR} install
@@ -27,7 +27,7 @@ ExternalProject_Add(
 
 
 set(CPUFEATURES_INC_DIR ${CPUFEATURES_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
-set(CPUFEATURES_LIB_DIR ${CPUFEATURES_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+set(CPUFEATURES_LIB_DIR ${CPUFEATURES_DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib)
 
 if(IPCL_SHARED)
   add_library(libcpu_features INTERFACE)
