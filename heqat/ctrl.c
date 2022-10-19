@@ -5,7 +5,6 @@
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
 #include "icp_sal_poll.h"
-#include "heqat/common/cpa_sample_utils.h"
 
 // Global variables used to hold measured performance numbers.
 #ifdef HE_QAT_PERF
@@ -21,6 +20,7 @@ double time_taken = 0.0;
 #include <openssl/bn.h>
 
 // Local headers
+#include "heqat/common/cpa_sample_utils.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
 #include "heqat/bnops.h"
