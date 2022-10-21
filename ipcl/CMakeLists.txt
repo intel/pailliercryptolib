@@ -61,6 +61,24 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
         PATTERN "*.hpp"
         PATTERN "*.h")
 
+if(IPCL_ENABLE_QAT)
+    target_include_directories(ipcl PUBLIC "$<BUILD_INTERFACE:${ICP_INC_DIR}>")
+    target_include_directories(ipcl PUBLIC "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>")
+    target_include_directories(ipcl PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+
+    install(DIRECTORY ${ICP_INC_DIR}/
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+            FILES_MATCHING
+            PATTERN "*.hpp"
+            PATTERN "*.h")
+
+    install(DIRECTORY ${HEQAT_INC_DIR}/
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+            FILES_MATCHING
+            PATTERN "*.hpp"
+            PATTERN "*.h")
+endif()
+
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads -lnuma)
@@ -73,11 +91,12 @@ endif()
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE libippcrypto)
 	if(IPCL_DETECT_IFMA_RUNTIME)
-		target_link_libraries(ipcl PRIVATE libcpu_features)
-		target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
+            target_link_libraries(ipcl PRIVATE libcpu_features)
+            target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
 	endif()
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})
 	if(IPCL_ENABLE_QAT)
+            target_include_directories(ipcl PRIVATE ${HEQAT_INC_DIR})
 	    target_link_libraries(ipcl PRIVATE libhe_qat udev z)
 	endif()
 
@@ -87,16 +106,14 @@ else()
 	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
 
 	if(IPCL_ENABLE_QAT)
-	    ipcl_create_archive(ipcl libhe_qat)
-		message(STATUS "HEQAT_PREFIX_INCLUDE  : ${HEQAT_PREFIX}/include")
-		message(STATUS "HEQAT_INC_DIR         : ${HEQAT_INC_DIR}")
-		target_include_directories(ipcl PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>")
-		target_link_libraries(ipcl PRIVATE udev z)
-    endif()
+            ipcl_create_archive(ipcl libhe_qat)
+            target_include_directories(ipcl PRIVATE ${HEQAT_INC_DIR})
+            target_link_libraries(ipcl PRIVATE udev z)
+        endif()
 
 	if(IPCL_DETECT_IFMA_RUNTIME)
-		ipcl_create_archive(ipcl libcpu_features)
-		target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
+            ipcl_create_archive(ipcl libcpu_features)
+            target_include_directories(ipcl PRIVATE ${CPUFEATURES_INC_DIR})
 	endif()
 
 	target_include_directories(ipcl PRIVATE ${IPPCRYPTO_INC_DIR})

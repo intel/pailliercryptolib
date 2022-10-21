@@ -9,7 +9,7 @@ set(HEQAT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/module/heqat)
 set(HEQAT_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS}")
 
 set(HEQAT_BUILD_TYPE Release)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   set(HEQAT_BUILD_TYPE Debug)
 endif()
 
@@ -17,7 +17,7 @@ ExternalProject_Add(
   ext_he_qat
   SOURCE_DIR ${HEQAT_SRC_DIR}
   PREFIX ${HEQAT_PREFIX}
-  INSTALL_DIR ${HEQAT_DESTDIR}
+  #  INSTALL_DIR ${HEQAT_DESTDIR}
   CMAKE_ARGS ${HEQAT_CXX_FLAGS}
   -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 	     -DHE_QAT_MISC=OFF
@@ -37,21 +37,26 @@ set(HEQAT_LIB_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDI
 
 # Bring up CPA variables
 include(${HEQAT_SRC_DIR}/icp/CMakeLists.txt)
-list(APPEND HEQAT_INC_DIR ${ICP_INC_DIR})
 
+# Create heqat library interface
 if(IPCL_SHARED)
   add_library(libhe_qat INTERFACE)
   add_dependencies(libhe_qat ext_he_qat)
 
   ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libhe_qat INTERFACE ${HEQAT_LIB_DIR}/libcpa_sample_utils.so)
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	  target_link_libraries(libhe_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat_debug.so)
   else()
 	  target_link_libraries(libhe_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat.so)
   endif()
   target_include_directories(libhe_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})
+  
+  install(
+    DIRECTORY ${HEQAT_LIB_DIR}/
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/heqat"
+    USE_SOURCE_PERMISSIONS
+  )
 else()
   add_library(libhe_qat STATIC IMPORTED GLOBAL)
   add_dependencies(libhe_qat ext_he_qat)
