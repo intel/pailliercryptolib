@@ -7,7 +7,7 @@ set(HE_QAT_HINT_DIR ${CMAKE_PREFIX_PATH})
 message(STATUS "CMAKE_PREFIX_PATH ${HE_QAT_HINT_DIR}")
 
 # Example using source
-find_package(HE_QAT 1.3.0 
+find_package(HE_QAT 1.3.2 
 	     HINTS ${HE_QAT_HINT_DIR} 
 	     REQUIRED)
 if(NOT TARGET HE_QAT::he_qat)
@@ -29,5 +29,4 @@ add_definitions(-fpermissive)
 add_executable(example example.cpp)
 target_include_directories(example PRIVATE ${ICP_INC_DIR})
 target_link_libraries(example PRIVATE HE_QAT::he_qat)
-target_link_libraries(example PRIVATE qat_s)
 target_link_libraries(example PRIVATE OpenSSL::SSL)
