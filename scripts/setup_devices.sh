@@ -5,7 +5,8 @@
 
 # Refresh
 echo "sudo service restart qat_service"
-sudo service qat_service restart
+#sudo service qat_service restart
+sudo systemctl restart qat_service.service
 
 num_phys_dev=$(lspci -d 8086:4940 | wc -l) 
 if [ $num_phys_dev -eq 0 ]; then
@@ -72,7 +73,8 @@ done
 
 # Refresh
 echo "sudo service restart qat_service"
-sudo service qat_service restart
+#sudo service qat_service restart
+sudo systemctl restart qat_service.service
 
 # If Virtualization Mode Enabled
 start=0
