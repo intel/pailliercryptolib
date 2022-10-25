@@ -41,7 +41,7 @@ The hardware requirement to use the library is the following:
  - Intel 4xxx co-processor
 <!-- - Intel C62XX acceleration card -->
 
-As for the operating systems, the library has been tested and confirmed to work on Ubuntu 20.04.
+As for the operating systems, the library has been tested and confirmed to work on Ubuntu 20.04 and CentOS 7.9.
 
 ### Dependencies
 
@@ -132,9 +132,13 @@ $ sudo usermod -aG qat $USER
 
 Verify the QAT installation by checking the QAT service status:
 
-
+ - Ubuntu
 ```
 sudo service qat_service status
+```
+ - CentOS
+```
+sudo systemctl status qat_service.service
 ```
 
 If all checks out, following the instructions below to build the HE QAT library.
@@ -144,18 +148,23 @@ If all checks out, following the instructions below to build the HE QAT library.
 This step is required. Note that if the step [Installing QAT Software Stack](#installing-qat-software-stack) has just been performed, then the exact path of the installation is known, i.e. 
 
 ```
-$ export ICP_ROOT=$HOME/QAT
+export ICP_ROOT=$HOME/QAT
 ```
 
-Alternatively, if the system has a ore-built QAT software stack, the script `auto_find_qat_install.sh` can used to help automatically find the path where it was installed (see command below).
+Alternatively, if the system has a pre-built QAT software stack installed, the script `auto_find_qat_install.sh` can used to help automatically find the path where it was installed (see command below). The script `auto_find_qat_install.sh` assumes that the QAT package is installed in a single location, such that if multiple installations are available at different locations, the script may produce undetermined behavior.
 
+ - Explicity way:
 ```
-$ export ICP_ROOT=$(./auto_find_qat_install.sh)
+export ICP_ROOT=$(./auto_find_qat_install.sh)
+```
+ - Implicity way:
+```
+source setup_env.sh
 ```
 
 #### Building the Library
 
-Execute step []() before building the library. 
+Follow the steps in the sections [Installing QAT Software Stack](#installing-qat-software-stack) and [Setup Environment](#setup-environment) before attempting to build the library. 
 
 - How to build without `BigNumber` support
 
@@ -193,15 +202,17 @@ $ cmake --build _build -j
 $ sudo cmake --install _build
 ```
 
-#### Configure QAT endpoints
+#### Configuring QAT endpoints
 
 Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. 
-The default configuration provided in this release is the optimal configuration to provide computing acceleration support for IPCL.
-The boilerplate configurations can be found in the directory `config`. 
+The default configuration provided in this release is the optimal configuration to provide computing acceleration support for [IPCL](https://github.com/intel/pailliercryptolib).
+The boilerplate configurations can be found in the `config` directory. 
 
 ```
-$ ./setup_devices.sh
+./scripts/setup_devices.sh
 ```
+
+The script above will configure the QAT devices to perform asymmetric functions only.
 
 #### Configuration Options
 
