@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(IPCL 1.1.4 REQUIRED HINTS ${IPCL_HINT_DIR})
+find_package(IPCL 2.0.0 REQUIRED HINTS ${IPCL_HINT_DIR})
 
 add_executable(test test.cpp)
 target_link_libraries(test PRIVATE IPCL::ipcl)

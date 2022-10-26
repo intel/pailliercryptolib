@@ -29,3 +29,72 @@ function(ipcl_create_archive target dependency)
     message(WARNING "Unsupported compiler ${CMAKE_CXX_COMPILER_ID}")
   endif()
 endfunction()
+
+
+function(ipcl_detect_lscpu_flag flag verbose)
+  # Detect IFMA by parsing lscpu
+  set(LSCPU_FLAG ${flag})
+  execute_process(COMMAND lscpu COMMAND grep ${LSCPU_FLAG} OUTPUT_VARIABLE LSCPU_FLAG)
+  if("${LSCPU_FLAG}" STREQUAL "")
+    if(verbose)
+      message(STATUS "Support ${flag}: False")
+    endif()
+    set(IPCL_FOUND_${flag} FALSE PARENT_SCOPE)
+  else()
+    if(verbose)
+      message(STATUS "Support ${flag}: True")
+    endif()
+    set(IPCL_FOUND_${flag} TRUE PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(ipcl_detect_qat)
+  # Detect SPR based QAT
+  message(STATUS "Detecting QAT...... ")
+  if(DEFINED ENV{ICP_ROOT})
+    set(tmp_ICP_ROOT $ENV{ICP_ROOT})
+    get_filename_component(tmp_ICP_ROOT_fullpath "${tmp_ICP_ROOT}" REALPATH)
+    if(EXISTS "${tmp_ICP_ROOT_fullpath}" AND
+       EXISTS "${tmp_ICP_ROOT_fullpath}/build" AND
+       EXISTS "${tmp_ICP_ROOT_fullpath}/quickassist")
+      message(STATUS "Environment variable ICP_ROOT is defined as ${tmp_ICP_ROOT_fullpath}.")
+    else()
+      message(FATAL_ERROR "Environment variable ICP_ROOT is incorrect. Try \$ export ICP_ROOT=<QAT_ROOT_PATH>")
+    endif()
+  else()
+  	message(FATAL_ERROR "Environment variable ICP_ROOT must be defined. Try \$ export ICP_ROOT=<QAT_ROOT_PATH>")
+  endif()
+  execute_process(COMMAND lspci -d 8086:4940 COMMAND wc -l OUTPUT_VARIABLE QAT_PHYSICAL OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(IPCL_FOUND_QAT FALSE PARENT_SCOPE)
+  if(${QAT_PHYSICAL} GREATER_EQUAL "1")
+    message(STATUS "Detected ${QAT_PHYSICAL} physical QAT processes")
+    execute_process(COMMAND lspci -d 8086:4941 COMMAND wc -l OUTPUT_VARIABLE QAT_VIRTUAL OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(${QAT_VIRTUAL} GREATER_EQUAL "1")
+      message(STATUS "Detected ${QAT_VIRTUAL} virtual QAT processes")
+      ipcl_check_qat_service_status()
+      set(IPCL_FOUND_QAT TRUE PARENT_SCOPE)
+    else()
+      message(STATUS "NO virtual QAT processors - IPCL_ENABLE_QAT set to OFF")
+    endif()
+  else()
+    message(STATUS "NO physical QAT processors - IPCL_ENABLE_QAT set to OFF")
+  endif()
+endfunction()
+
+
+function(ipcl_check_qat_service_status)
+  # Detect qat_service service status
+  execute_process(COMMAND systemctl status qat_service.service COMMAND grep "Active: active" COMMAND wc -l OUTPUT_VARIABLE QAT_SERVICE_STATUS OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(${QAT_SERVICE_STATUS} EQUAL "1")
+    message(STATUS "qat_service is ACTIVE")
+  else()
+    message(WARNING 
+      " qat_service is NOT ACTIVE!\n"
+      " Since QAT is detected, compilation will continue however the"
+      " qat_service need to be active to use the library.\n"
+      " To start the service, issue the following command --"
+      " \$ sudo systemctl start qat_service.service"
+    )
+  endif()
+endfunction()
+    

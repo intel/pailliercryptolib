@@ -5,10 +5,13 @@ cmake_minimum_required(VERSION 3.15.1)
 
 project(IPCL VERSION 2.0.0 LANGUAGES C CXX)
 
+# includes
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
+include(ipcl-util)
 
 if(CMAKE_BUILD_TYPE)
   set(RELEASE_TYPES
@@ -42,9 +45,10 @@ endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl;${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
+
 
 #---------------------------------------------------
 option(IPCL_TEST "Enable testing" ON)
@@ -55,21 +59,22 @@ option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_THREAD_COUNT "The max number of threads used by OpenMP(If the value is OFF/0, it is determined at runtime)" OFF)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
-
-if(IPCL_ENABLE_QAT)
-	add_compile_definitions(IPCL_USE_QAT)
-  message(STATUS "QAT enabled - IPCL_ENABLE_OMP set to OFF")
-  set(IPCL_ENABLE_OMP OFF)
-  if(IPCL_USE_QAT_LITE)
-    add_compile_definitions(IPCL_USE_QAT_LITE)
-    message(STATUS "QAT Lite enabled - IPCL_USE_QAT_LITE set to ON")
-  else()
-    message(STATUS "QAT Lite disabled - IPCL_USE_QAT_LITE set to OFF")
-  endif()
-endif()
-
 option(IPCL_DETECT_IFMA_RUNTIME "Detect AVX512/IFMA instructions during runtime" OFF)
 option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
+
+if(IPCL_ENABLE_QAT)
+  ipcl_detect_qat()
+  if(IPCL_FOUND_QAT)
+    add_compile_definitions(IPCL_USE_QAT)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/heqat")
+    if(IPCL_USE_QAT_LITE)
+      add_compile_definitions(IPCL_USE_QAT_LITE)
+      message(STATUS "QAT Lite enabled - IPCL_USE_QAT_LITE set to ON")
+    else()
+      message(STATUS "QAT Lite disabled - IPCL_USE_QAT_LITE set to OFF")
+    endif()
+  endif()
+endif()
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
@@ -78,14 +83,21 @@ if(IPCL_ENABLE_OMP)
     endif()
 endif()
 
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(IPCL_DEBUG ON)
+if(IPCL_DETECT_IFMA_RUNTIME)
+  add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/cpufeatures")
 else()
-  set(IPCL_DEBUG OFF)
+  # check whether cpu support avx512 flag
+  if(IPCL_DEBUG_DISABLE_AVX512IFMA)
+    message(STATUS "Support AVX512IFMA: False")
+  else()
+    ipcl_detect_lscpu_flag("avx512ifma" FALSE)
+    if(IPCL_FOUND_avx512ifma)
+      add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+      message(STATUS "Support AVX512IFMA instruction: True")
+    endif()
+  endif()
 endif()
-
-set(IPCL_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/ipcl")
 
 message(STATUS "CMAKE_BUILD_TYPE:           ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_C_COMPILER:           ${CMAKE_C_COMPILER}")
@@ -104,10 +116,24 @@ message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
 message(STATUS "IPCL_DETECT_IFMA_RUNTIME:   ${IPCL_DETECT_IFMA_RUNTIME}")
 
-set(IPCL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
-set(IPCL_SRC_DIR ${IPCL_ROOT_DIR}/ipcl)
-set(IPCL_INC_DIR ${IPCL_SRC_DIR}/include)
-
+# check whether cpu support rdseed or rdrand instruction
+ipcl_detect_lscpu_flag("rdseed" FALSE)
+if(IPCL_FOUND_rdseed)
+  message(STATUS "Support RDSEED instruction: True")
+  add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
+else()
+  ipcl_detect_lscpu_flag("rdrand" FALSE)
+  if(IPCL_FOUND_rdrand)
+    message(STATUS "Support RDRAND instruction: True")
+    add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
+  else()
+    message(WARNING 
+        "CPU doesn't support RDSEED and RDRAND instruction, using IPP-Crypto"
+        " S/W psuedo random number generator"
+    )
+  endif()
+endif()
+  
 set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -120,55 +146,33 @@ set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
-if(IPCL_DETECT_IFMA_RUNTIME)
-  add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cpufeatures")
+# global IPCL folders
+set(IPCL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(IPCL_SRC_DIR ${IPCL_ROOT_DIR}/ipcl)
+set(IPCL_INC_DIR ${IPCL_SRC_DIR}/include)
+set(IPCL_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ipcl)
+set(IPCL_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl)
+set(IPCL_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/ipcl")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(IPCL_DEBUG ON)
 else()
-  # check whether cpu support avx512 flag
-  if(IPCL_DEBUG_DISABLE_AVX512IFMA)
-    message(STATUS "Support AVX512IFMA: False")
-  else()
-    set(CPU_AVX512_FLAG "avx512ifma")
-    execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
-    if("${CPU_ENABLE_AVX512}" STREQUAL "")
-      message(STATUS "Support AVX512IFMA: False")
-    else()
-      message(STATUS "Support AVX512IFMA: True")
-      add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
-    endif()
-  endif()
+  set(IPCL_DEBUG OFF)
 endif()
 
-# check whether cpu support rdseed or rdrand instruction
-set(CPU_RDSEED_FLAG "rdseed")
-execute_process(COMMAND lscpu COMMAND grep ${CPU_RDSEED_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDSEED)
-if("${CPU_ENABLE_RDSEED}" STREQUAL "")
-  set(CPU_RDRAND_FLAG "rdrand")
-  execute_process(COMMAND lscpu COMMAND grep ${CPU_RDRAND_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_RDRAND)
-  if("${CPU_ENABLE_RDRAND}" STREQUAL "")
-    message(WARNING "CPU doesn't support RDSEED and RDRAND instruction, using random generator will cause errors.")
-  else ()
-    message(STATUS "Support RDRAND instruction: True")
-    add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
-  endif()
-else()
-  message(STATUS "Support RDSEED instruction: True")
-  add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
-endif()
-
-# find package for OpenSSL and Threads
+# find package: Threads config
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
-# set(THREADS_PREFER_PTHREAD_FLAG ON)
-# set(OPENSSL_USE_STATIC_LIBS TRUE)
-
 find_package(Threads REQUIRED)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+
+# find package: OpenSSL config
+if(IPCL_SHARED)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
+  message(STATUS "OPENSSL_USE_STATIC_LIBS:    TRUE" )
+else()
+  message(STATUS "OPENSSL_USE_STATIC_LIBS:    FALSE" )
+endif()
 find_package(OpenSSL REQUIRED)
 
 # External dependencies
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
-include(ipcl-util)
-
 include(cmake/ippcrypto.cmake)
 if(IPCL_DETECT_IFMA_RUNTIME)
   include(cmake/cpufeatures.cmake)
@@ -185,8 +189,7 @@ if(IPCL_BENCHMARK)
   include(cmake/gbenchmark.cmake)
 endif()
 
-
-
+# IPCL main directory
 add_subdirectory(ipcl)
 
 # unit-test and benchmarks
@@ -201,6 +204,7 @@ if(IPCL_BENCHMARK)
   add_custom_target(benchmark COMMAND $<TARGET_FILE:bench_ipcl> DEPENDS bench_ipcl)
 endif()
 
+# doxygen generation
 if(IPCL_DOCS)
   add_subdirectory(docs)
 endif()

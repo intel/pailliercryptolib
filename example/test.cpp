@@ -8,6 +8,8 @@
 #include <vector>
 
 int main() {
+  ipcl::initializeContext("QAT");
+
   const uint32_t num_values = 9;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
@@ -37,4 +39,5 @@ int main() {
 
   delete key.pub_key;
   delete key.priv_key;
+  ipcl::terminateContext();
 }
