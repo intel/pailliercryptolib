@@ -140,11 +140,10 @@ set(HE_QAT_FORWARD_CMAKE_ARGS
 )
 
 #OpenSSL installation
-if(HE_QAT_SHARED)
+if(NOT HE_QAT_SHARED)
   set(OPENSSL_USE_STATIC_LIBS TRUE)
   message(STATUS "OPENSSL_USE_STATIC_LIBS TRUE")
 else()
-  set(OPENSSL_USE_STATIC_LIBS FALSE)
   message(STATUS "OPENSSL_USE_STATIC_LIBS FALSE") 
 endif()
 find_package(OpenSSL REQUIRED)
@@ -162,8 +161,7 @@ if(NOT CMAKE_INSTALL_PREFIX)
 endif()
 
 # Include QAT lib API support
-# include(icp/CMakeLists.txt)
-include(cmake/qat_config.cmake)
+include(icp/CMakeLists.txt)
 
 # HE_QAT Library
 add_subdirectory(heqat)

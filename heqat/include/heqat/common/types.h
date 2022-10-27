@@ -21,7 +21,7 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-#include "cpa_sample_utils.h"
+#include "heqat/common/cpa_sample_utils.h"
 #include "heqat/common/consts.h"
 
 // Type definitions

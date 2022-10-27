@@ -14,6 +14,7 @@ macro(heqat_create_executable sample_case language dependencies)
   add_executable(${target} test_${sample_case}.${extension})
   
   target_include_directories(${target} PUBLIC ${HE_QAT_INC_DIR})
+  target_include_directories(${target} PUBLIC ${ICP_INC_DIR})
   
   target_link_libraries(${target} PUBLIC he_qat)
   

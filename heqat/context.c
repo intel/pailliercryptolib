@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "cpa_sample_utils.h"
+#include "heqat/common/cpa_sample_utils.h"
 #include "heqat/common/types.h"
 #include "heqat/context.h"
 
