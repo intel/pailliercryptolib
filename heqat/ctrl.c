@@ -20,7 +20,7 @@ double time_taken = 0.0;
 #include <openssl/bn.h>
 
 // Local headers
-#include "heqat/common/cpa_sample_utils.h"
+#include "cpa_sample_utils.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
 #include "heqat/bnops.h"

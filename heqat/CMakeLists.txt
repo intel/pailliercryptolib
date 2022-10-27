@@ -25,24 +25,27 @@ add_library(HE_QAT::he_qat ALIAS he_qat)
 target_include_directories(he_qat 
 	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers 
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> #Public headers
-	PRIVATE ${ICP_INC_DIR} #Private headers 
+  PUBLIC ${ICP_INC_DIR}
 )
 
 install(DIRECTORY ${HE_QAT_INC_DIR}/
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
 	FILES_MATCHING 
 	PATTERN "*.hpp"
-	PATTERN "*.h")
+  PATTERN "*.h")
 
 target_link_directories(he_qat PUBLIC ${ICP_BUILDOUTPUT_PATH})
 
 target_link_libraries(he_qat PRIVATE udev z)
 target_link_libraries(he_qat PRIVATE OpenSSL::SSL)
 target_link_libraries(he_qat PRIVATE Threads::Threads)
+
 if(HE_QAT_SHARED)
+  target_link_libraries(he_qat PUBLIC cpa_sample_utils)
   target_link_libraries(he_qat PRIVATE qat_s)
   target_link_libraries(he_qat PRIVATE usdm_drv_s)
 else()
+  heqat_create_archive(he_qat cpa_sample_utils)
   heqat_create_archive(he_qat libadf_static)
   heqat_create_archive(he_qat libosal_static)
   heqat_create_archive(he_qat libqat_static)
@@ -67,8 +70,6 @@ if(HE_QAT_DEBUG)
 else()
   set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat")
 endif()
-
-install(TARGETS he_qat DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 include(CMakePackageConfigHelpers)
 
@@ -96,13 +97,23 @@ configure_package_config_file(
 		INSTALL_DESTINATION ${HE_QAT_CONFIG_INSTALL_DIR}
 )
 
-install(
+if(HE_QAT_SHARED)
+  install(
+    TARGETS he_qat cpa_sample_utils
+    EXPORT he_qatTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+else()
+  install(
     TARGETS he_qat
     EXPORT he_qatTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
+endif()
 
 install(FILES ${HE_QAT_CONFIG_FILENAME}
               ${HE_QAT_CONFIG_VERSION_FILENAME}

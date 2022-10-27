@@ -1,4 +1,4 @@
-#include "heqat/common/cpa_sample_utils.h"
+#include "cpa_sample_utils.h"
 #include "heqat/common/utils.h"
 
 #include <openssl/err.h>

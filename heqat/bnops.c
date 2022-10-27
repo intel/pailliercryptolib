@@ -5,7 +5,7 @@
 #include "cpa_cy_ln.h"
 #include "icp_sal_poll.h"
 
-#include "heqat/common/cpa_sample_utils.h"
+#include "cpa_sample_utils.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
 #include "heqat/bnops.h"
