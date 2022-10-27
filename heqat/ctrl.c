@@ -37,7 +37,6 @@ HE_QAT_RequestBuffer     he_qat_buffer; ///< This the internal buffer that holds
 HE_QAT_OutstandingBuffer outstanding; ///< This is the data structure that holds outstanding requests from separate active threads calling the API.
 volatile unsigned long response_count = 0; ///< Counter of processed requests and it is used to help control throttling.
 static volatile unsigned long request_count = 0; ///< Counter of received requests and it is used to help control throttling.
-static unsigned long request_latency = 0; ///< Variable used to hold measured averaged latency of requests (currently unused).
 static unsigned long restart_threshold = NUM_PKE_SLICES * HE_QAT_NUM_ACTIVE_INSTANCES; ///< Number of concurrent requests allowed to be sent to accelerator at once. 
 static unsigned long max_pending = (2 * NUM_PKE_SLICES * HE_QAT_NUM_ACTIVE_INSTANCES); ///< Number of requests sent to the accelerator that are pending completion.
 
@@ -118,46 +117,6 @@ static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
     printf("Unlocked submit request list. [internal buffer size: %d]\n",
            _buffer->count);
 #endif
-}
-
-
-/// @brief Retrive single request from internal buffer.
-/// @details Thread-safe consumer implementation for the shared request buffer.
-/// Read request from internal buffer `he_qat_buffer` to finally offload the request to be processed by QAT devices.
-/// Supported in single-threaded or multi-threaded mode.
-/// @param[in] _buffer buffer of type HE_QAT_RequestBuffer, typically the internal buffer in current implementation.
-/// @retval single work request in HE_QAT_TaskRequest data structure.
-static HE_QAT_TaskRequest* read_request(HE_QAT_RequestBuffer* _buffer) 
-{
-    void* item = NULL;
-    static unsigned int counter = 0;
-
-    pthread_mutex_lock(&_buffer->mutex);
-
-#ifdef HE_QAT_DEBUG
-    printf("Wait lock read request. [internal buffer size: %d] Request #%u\n",
-           _buffer->count, counter++);
-#endif
-    // Wait while buffer is empty
-    while (_buffer->count <= 0)
-        pthread_cond_wait(&_buffer->any_more_data, &_buffer->mutex);
-
-    assert(_buffer->count > 0);
-
-    item = _buffer->data[_buffer->next_data_slot++];
-
-    _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
-    _buffer->count--;
-
-    pthread_cond_signal(&_buffer->any_free_slot);
-    pthread_mutex_unlock(&_buffer->mutex);
-
-#ifdef HE_QAT_DEBUG
-    printf("Unlocked read request. [internal buffer count: %d]\n",
-           _buffer->count);
-#endif
-
-    return (HE_QAT_TaskRequest*)(item);
 }
 
 /// @brief Retrieve multiple requests from the outstanding buffer.

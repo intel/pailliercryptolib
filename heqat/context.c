@@ -25,7 +25,6 @@ static pthread_mutex_t context_lock;
 // Global variable declarations
 static pthread_t         buffer_manager;
 static pthread_t         he_qat_runner;
-static HE_QAT_Inst       he_qat_instances[HE_QAT_NUM_ACTIVE_INSTANCES];
 static pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
 static HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
 static HE_QAT_Config*    he_qat_config = NULL;
@@ -47,7 +46,6 @@ extern void stop_perform_op(void* _inst_config, unsigned num_inst);
 // WARNING: Deprecated when "start_instances" becomes default.
 extern void* start_perform_op(void* _inst_config);
 
-static CpaInstanceHandle handle = NULL;
 static Cpa16U numInstances = 0;
 static Cpa16U nextInstance = 0;
 
@@ -100,7 +98,6 @@ static CpaInstanceHandle get_qat_instance() {
 #endif
             if (status == CPA_STATUS_SUCCESS)
                 return cyInstHandles[nextInstance];
-            //*pCyInstHandle = cyInstHandles[0];
         }
 
         if (0 == numInstances) {
@@ -160,7 +157,6 @@ HE_QAT_STATUS acquire_qat_devices() {
     // Potential out-of-scope hazard for segmentation fault
     CpaInstanceHandle _inst_handle[HE_QAT_NUM_ACTIVE_INSTANCES];  // = NULL;
     // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
-    // sampleCyGetInstance(&_inst_handle);
     for (unsigned int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
         _inst_handle[i] = get_qat_instance();
         if (_inst_handle[i] == NULL) {
@@ -170,11 +166,6 @@ HE_QAT_STATUS acquire_qat_devices() {
         }
     }
 
-    // sampleCyGetInstance(&handle);
-    // if (handle == NULL) {
-    //    printf("Failed to find QAT endpoints.\n");
-    //    return HE_QAT_STATUS_FAIL;
-    //}
 #ifdef HE_QAT_DEBUG
     printf("Found QAT endpoints.\n");
 #endif
@@ -212,9 +203,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     pthread_cond_init(&outstanding.any_ready_buffer, NULL);
 
     // Creating QAT instances (consumer threads) to process op requests
-    pthread_attr_t attr;
     cpu_set_t cpus;
-    // for (int i = 0; i < HE_QAT_SYNC; i++) {
     for (int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
         CPU_ZERO(&cpus);
         CPU_SET(i, &cpus);
@@ -223,22 +212,15 @@ HE_QAT_STATUS acquire_qat_devices() {
                                     &cpus);
 
         // configure thread
-        // HE_QAT_InstConfig *config = (HE_QAT_InstConfig *)
-        //                                     malloc(sizeof(QATInstConfig));
-        // if (config == NULL) return HE_QAT_FAIL;
         he_qat_inst_config[i].active = 0;   // HE_QAT_STATUS_INACTIVE
         he_qat_inst_config[i].polling = 0;  // HE_QAT_STATUS_INACTIVE
         he_qat_inst_config[i].running = 0;
         he_qat_inst_config[i].status = CPA_STATUS_FAIL;
-        //	he_qat_inst_config[i].mutex = PTHREAD_MUTEX_INITIALIZER;
         pthread_mutex_init(&he_qat_inst_config[i].mutex, NULL);
-        //	he_qat_inst_config[i].ready = PTHREAD_COND_INITIALIZER;
         pthread_cond_init(&he_qat_inst_config[i].ready, NULL);
         he_qat_inst_config[i].inst_handle = _inst_handle[i];
         he_qat_inst_config[i].inst_id = i;
         he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
-//        pthread_create(&he_qat_instances[i], he_qat_inst_config[i].attr,
-//                       start_perform_op, (void*)&he_qat_inst_config[i]);
     }
 
     he_qat_config = (HE_QAT_Config *) malloc(sizeof(HE_QAT_Config));
@@ -248,18 +230,12 @@ HE_QAT_STATUS acquire_qat_devices() {
     he_qat_config->active = 0;
 
     // Work on this
- //   pthread_create(&he_qat_instances[0], NULL, start_instances, (void*)he_qat_config);
     pthread_create(&he_qat_runner, NULL, start_instances, (void*)he_qat_config);
 #ifdef HE_QAT_DEBUG
     printf("Created processing threads.\n");
 #endif
 
     // Dispatch the qat instances to run independently in the background
-//    for (int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
-//        pthread_detach(he_qat_instances[i]);
-//    }
-    // Dispatch all QAT instances in a single thread 
-//    pthread_detach(he_qat_instances[0]);
     pthread_detach(he_qat_runner);
 #ifdef HE_QAT_DEBUG
     printf("Detached processing threads.\n");
@@ -296,8 +272,6 @@ HE_QAT_STATUS acquire_qat_devices() {
 /// @brief
 /// Release QAT instances and tear down QAT execution environment.
 HE_QAT_STATUS release_qat_devices() {
-    CpaStatus status = CPA_STATUS_FAIL;
-
     pthread_mutex_lock(&context_lock);
     
     if (HE_QAT_STATUS_INACTIVE == context_state) {
@@ -306,7 +280,6 @@ HE_QAT_STATUS release_qat_devices() {
     }
 
     stop_instances(he_qat_config);
-    //stop_perform_op(he_qat_inst_config, HE_QAT_NUM_ACTIVE_INSTANCES);
 #ifdef HE_QAT_DEBUG
     printf("Stopped polling and processing threads.\n");
 #endif
