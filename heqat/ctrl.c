@@ -1,12 +1,12 @@
-/// @file heqat/ctrl.c
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
+/// @file heqat/ctrl.c
 
 // QAT-API headers
-#include "cpa.h"
-#include "cpa_cy_im.h"
-#include "cpa_cy_ln.h"
-#include "icp_sal_poll.h"
+#include <cpa.h>
+#include <cpa_cy_im.h>
+#include <cpa_cy_ln.h>
+#include <icp_sal_poll.h>
 
 // Global variables used to hold measured performance numbers.
 #ifdef HE_QAT_PERF
@@ -25,7 +25,6 @@ double time_taken = 0.0;
 #include "heqat/common/utils.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
-//#include "heqat/bnops.h"
 
 // Warn user on selected execution mode
 #ifdef HE_QAT_SYNC_MODE
@@ -51,14 +50,12 @@ static unsigned long max_pending = (2 * NUM_PKE_SLICES * HE_QAT_NUM_ACTIVE_INSTA
 /// @param[out] _buffer Either `he_qat_buffer` or `outstanding` buffer.
 /// @param[in] args Work request packaged in a custom data structure.
 void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
-#ifdef HE_QAT_DEBUG
-    printf("Lock write request\n");
-#endif
+    HE_QAT_PRINT_DBG("Lock write request\n");
+    
     pthread_mutex_lock(&_buffer->mutex);
 
-#ifdef HE_QAT_DEBUG
-    printf("Wait lock write request. [buffer size: %d]\n", _buffer->count);
-#endif
+    HE_QAT_PRINT_DBG("Wait lock write request. [buffer size: %d]\n", _buffer->count);
+    
     while (_buffer->count >= HE_QAT_BUFFER_SIZE)
         pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
 
@@ -72,9 +69,7 @@ void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
 
-#ifdef HE_QAT_DEBUG
-    printf("Unlocked write request. [buffer size: %d]\n", _buffer->count);
-#endif
+    HE_QAT_PRINT_DBG("Unlocked write request. [buffer size: %d]\n", _buffer->count);
 }
 
 /// @brief Populates internal buffer with a list of work request.
@@ -83,19 +78,16 @@ void submit_request(HE_QAT_RequestBuffer* _buffer, void* args) {
 /// @param[in] _requests list of requests retrieved from the buffer (`outstanding`) holding outstanding requests.
 static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
                                 HE_QAT_TaskRequestList* _requests) {
-#ifdef HE_QAT_DEBUG
-    printf("Lock submit request list\n");
-#endif
+    HE_QAT_PRINT_DBG("Lock submit request list\n");
+    
     if (0 == _requests->count) return;
 
     pthread_mutex_lock(&_buffer->mutex);
 
-#ifdef HE_QAT_DEBUG
-    printf(
+    HE_QAT_PRINT_DBG(
         "Wait lock submit request list. [internal buffer size: %d] [num "
         "requests: %u]\n",
         _buffer->count, _requests->count);
-#endif
 
     // Wait until buffer can accomodate the number of input requests
     while (_buffer->count >= HE_QAT_BUFFER_SIZE ||
@@ -103,7 +95,7 @@ static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
         pthread_cond_wait(&_buffer->any_free_slot, &_buffer->mutex);
 
     assert(_buffer->count < HE_QAT_BUFFER_SIZE);
-    assert(_requests->count <= (HE_QAT_BUFFER_SIZE - _buffer->count));
+    //assert(_requests->count <= (HE_QAT_BUFFER_SIZE - _buffer->count));
 
     for (unsigned int i = 0; i < _requests->count; i++) {
         _buffer->data[_buffer->next_free_slot++] = _requests->request[i];
@@ -115,10 +107,9 @@ static void submit_request_list(HE_QAT_RequestBuffer* _buffer,
 
     pthread_cond_signal(&_buffer->any_more_data);
     pthread_mutex_unlock(&_buffer->mutex);
-#ifdef HE_QAT_DEBUG
-    printf("Unlocked submit request list. [internal buffer size: %d]\n",
+    
+    HE_QAT_PRINT_DBG("Unlocked submit request list. [internal buffer size: %d]\n",
            _buffer->count);
-#endif
 }
 
 /// @brief Retrieve multiple requests from the outstanding buffer.
@@ -141,17 +132,14 @@ static void read_request_list(HE_QAT_TaskRequestList* _requests,
         pthread_cond_wait(&_buffer->any_more_data, &_buffer->mutex);
 
     assert(_buffer->count > 0);
-    // assert(_buffer->count <= HE_QAT_BUFFER_SIZE);
+    assert(_buffer->count <= HE_QAT_BUFFER_SIZE);
 
     unsigned int count = (_buffer->count < max_requests) ? _buffer->count : max_requests;
 
-    //for (unsigned int i = 0; i < _buffer->count; i++) {
     for (unsigned int i = 0; i < count; i++) {
         _requests->request[i] = _buffer->data[_buffer->next_data_slot++];
         _buffer->next_data_slot %= HE_QAT_BUFFER_SIZE;
     }
-    //_requests->count = _buffer->count;
-    //_buffer->count = 0;
     _requests->count = count;
     _buffer->count -= count;
 
@@ -173,8 +161,8 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
     if (NULL == _requests) return;
     _requests->count = 0;
 
-    // for now, only one thread can change next_ready_buffer
-    // so no need for sync tools
+    // For now, only one thread can change next_ready_buffer
+    // so no need for synchronization objects
 
     // Select an outstanding buffer to pull requests and add them into the
     // processing queue (internal buffer)
@@ -254,7 +242,7 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 ///		     disactive (val=0) the scheduler.
 void* schedule_requests(void* context_state) {
     if (NULL == context_state) {
-        printf("Failed at buffer_manager: argument is NULL.\n");
+        HE_QAT_PRINT_DBG("Failed at buffer_manager: argument is NULL.\n");
         pthread_exit(NULL);
     }
 
@@ -266,7 +254,7 @@ void* schedule_requests(void* context_state) {
     }
     outstanding_requests.count = 0;
 
-    // this thread should receive signal from context to exit
+    // This thread should receive signal from context to exit
     *active = HE_QAT_STATUS_RUNNING;
     while (HE_QAT_STATUS_INACTIVE != *active) {
         // Collect a set of requests from the outstanding buffer
@@ -284,7 +272,7 @@ void* schedule_requests(void* context_state) {
 /// 			    values to start and poll responses from the accelerator.
 static void* start_inst_polling(void* _inst_config) {
     if (NULL == _inst_config) {
-        printf(
+        HE_QAT_PRINT_ERR(
             "Failed at start_inst_polling: argument is NULL.\n");  //,__FUNC__);
         pthread_exit(NULL);
     }
@@ -293,9 +281,7 @@ static void* start_inst_polling(void* _inst_config) {
 
     if (NULL == config->inst_handle) return NULL;
 
-#ifdef HE_QAT_DEBUG
-    printf("Instance ID %d Polling\n",config->inst_id);
-#endif
+    HE_QAT_PRINT_DBG("Instance ID %d Polling\n",config->inst_id);
 
     // What is harmful for polling without performing any operation?
     config->polling = 1;
@@ -333,22 +319,23 @@ void* start_instances(void* _config) {
     static unsigned int next_instance = 0;
     
     if (NULL == _config) {
-        printf("Failed in start_instances: _config is NULL.\n");
+        HE_QAT_PRINT_ERR("Failed in start_instances: _config is NULL.\n");
         pthread_exit(NULL);
     }
 
     HE_QAT_Config* config = (HE_QAT_Config*)_config;
     instance_count = config->count;
 
-    printf("Instance Count: %d\n",instance_count);
+    HE_QAT_PRINT_DBG("Instance Count: %d\n",instance_count);
     pthread_t* polling_thread = (pthread_t *) malloc(sizeof(pthread_t)*instance_count);
     if (NULL == polling_thread) {
-        printf("Failed in start_instances: polling_thread is NULL.\n");
+        HE_QAT_PRINT_ERR("Failed in start_instances: polling_thread is NULL.\n");
         pthread_exit(NULL);
     }
+ 
     unsigned* request_count_per_instance = (unsigned *) malloc(sizeof(unsigned)*instance_count);
     if (NULL == request_count_per_instance) {
-        printf("Failed in start_instances: polling_thread is NULL.\n");
+        HE_QAT_PRINT_ERR("Failed in start_instances: polling_thread is NULL.\n");
         pthread_exit(NULL);
     }
     for (unsigned i = 0; i < instance_count; i++) {
@@ -356,7 +343,6 @@ void* start_instances(void* _config) {
     }
 
     CpaStatus status = CPA_STATUS_FAIL;
-
     for (unsigned int j = 0; j < config->count; j++) {	    
         // Start from zero or restart after stop_perform_op
         pthread_mutex_lock(&config->inst_config[j].mutex);
@@ -370,7 +356,7 @@ void* start_instances(void* _config) {
         status = cpaCyStartInstance(config->inst_config[j].inst_handle);
         config->inst_config[j].status = status;
         if (CPA_STATUS_SUCCESS == status) {
-            printf("Cpa CyInstance has successfully started.\n");
+            HE_QAT_PRINT_DBG("Cpa CyInstance has successfully started.\n");
             status =
                 cpaCySetAddressTranslation(config->inst_config[j].inst_handle, 
 				HE_QAT_virtToPhys);
@@ -381,18 +367,17 @@ void* start_instances(void* _config) {
     
         if (CPA_STATUS_SUCCESS != status) pthread_exit(NULL);
 
-        printf("Instance ID: %d\n",config->inst_config[j].inst_id);
+        HE_QAT_PRINT_DBG("Instance ID: %d\n",config->inst_config[j].inst_id);
 
          // Start QAT instance and start polling
-         //pthread_t polling_thread;
          if (pthread_create(&polling_thread[j], config->inst_config[j].attr, start_inst_polling,
                             (void*)&(config->inst_config[j])) != 0) {
-             printf("Failed at creating and starting polling thread.\n");
+             HE_QAT_PRINT_ERR("Failed at creating and starting polling thread.\n");
              pthread_exit(NULL);
          }
 
          if (pthread_detach(polling_thread[j]) != 0) {
-             printf("Failed at detaching polling thread.\n");
+             HE_QAT_PRINT_ERR("Failed at detaching polling thread.\n");
              pthread_exit(NULL);
          }
 	 
@@ -410,41 +395,35 @@ void* start_instances(void* _config) {
     config->running = 1;
     config->active = 1;
     while (config->running) {
-#ifdef HE_QAT_DEBUG
-        printf("Try reading request from buffer. Inst #%d\n", next_instance);
-#endif
+        HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n", next_instance);
+	
 	unsigned long pending = request_count - response_count;
 	unsigned long available = max_pending - ((pending < max_pending)?pending:max_pending);
-#ifdef HE_QAT_DEBUG
-	printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+	
+	HE_QAT_PRINT_DBG("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
 			request_count,response_count,pending,available);
-#endif
+	
 	while (available < restart_threshold) {
-	    HE_QAT_PRINT_DBG("[WAIT]\n");
-
-	    // argument passed in microseconds 
-	    //OS_SLEEP(RESTART_LATENCY_MICROSEC);
-        HE_QAT_SLEEP(RESTART_LATENCY_MICROSEC, HE_QAT_MICROSEC);
-        pending = request_count - response_count;
-	    available = max_pending - ((pending < max_pending)?pending:max_pending);
-#ifdef HE_QAT_DEBUG
-           printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+            HE_QAT_PRINT_DBG("[WAIT]\n");
+            
+            // argument passed in microseconds 
+            HE_QAT_SLEEP(RESTART_LATENCY_MICROSEC, HE_QAT_MICROSEC);
+            pending = request_count - response_count;
+            available = max_pending - ((pending < max_pending)?pending:max_pending);
+            HE_QAT_PRINT_DBG("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
           			request_count,response_count,pending,available);
-#endif
-	}
-#ifdef HE_QAT_DEBUG
-	printf("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+	}	
+	HE_QAT_PRINT_DBG("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
 			request_count,response_count,pending,available);
-#endif
+	
 	unsigned int max_requests = available;
 
 	// Try consume maximum amount of data from butter to perform requested operation
         read_request_list(&outstanding_requests, &he_qat_buffer, max_requests);
 
-#ifdef HE_QAT_DEBUG
-        printf("Offloading %u requests to the accelerator.\n", outstanding_requests.count);
-#endif
-        for (unsigned int i = 0; i < outstanding_requests.count; i++) {
+        HE_QAT_PRINT_DBG("Offloading %u requests to the accelerator.\n", outstanding_requests.count);
+        
+	for (unsigned int i = 0; i < outstanding_requests.count; i++) {
 	   HE_QAT_TaskRequest* request = outstanding_requests.request[i];
 #ifdef HE_QAT_SYNC_MODE
         COMPLETION_INIT(&request->callback);
@@ -456,9 +435,7 @@ void* start_instances(void* _config) {
             switch (request->op_type) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
-#ifdef HE_QAT_DEBUG
-                printf("Offload request using instance #%d\n", next_instance);
-#endif
+                HE_QAT_PRINT_DBG("Offload request using instance #%d\n", next_instance);
 #ifdef HE_QAT_PERF
                 gettimeofday(&request->start, NULL);
 #endif
@@ -472,16 +449,14 @@ void* start_instances(void* _config) {
                 break;
             case HE_QAT_OP_NONE:
             default:
-#ifdef HE_QAT_DEBUG
-                printf("HE_QAT_OP_NONE to instance #%d\n", next_instance);
-#endif
+                HE_QAT_PRINT_DBG("HE_QAT_OP_NONE to instance #%d\n", next_instance);
                 retry = HE_QAT_MAX_RETRY;
                 break;
             }
 
 	    if (CPA_STATUS_RETRY == status) {
-	        printf("CPA requested RETRY\n");
-	        printf("RETRY count = %u\n",retry);
+	        HE_QAT_PRINT_DBG("CPA requested RETRY\n");
+	        HE_QAT_PRINT_DBG("RETRY count = %u\n",retry);
 		pthread_exit(NULL); // halt the whole system
 	    }
 
@@ -497,14 +472,15 @@ void* start_instances(void* _config) {
 	    // Wake up any blocked call to stop_perform_op, signaling that now it is
             // safe to terminate running instances. Check if this detereorate
             // performance.
-            pthread_cond_signal(&config->inst_config[next_instance].ready);  // Prone to the lost wake-up problem
+	    // TODO(fdiasmor): Check if prone to the lost wake-up problem.
+            pthread_cond_signal(&config->inst_config[next_instance].ready);  
 
 #ifdef HE_QAT_SYNC_MODE
             // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
                 request->op_status = CPA_STATUS_FAIL;
                 request->request_status = HE_QAT_STATUS_FAIL;  // Review it
-                printf("Failed in COMPLETION WAIT\n");
+                HE_QAT_PRINT_ERR("Failed in COMPLETION WAIT\n");
             }
 
             // Destroy synchronization object
@@ -513,12 +489,10 @@ void* start_instances(void* _config) {
         } else {
             request->op_status = CPA_STATUS_FAIL;
             request->request_status = HE_QAT_STATUS_FAIL;  // Review it
-	    printf("Request Submission FAILED\n");
+	    HE_QAT_PRINT_ERR("Request Submission FAILED\n");
         }
 
-#ifdef HE_QAT_DEBUG
-        printf("Offloading completed by instance #%d\n", next_instance-1);
-#endif
+        HE_QAT_PRINT_DBG("Offloading completed by instance #%d\n", next_instance-1);
 
 	// Reset pointer
 	outstanding_requests.request[i] = NULL;
@@ -545,7 +519,7 @@ void* start_instances(void* _config) {
 ///			    instance.
 void* start_perform_op(void* _inst_config) {
     if (NULL == _inst_config) {
-        printf("Failed in start_perform_op: _inst_config is NULL.\n");
+        HE_QAT_PRINT_ERR("Failed in start_perform_op: _inst_config is NULL.\n");
         pthread_exit(NULL);
     }
 
@@ -563,7 +537,7 @@ void* start_perform_op(void* _inst_config) {
     status = cpaCyStartInstance(config->inst_handle);
     config->status = status;
     if (CPA_STATUS_SUCCESS == status) {
-        printf("Cpa CyInstance has successfully started.\n");
+        HE_QAT_PRINT_DBG("Cpa CyInstance has successfully started.\n");
         status =
             cpaCySetAddressTranslation(config->inst_handle, HE_QAT_virtToPhys);
     }
@@ -577,12 +551,12 @@ void* start_perform_op(void* _inst_config) {
     pthread_t polling_thread;
     if (pthread_create(&polling_thread, config->attr, start_inst_polling,
                        (void*)config) != 0) {
-        printf("Failed at creating and starting polling thread.\n");
+        HE_QAT_PRINT_ERR("Failed at creating and starting polling thread.\n");
         pthread_exit(NULL);
     }
 
     if (pthread_detach(polling_thread) != 0) {
-        printf("Failed at detaching polling thread.\n");
+        HE_QAT_PRINT_ERR("Failed at detaching polling thread.\n");
         pthread_exit(NULL);
     }
     
@@ -595,30 +569,27 @@ void* start_perform_op(void* _inst_config) {
     config->running = 1;
     config->active = 1;
     while (config->running) {
-#ifdef HE_QAT_DEBUG
-        printf("Try reading request from buffer. Inst #%d\n", config->inst_id);
-#endif
+        HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n", config->inst_id);
+	
 	unsigned long pending = request_count - response_count;
 	unsigned long available = max_pending - ((pending < max_pending)?pending:max_pending);
-#ifdef HE_QAT_DEBUG
-	printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+	
+	HE_QAT_PRINT_DBG("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
 			request_count,response_count,pending,available);
-#endif
+	
 	while (available < restart_threshold) {
-#ifdef HE_QAT_DEBUG
-	   printf("[WAIT]\n");
-#endif
-	   // argument passed in microseconds 
-	   //OS_SLEEP(650);
-       HE_QAT_SLEEP(650,HE_QAT_MICROSEC);
-       pending = request_count - response_count;
-	   available = max_pending - ((pending < max_pending)?pending:max_pending);
+          HE_QAT_PRINT_DBG("[WAIT]\n");
+   
+          HE_QAT_SLEEP(650,HE_QAT_MICROSEC);
+          
+	  pending = request_count - response_count;
+          available = max_pending - ((pending < max_pending)?pending:max_pending);
 	}
-#ifdef HE_QAT_DEBUG
-	printf("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
+	HE_QAT_PRINT_DBG("[SUBMIT] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
 			request_count,response_count,pending,available);
-#endif
+	
 	unsigned int max_requests = available;
+	
 	// Try consume maximum amount of data from butter to perform requested operation
         read_request_list(&outstanding_requests, &he_qat_buffer, max_requests);
 
@@ -630,13 +601,12 @@ void* start_perform_op(void* _inst_config) {
 //            pthread_cond_signal(&config->ready);
 //            continue;
 //        }
-#ifdef HE_QAT_DEBUG
-        printf("Offloading %u requests to the accelerator.\n", outstanding_requests.count);
-#endif
-        for (unsigned int i = 0; i < outstanding_requests.count; i++) {
-	   HE_QAT_TaskRequest* request = outstanding_requests.request[i];
+        HE_QAT_PRINT_DBG("Offloading %u requests to the accelerator.\n", outstanding_requests.count);
+        
+	for (unsigned int i = 0; i < outstanding_requests.count; i++) {
+            HE_QAT_TaskRequest* request = outstanding_requests.request[i];
 #ifdef HE_QAT_SYNC_MODE
-        COMPLETION_INIT(&request->callback);
+            COMPLETION_INIT(&request->callback);
 #endif
         unsigned retry = 0;
         do {
@@ -644,10 +614,8 @@ void* start_perform_op(void* _inst_config) {
             switch (request->op_type) {
             // Select appropriate action
             case HE_QAT_OP_MODEXP:
-		//if (retry > 0) printf("Try offloading again last request\n");
-#ifdef HE_QAT_DEBUG
-                printf("Offload request using instance #%d\n", config->inst_id);
-#endif
+		//if (retry > 0) HE_QAT_PRINT_DBG("Try offloading again last request\n");
+                HE_QAT_PRINT_DBG("Offload request using instance #%d\n", config->inst_id);
 #ifdef HE_QAT_PERF
                 gettimeofday(&request->start, NULL);
 #endif
@@ -661,18 +629,15 @@ void* start_perform_op(void* _inst_config) {
                 break;
             case HE_QAT_OP_NONE:
             default:
-#ifdef HE_QAT_DEBUG
-                printf("HE_QAT_OP_NONE to instance #%d\n", config->inst_id);
-#endif
+                HE_QAT_PRINT_DBG("HE_QAT_OP_NONE to instance #%d\n", config->inst_id);
                 retry = HE_QAT_MAX_RETRY;
                 break;
             }
 
 	    if (CPA_STATUS_RETRY == status) {
-	        printf("CPA requested RETRY\n");
-	        printf("RETRY count: %u\n",retry);
-            //OS_SLEEP(600);
-            HE_QAT_SLEEP(600, HE_QAT_MICROSEC);
+                HE_QAT_PRINT_DBG("CPA requested RETRY\n");
+                HE_QAT_PRINT_DBG("RETRY count: %u\n",retry);
+                HE_QAT_SLEEP(600, HE_QAT_MICROSEC);
 	    }
 
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
@@ -681,13 +646,14 @@ void* start_perform_op(void* _inst_config) {
         if (CPA_STATUS_SUCCESS == status) {
 	    // Global tracking of number of requests 
 	    request_count += 1;
-	    //printf("retry_count = %d\n",retry_count);
+
+	    HE_QAT_PRINT_DBG("retry_count = %d\n",retry_count);
 #ifdef HE_QAT_SYNC_MODE
             // Wait until the callback function has been called
             if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
                 request->op_status = CPA_STATUS_FAIL;
                 request->request_status = HE_QAT_STATUS_FAIL;  // Review it
-                printf("Failed in COMPLETION WAIT\n");
+                HE_QAT_PRINT_ERR("Failed in COMPLETION WAIT\n");
             }
 
             // Destroy synchronization object
@@ -708,11 +674,10 @@ void* start_perform_op(void* _inst_config) {
 	// Wake up any blocked call to stop_perform_op, signaling that now it is
         // safe to terminate running instances. Check if this detereorate
         // performance.
-        pthread_cond_signal(
-            &config->ready);  // Prone to the lost wake-up problem
-#ifdef HE_QAT_DEBUG
-        printf("Offloading completed by instance #%d\n", config->inst_id);
-#endif
+	// TODO(fdiasmor): Check if prone to the lost wake-up problem.
+        pthread_cond_signal(&config->ready); 
+    
+    	HE_QAT_PRINT_DBG("Offloading completed by instance #%d\n", config->inst_id);
     }
     pthread_exit(NULL);
 }
@@ -734,36 +699,33 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
     CpaStatus status = CPA_STATUS_FAIL;
     for (unsigned i = 0; i < num_inst; i++) {
         pthread_mutex_lock(&config[i].mutex);
-#ifdef HE_QAT_DEBUG
-        printf("Try teardown HE QAT instance #%d.\n", i);
-#endif
-        while (0 == config[i].active) {
+        
+	HE_QAT_PRINT_DBG("Try teardown HE QAT instance #%d.\n", i);
+        
+	while (0 == config[i].active) {
             pthread_cond_wait(&config[i].ready, &config[i].mutex);
         }
-        if (CPA_STATUS_SUCCESS == config[i].status && config[i].active) {
-#ifdef HE_QAT_DEBUG
-            printf("Stop polling and running threads #%d\n", i);
-#endif
-            config[i].polling = 0;
+        
+	if (CPA_STATUS_SUCCESS == config[i].status && config[i].active) {
+            HE_QAT_PRINT_DBG("Stop polling and running threads #%d\n", i);
+            
+	    config[i].polling = 0;
             config[i].running = 0;
-            //OS_SLEEP(10);
-            HE_QAT_SLEEP(10, HE_QAT_MICROSEC);
-#ifdef HE_QAT_DEBUG
-            printf("Stop cpaCyInstance #%d\n", i);
-#endif
+            
+	    HE_QAT_SLEEP(10, HE_QAT_MICROSEC);
+            
+	    HE_QAT_PRINT_DBG("Stop cpaCyInstance #%d\n", i);
             if (config[i].inst_handle == NULL) continue;
-#ifdef HE_QAT_DEBUG
-            printf("cpaCyStopInstance\n");
-#endif
-            status = cpaCyStopInstance(config[i].inst_handle);
+            
+	    HE_QAT_PRINT_DBG("cpaCyStopInstance\n");
+	    status = cpaCyStopInstance(config[i].inst_handle);
             if (CPA_STATUS_SUCCESS != status) {
-                printf("Failed to stop QAT instance #%d\n", i);
+                HE_QAT_PRINT_ERR("Failed to stop QAT instance #%d\n", i);
             }
         }
         pthread_cond_signal(&config[i].ready);
         pthread_mutex_unlock(&config[i].mutex);
     }
-    //}
 
     return;
 }

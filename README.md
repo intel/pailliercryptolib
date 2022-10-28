@@ -314,7 +314,10 @@ TODO
 
 # Contributors
 
-Fillipe Dias M. de Souza (Lead)
-Sejun Kim
-Pengfei Zhao
+Main contributors to this project, sorted by alphabetical order of last name are:
+  - [Fillipe Dias M. de Souza](https://www.linkedin.com/in/fillipe-d-m-de-souza-a8281820) (lead)
+  - [Xiaoran Fang](https://github.com/fangxiaoran)
+  - [Jingyi Jin](https://www.linkedin.com/in/jingyi-jin-655735)
+  - [Sejun Kim](https://www.linkedin.com/in/sejun-kim-2b1b4866) 
+  - [Pengfei Zhao](https://github.com/justalittlenoob)
 

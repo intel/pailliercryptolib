@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 /// @file heqat/bnops.c
 
-#include "cpa.h"
-#include "cpa_cy_im.h"
-#include "cpa_cy_ln.h"
-#include "icp_sal_poll.h"
+#include <cpa.h>
+#include <cpa_cy_im.h>
+#include <cpa_cy_ln.h>
+#include <icp_sal_poll.h>
 
 #include "heqat/bnops.h"
 #include "heqat/common/consts.h"
@@ -52,7 +52,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     static unsigned long long req_count = 0;
     
     // Unpack data and copy to QAT friendly memory space
-    int len = (nbits + 7) >> 3;  // nbits / 8;
+    int len = (nbits + 7) >> 3;
 
     if (NULL == r) return HE_QAT_STATUS_INVALID_PARAM;
     if (NULL == b) return HE_QAT_STATUS_INVALID_PARAM;
@@ -63,10 +63,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     Cpa8U* pModulus = NULL;
     Cpa8U* pExponent = NULL;
 
-    // TODO(fdiasmor): Try it with 8-byte alignment.
-    //CpaStatus status = CPA_STATUS_FAIL;
-    // status = PHYS_CONTIG_ALLOC(&pBase, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
     status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
         if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
@@ -76,8 +72,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    // status = PHYS_CONTIG_ALLOC(&pExponent, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
@@ -86,8 +80,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
         return HE_QAT_STATUS_FAIL;
     }
 
-    // status = PHYS_CONTIG_ALLOC(&pModulus, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
@@ -120,8 +112,6 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    // status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
@@ -170,16 +160,11 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
         return HE_QAT_STATUS_FAIL;
     }
 
-    // TODO: @fdiasmor Try it with 8-byte alignment.
-    //CpaStatus status = CPA_STATUS_FAIL;
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-    //status = PHYS_CONTIG_ALLOC(&pBase, len);
-    //status = PHYS_CONTIG_ALLOC(&pBase, len);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         if (!BN_bn2binpad(b, pBase, len)) {
             HE_QAT_PRINT_ERR("BN_bn2binpad (base) failed in bnModExpPerformOp.\n");
-            //PHYS_CONTIG_FREE(pBase);
             HE_QAT_MEM_FREE_CONTIG(pBase);
             return HE_QAT_STATUS_FAIL;
         }
@@ -188,12 +173,10 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
         return HE_QAT_STATUS_FAIL;
     }
 
-    //status = PHYS_CONTIG_ALLOC(&pExponent, len);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         if (!BN_bn2binpad(e, pExponent, len)) {
             HE_QAT_PRINT_ERR("BN_bn2binpad (exponent) failed in bnModExpPerformOp.\n");
-            //PHYS_CONTIG_FREE(pExponent);
             HE_QAT_MEM_FREE_CONTIG(pExponent);
             return HE_QAT_STATUS_FAIL;
         }
@@ -202,12 +185,10 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
         return HE_QAT_STATUS_FAIL;
     }
 
-    //status = PHYS_CONTIG_ALLOC(&pModulus, len);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         if (!BN_bn2binpad(m, pModulus, len)) {
             HE_QAT_PRINT_ERR("BN_bn2binpad failed in bnModExpPerformOp.\n");
-            //PHYS_CONTIG_FREE(pModulus);
             HE_QAT_MEM_FREE_CONTIG(pModulus);
             return HE_QAT_STATUS_FAIL;
         }
@@ -231,7 +212,6 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    //status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
     status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
@@ -248,6 +228,7 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     request->op_output = (void*)r;
     
     request->id = req_count++;
+    
     // Ensure calls are synchronized at exit (blocking)
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
@@ -267,7 +248,6 @@ void getBnModExpRequest(unsigned int batch_size) {
     double time_taken = 0.0;
     gettimeofday(&start_time, NULL);
 #endif
-//    while (j < batch_size) {
     do {
         // Buffer read may be safe for single-threaded blocking calls only.
         // Note: Not tested on multithreaded environment.
@@ -307,20 +287,17 @@ void getBnModExpRequest(unsigned int batch_size) {
         // Move forward to wait for the next request that will be offloaded
         pthread_mutex_unlock(&task->mutex);
 
-        // Fix segmentation fault?
         free(he_qat_buffer.data[block_at_index]);
         he_qat_buffer.data[block_at_index] = NULL;
 
         block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
-//        j++;
-//    }
-    } while (++j < batch_size); // number of null pointers equal batch size ?
+    } while (++j < batch_size); 
 
 #ifdef HE_QAT_PERF
     gettimeofday(&end_time, NULL);
     time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
     time_taken =
-        (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
+        (time_taken + (end_time.tv_usec - start_time.tv_usec)); 
     HE_QAT_PRINT("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
@@ -350,10 +327,6 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     Cpa8U* pModulus = NULL;
     Cpa8U* pExponent = NULL;
 
-    // TODO(fdiasmor): Try it with 8-byte alignment.
-    //CpaStatus status = CPA_STATUS_FAIL;
-    // status = PHYS_CONTIG_ALLOC(&pBase, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
     status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
@@ -363,8 +336,6 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
         return HE_QAT_STATUS_FAIL;
     }
 
-    // status = PHYS_CONTIG_ALLOC(&pExponent, len);
-    // status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
@@ -373,8 +344,6 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
         return HE_QAT_STATUS_FAIL;
     }
 
-    // status = PHYS_CONTIG_ALLOC(&pModulus, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
@@ -383,8 +352,6 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
         return HE_QAT_STATUS_FAIL;
     }
 
-    // HE_QAT_TaskRequest request =
-    //           HE_QAT_PACK_MODEXP_REQUEST(pBase, pExponent, pModulus, r)
     // Pack it as a QAT Task Request
     HE_QAT_TaskRequest* request =
         (HE_QAT_TaskRequest*)calloc(1, sizeof(HE_QAT_TaskRequest));
@@ -409,8 +376,6 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    // status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
-    //status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
     status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
@@ -532,7 +497,7 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 
         // outstanding.buffer[_buffer_id].count--;
 
-        free(outstanding.buffer[_buffer_id].data[next_data_out]);
+	free(outstanding.buffer[_buffer_id].data[next_data_out]);
         outstanding.buffer[_buffer_id].data[next_data_out] = NULL;
 
         // Update for next thread on the next external iteration

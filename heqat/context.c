@@ -1,6 +1,6 @@
-/// @file heqat/context.c
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
+/// @file heqat/context.c
 
 #define _GNU_SOURCE
 
@@ -98,7 +98,7 @@ static CpaInstanceHandle get_qat_instance() {
                 HE_QAT_PRINT("\tbusAddress: %d\n",info.physInstId.busAddress);
                 HE_QAT_PRINT("\tkptAcHandle: %d\n",info.physInstId.kptAcHandle);
 #endif
-	        }
+            }
             HE_QAT_PRINT_DBG("Next Instance: %d.\n", nextInstance);
 
             if (status == CPA_STATUS_SUCCESS)
@@ -116,9 +116,8 @@ static CpaInstanceHandle get_qat_instance() {
     }
 
     nextInstance = ((nextInstance + 1) % numInstances);
-#ifdef HE_QAT_DEBUG
-    printf("Next Instance: %d.\n", nextInstance);
-#endif
+    HE_QAT_PRINT_DBG("Next Instance: %d.\n", nextInstance);
+
     return cyInstHandles[nextInstance];
 }
 
@@ -140,24 +139,20 @@ HE_QAT_STATUS acquire_qat_devices() {
     if (CPA_STATUS_SUCCESS != status) {
         pthread_mutex_unlock(&context_lock);
         HE_QAT_PRINT_ERR("Failed to initialized memory driver.\n");
-        return HE_QAT_STATUS_FAIL;  // HEQAT_STATUS_ERROR
+        return HE_QAT_STATUS_FAIL; 
     }
     HE_QAT_PRINT_DBG("QAT memory successfully initialized.\n");
 
-    // Not sure if for multiple instances the id will need to be specified, e.g.
-    // "SSL1"
     status = icp_sal_userStartMultiProcess("SSL", CPA_FALSE);
     if (CPA_STATUS_SUCCESS != status) {
         pthread_mutex_unlock(&context_lock);
         HE_QAT_PRINT_ERR("Failed to start SAL user process SSL\n");
         qaeMemDestroy();
-        return HE_QAT_STATUS_FAIL;  // HE_QAT_STATUS_FAIL
+        return HE_QAT_STATUS_FAIL; 
     }
     HE_QAT_PRINT_DBG("SAL user process successfully started.\n");
 
-    // Potential out-of-scope hazard for segmentation fault
-    CpaInstanceHandle _inst_handle[HE_QAT_NUM_ACTIVE_INSTANCES];  // = NULL;
-    // TODO: @fdiasmor Create a CyGetInstance that retrieves more than one.
+    CpaInstanceHandle _inst_handle[HE_QAT_NUM_ACTIVE_INSTANCES];
     for (unsigned int i = 0; i < HE_QAT_NUM_ACTIVE_INSTANCES; i++) {
         _inst_handle[i] = get_qat_instance();
         if (_inst_handle[i] == NULL) {
@@ -228,7 +223,6 @@ HE_QAT_STATUS acquire_qat_devices() {
     he_qat_config->running = 0;
     he_qat_config->active = 0;
 
-    // Work on this
     pthread_create(&he_qat_runner, NULL, start_instances, (void*)he_qat_config);
     HE_QAT_PRINT_DBG("Created processing threads.\n");
 
@@ -277,8 +271,7 @@ HE_QAT_STATUS release_qat_devices() {
     stop_instances(he_qat_config);
     HE_QAT_PRINT_DBG("Stopped polling and processing threads.\n");
 
-    // Deactivate context (this will cause the buffer manager thread to be
-    // terminated)
+    // Deactivate context (this will terminate buffer manager thread
     context_state = HE_QAT_STATUS_INACTIVE;
 
     // Stop QAT SSL service
