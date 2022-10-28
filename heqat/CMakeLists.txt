@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 
 # HE QAT Lib source code
 set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c

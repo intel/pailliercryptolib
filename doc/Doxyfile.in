@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 PROJECT_NAME           = "Intel HE Acceleration Library for QAT"
@@ -11,7 +11,6 @@ INPUT                  = @CMAKE_SOURCE_DIR@/heqat/include/heqat \
                          @CMAKE_SOURCE_DIR@/heqat \ 
                          @CMAKE_SOURCE_DIR@/heqat/misc \ 
                          @CMAKE_SOURCE_DIR@/heqat/common \ 
-                         @CMAKE_SOURCE_DIR@/icp \
                          @CMAKE_SOURCE_DIR@/samples \
                          @CMAKE_SOURCE_DIR@/README.md 
 RECURSIVE              = YES

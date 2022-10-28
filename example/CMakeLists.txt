@@ -1,3 +1,6 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
 project(he_qat_example LANGUAGES C CXX)
 
 cmake_minimum_required(VERSION 3.13)

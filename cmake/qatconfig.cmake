@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 
 # Setup ICP variables
 if(DEFINED ENV{ICP_ROOT})

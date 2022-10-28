@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 #!/bin/bash
 
 export HEQATLIB_INSTALL_DIR=$HEQATLIB_ROOT_DIR/install
