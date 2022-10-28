@@ -35,7 +35,8 @@ set(HEQAT_INC_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
 set(HEQAT_LIB_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 # Bring up CPA variables
-include(${HEQAT_SRC_DIR}/icp/CMakeLists.txt)
+#include(${HEQAT_SRC_DIR}/icp/CMakeLists.txt)
+#list(APPEND HEQAT_INC_DIR ${ICP_INC_DIR})
 
 # Create heqat library interface
 if(IPCL_SHARED)
