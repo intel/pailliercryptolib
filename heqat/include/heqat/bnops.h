@@ -1,5 +1,5 @@
 /**
- * @file he_qat_bn_ops.h
+ * @file heqat/bnops.h
  *
  * @details 
  * 	In this file, functions for Big Number operations accelerated by the 
@@ -121,7 +121,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
 ///          thread releases one. This function must be called before
 ///          calling HE_QAT_bnModExp_MT(.).
 ///
-/// @param[out] _buffer_id Pointer to memory space allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
+/// @param[out] _buffer_id Memory space address allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id);
 
 /// @brief Wait for request processing to complete and release previously acquired buffer. 

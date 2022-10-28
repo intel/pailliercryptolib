@@ -28,7 +28,7 @@ int main() {
         exit(1);
     }
 
-    OS_SLEEP(5000);
+    HE_QAT_SLEEP(5000, HE_QAT_MILLISEC);
 
     status = release_qat_devices();
     if (HE_QAT_STATUS_SUCCESS == status) {

@@ -20,10 +20,10 @@ double time_taken = 0.0;
 #include <openssl/bn.h>
 
 // Local headers
-#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/common/utils.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
-#include "heqat/bnops.h"
+//#include "heqat/bnops.h"
 
 // Warn user on selected execution mode
 #ifdef HE_QAT_SYNC_MODE
@@ -165,7 +165,7 @@ static void read_request_list(HE_QAT_TaskRequestList* _requests,
 /// This function is supported in single-threaded or multi-threaded mode.
 /// @param[out] _requests list of work requests retrieved from outstanding buffer.
 /// @param[in] _outstanding_buffer outstanding buffer holding requests in ready-to-be-scheduled state.
-/// @param[in] max_requests maximum number of requests to retrieve from outstanding buffer if available.
+/// @param[in] max_num_requests maximum number of requests to retrieve from outstanding buffer if available.
 static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_OutstandingBuffer* _outstanding_buffer, unsigned int max_num_requests) 
 {
     if (NULL == _requests) return;
@@ -248,7 +248,7 @@ static void pull_outstanding_requests(HE_QAT_TaskRequestList* _requests, HE_QAT_
 /// @brief Schedule outstanding requests to the internal buffer and be ready for processing.
 /// @details Schedule outstanding requests from outstanding buffers to the internal buffer,
 /// from which requests are ready to be submitted to the device for processing.
-/// @param[in] state A volatile integer variable used to activate (val>0) or 
+/// @param[in] context_state A volatile integer variable used to activate (val>0) or 
 ///		     disactive (val=0) the scheduler.
 void* schedule_requests(void* context_state) {
     if (NULL == context_state) {
@@ -299,7 +299,8 @@ static void* start_inst_polling(void* _inst_config) {
     config->polling = 1;
     while (config->polling) {
         icp_sal_CyPollInstance(config->inst_handle, 0);
-        OS_SLEEP(50);
+        //OS_SLEEP(50);
+        HE_QAT_SLEEP(50, HE_QAT_MICROSEC);
     }
 
     pthread_exit(NULL);
@@ -370,7 +371,7 @@ void* start_instances(void* _config) {
             printf("Cpa CyInstance has successfully started.\n");
             status =
                 cpaCySetAddressTranslation(config->inst_config[j].inst_handle, 
-				sampleVirtToPhys);
+				HE_QAT_virtToPhys);
         }
     
         pthread_cond_signal(&config->inst_config[j].ready);
@@ -417,13 +418,13 @@ void* start_instances(void* _config) {
 			request_count,response_count,pending,available);
 #endif
 	while (available < restart_threshold) {
-#ifdef HE_QAT_DEBUG
-	   printf("[WAIT]\n");
-#endif
-	   // argument passed in microseconds 
-	   OS_SLEEP(RESTART_LATENCY_MICROSEC);
-           pending = request_count - response_count;
-	   available = max_pending - ((pending < max_pending)?pending:max_pending);
+	    HE_QAT_PRINT_DBG("[WAIT]\n");
+
+	    // argument passed in microseconds 
+	    //OS_SLEEP(RESTART_LATENCY_MICROSEC);
+        HE_QAT_SLEEP(RESTART_LATENCY_MICROSEC, HE_QAT_MICROSEC);
+        pending = request_count - response_count;
+	    available = max_pending - ((pending < max_pending)?pending:max_pending);
 #ifdef HE_QAT_DEBUG
            printf("[CHECK] request_count: %lu response_count: %lu pending: %lu available: %lu\n",
           			request_count,response_count,pending,available);
@@ -562,7 +563,7 @@ void* start_perform_op(void* _inst_config) {
     if (CPA_STATUS_SUCCESS == status) {
         printf("Cpa CyInstance has successfully started.\n");
         status =
-            cpaCySetAddressTranslation(config->inst_handle, sampleVirtToPhys);
+            cpaCySetAddressTranslation(config->inst_handle, HE_QAT_virtToPhys);
     }
 
     pthread_cond_signal(&config->ready);
@@ -606,8 +607,9 @@ void* start_perform_op(void* _inst_config) {
 	   printf("[WAIT]\n");
 #endif
 	   // argument passed in microseconds 
-	   OS_SLEEP(650);
-           pending = request_count - response_count;
+	   //OS_SLEEP(650);
+       HE_QAT_SLEEP(650,HE_QAT_MICROSEC);
+       pending = request_count - response_count;
 	   available = max_pending - ((pending < max_pending)?pending:max_pending);
 	}
 #ifdef HE_QAT_DEBUG
@@ -667,7 +669,8 @@ void* start_perform_op(void* _inst_config) {
 	    if (CPA_STATUS_RETRY == status) {
 	        printf("CPA requested RETRY\n");
 	        printf("RETRY count: %u\n",retry);
-                OS_SLEEP(600);
+            //OS_SLEEP(600);
+            HE_QAT_SLEEP(600, HE_QAT_MICROSEC);
 	    }
 
         } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
@@ -741,7 +744,8 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
 #endif
             config[i].polling = 0;
             config[i].running = 0;
-            OS_SLEEP(10);
+            //OS_SLEEP(10);
+            HE_QAT_SLEEP(10, HE_QAT_MICROSEC);
 #ifdef HE_QAT_DEBUG
             printf("Stop cpaCyInstance #%d\n", i);
 #endif

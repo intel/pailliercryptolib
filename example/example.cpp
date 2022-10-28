@@ -45,7 +45,7 @@ int main(int argc, const char** argv) {
 
 #ifdef HE_QAT_DEBUG
         char* bn_str = BN_bn2hex(bn_mod);
-        PRINT("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
+        HE_QAT_PRINT("Generated modulus: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
         OPENSSL_free(bn_str);
 #endif
@@ -71,13 +71,13 @@ int main(int argc, const char** argv) {
         if (!ERR_get_error()) {
 #ifdef HE_QAT_DEBUG
             bn_str = BN_bn2hex(ssl_res);
-            PRINT("SSL BN mod exp: %s num_bytes: %d num_bits: %d\n", bn_str,
+            HE_QAT_PRINT("SSL BN mod exp: %s num_bytes: %d num_bits: %d\n", bn_str,
                    BN_num_bytes(ssl_res), BN_num_bits(ssl_res));
             showHexBN(ssl_res, bit_length);
             OPENSSL_free(bn_str);
 #endif
         } else {
-            PRINT_ERR("Modular exponentiation failed.\n");
+            HE_QAT_PRINT_ERR("Modular exponentiation failed.\n");
 	    exit(1);
         }
 
@@ -103,18 +103,18 @@ int main(int argc, const char** argv) {
             (mod * avg_speed_up +
              (ssl_elapsed) / (qat_elapsed/BATCH_SIZE)) / (mod + 1);
 
-        PRINT("Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
+        HE_QAT_PRINT("Trial #%03lu\tOpenSSL: %.1lfus\tQAT: %.1lfus\tSpeed Up:%.1lfx\t",
             (mod + 1), ssl_avg_time, qat_avg_time, avg_speed_up);
 
 	if (HE_QAT_STATUS_SUCCESS != status) {
-            PRINT_ERR("\nQAT bnModExpOp failed\n");
+            HE_QAT_PRINT_ERR("\nQAT bnModExpOp failed\n");
 	    exit(1);
         }
         
 	if (BN_cmp(qat_res, ssl_res) != 0)
-            PRINT("\t** FAIL **\n");
+            HE_QAT_PRINT("\t** FAIL **\n");
         else
-            PRINT("\t** PASS **\n");
+            HE_QAT_PRINT("\t** PASS **\n");
 
         HE_QAT_PRINT_DBG("\nQAT bnModExpOp finished\n");
 
