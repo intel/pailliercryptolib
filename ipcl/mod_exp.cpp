@@ -147,7 +147,7 @@ static std::vector<BigNumber> heQatBnModExp(
                                     exp_len_[i], bn_modulus_data_[i], nbits);
 #endif
       if (HE_QAT_STATUS_SUCCESS != status) {
-        PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+        HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
       }
     }
     getBnModExpRequest(batch_size);
@@ -233,7 +233,7 @@ static std::vector<BigNumber> heQatBnModExp(
                                     exp_len_[i], bn_modulus_data_[i], nbits);
 #endif
       if (HE_QAT_STATUS_SUCCESS != status) {
-        PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+        HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
       }
     }
     getBnModExpRequest(residue);
@@ -343,7 +343,7 @@ static std::vector<BigNumber> heQatBnModExp(
     status = HE_QAT_bnModExp(bn_remainder_, bn_base_, bn_exponent_, bn_modulus_,
                              nbits);
     if (HE_QAT_STATUS_SUCCESS != status) {
-      PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+      HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
     }
   }
   getBnModExpRequest(IPCL_CRYPTO_MB_SIZE);
@@ -429,7 +429,7 @@ static BigNumber heQatBnModExp(const BigNumber& base, const BigNumber& exponent,
   status = HE_QAT_bnModExp(bn_remainder_data_, bn_base_data_, bn_exponent_data_,
                            bn_modulus_data_, nbits);
   if (HE_QAT_STATUS_SUCCESS != status) {
-    PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+    HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
   }
   getBnModExpRequest(1);
 
