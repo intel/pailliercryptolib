@@ -161,7 +161,7 @@ if(NOT CMAKE_INSTALL_PREFIX)
 endif()
 
 # Include QAT lib API support
-include(icp/CMakeLists.txt)
+include(cmake/qatconfig.cmake)
 
 # HE_QAT Library
 add_subdirectory(heqat)
