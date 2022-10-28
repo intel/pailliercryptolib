@@ -7,7 +7,7 @@
 #ifndef HE_QAT_MISC_H_
 #define HE_QAT_MISC_H_
 
-#include "heqat/common/consts.h" 
+#include "heqat/common/consts.h"
 #include "heqat/common/types.h"
 
 #ifdef __cplusplus
@@ -33,6 +33,6 @@ HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
 /// represented in nbits.
 HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
                              const BigNumber& bn);
-#endif // __cpluscplus
+#endif  // __cpluscplus
 
 #endif  // HE_QAT_MISC_H_

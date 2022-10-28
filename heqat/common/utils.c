@@ -17,7 +17,7 @@ BIGNUM* generateTestBNData(int nbits) {
     if (!BN_rand(bn, nbits, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY)) {
         BN_free(bn);
         HE_QAT_PRINT_ERR("Error while generating BN random number: %lu\n",
-               ERR_get_error());
+                         ERR_get_error());
         return NULL;
     }
 
@@ -37,8 +37,8 @@ unsigned char* paddingZeros(BIGNUM* bn, int nbits) {
     int len = bytes_left + num_bytes;
     if (!(bin = (unsigned char*)OPENSSL_zalloc(len))) return NULL;
 
-    HE_QAT_PRINT_DBG("Padding bn with %d bytes to total %d bytes\n", 
-		    bytes_left, len);
+    HE_QAT_PRINT_DBG("Padding bn with %d bytes to total %d bytes\n", bytes_left,
+                     len);
 
     BN_bn2binpad(bn, bin, len);
     if (ERR_get_error()) {
@@ -54,8 +54,7 @@ void showHexBN(BIGNUM* bn, int nbits) {
     unsigned char* bin = (unsigned char*)OPENSSL_zalloc(len);
     if (!bin) return;
     if (BN_bn2binpad(bn, bin, len)) {
-        for (size_t i = 0; i < len; i++) 
-            HE_QAT_PRINT("%2.2x", bin[i]);
+        for (size_t i = 0; i < len; i++) HE_QAT_PRINT("%2.2x", bin[i]);
         HE_QAT_PRINT("\n");
     }
     OPENSSL_free(bin);
@@ -64,8 +63,7 @@ void showHexBN(BIGNUM* bn, int nbits) {
 
 void showHexBin(unsigned char* bin, int len) {
     if (!bin) return;
-    for (size_t i = 0; i < len; i++) 
-        HE_QAT_PRINT("%2.2x", bin[i]);
+    for (size_t i = 0; i < len; i++) HE_QAT_PRINT("%2.2x", bin[i]);
     HE_QAT_PRINT("\n");
     return;
 }

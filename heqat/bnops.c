@@ -33,15 +33,17 @@ extern HE_QAT_RequestBuffer he_qat_buffer;
 extern HE_QAT_OutstandingBuffer outstanding;
 
 // Callback functions
-extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
-extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status, void* pOpData, CpaFlatBuffer* pOut);
+extern void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status,
+                                        void* pOpData, CpaFlatBuffer* pOut);
+extern void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status,
+                                    void* pOpData, CpaFlatBuffer* pOut);
 
 /// @brief Thread-safe producer implementation for the shared request buffer.
-/// @details Fill internal or outstanding buffer with incoming work requests. 
+/// @details Fill internal or outstanding buffer with incoming work requests.
 ///          This function is implemented in he_qat_ctrl.c.
 extern void submit_request(HE_QAT_RequestBuffer* _buffer, void* args);
 
-/* 
+/*
  * **************************************************************************
  *  Implementation of Functions for the Single Interface Support
  * **************************************************************************
@@ -50,7 +52,7 @@ extern void submit_request(HE_QAT_RequestBuffer* _buffer, void* args);
 HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
                               unsigned char* e, unsigned char* m, int nbits) {
     static unsigned long long req_count = 0;
-    
+
     // Unpack data and copy to QAT friendly memory space
     int len = (nbits + 7) >> 3;
 
@@ -65,7 +67,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
 
     HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
     status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
-        if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         memcpy(pBase, b, len);
     } else {
         HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
@@ -101,7 +103,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     CpaCyLnModExpOpData* op_data =
         (CpaCyLnModExpOpData*)calloc(1, sizeof(CpaCyLnModExpOpData));
     if (NULL == op_data) {
-        HE_QAT_PRINT_ERR("Cpa memory allocation failed in bnModExpPerformOp.\n");
+        HE_QAT_PRINT_ERR(
+            "Cpa memory allocation failed in bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
     }
     op_data->base.pData = pBase;
@@ -112,7 +115,8 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len,
+                                     BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
@@ -126,9 +130,9 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     request->callback_func = (void*)HE_QAT_bnModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
-    
+
     request->id = req_count++;
-    
+
     // Ensure calls are synchronized at exit (blocking)
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
@@ -141,11 +145,12 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     return HE_QAT_STATUS_SUCCESS;
 }
 
-HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, int nbits) {
+HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m,
+                                  int nbits) {
     static unsigned long long req_count = 0;
-    
+
     // Unpack data and copy to QAT friendly memory space
-    int len = (nbits + 7) >> 3; 
+    int len = (nbits + 7) >> 3;
 
     Cpa8U* pBase = NULL;
     Cpa8U* pModulus = NULL;
@@ -164,7 +169,8 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         if (!BN_bn2binpad(b, pBase, len)) {
-            HE_QAT_PRINT_ERR("BN_bn2binpad (base) failed in bnModExpPerformOp.\n");
+            HE_QAT_PRINT_ERR(
+                "BN_bn2binpad (base) failed in bnModExpPerformOp.\n");
             HE_QAT_MEM_FREE_CONTIG(pBase);
             return HE_QAT_STATUS_FAIL;
         }
@@ -176,7 +182,8 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         if (!BN_bn2binpad(e, pExponent, len)) {
-            HE_QAT_PRINT_ERR("BN_bn2binpad (exponent) failed in bnModExpPerformOp.\n");
+            HE_QAT_PRINT_ERR(
+                "BN_bn2binpad (exponent) failed in bnModExpPerformOp.\n");
             HE_QAT_MEM_FREE_CONTIG(pExponent);
             return HE_QAT_STATUS_FAIL;
         }
@@ -212,7 +219,8 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len,
+                                     BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
@@ -226,9 +234,9 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     request->callback_func = (void*)HE_QAT_BIGNUMModExpCallback;
     request->op_status = status;
     request->op_output = (void*)r;
-    
+
     request->id = req_count++;
-    
+
     // Ensure calls are synchronized at exit (blocking)
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
@@ -254,8 +262,7 @@ void getBnModExpRequest(unsigned int batch_size) {
         HE_QAT_TaskRequest* task =
             (HE_QAT_TaskRequest*)he_qat_buffer.data[block_at_index];
 
-        if (NULL == task)
-           continue;
+        if (NULL == task) continue;
 
         // Block and synchronize: Wait for the most recently offloaded request
         // to complete processing
@@ -291,20 +298,19 @@ void getBnModExpRequest(unsigned int batch_size) {
         he_qat_buffer.data[block_at_index] = NULL;
 
         block_at_index = (block_at_index + 1) % HE_QAT_BUFFER_SIZE;
-    } while (++j < batch_size); 
+    } while (++j < batch_size);
 
 #ifdef HE_QAT_PERF
     gettimeofday(&end_time, NULL);
     time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
-    time_taken =
-        (time_taken + (end_time.tv_usec - start_time.tv_usec)); 
+    time_taken = (time_taken + (end_time.tv_usec - start_time.tv_usec));
     HE_QAT_PRINT("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
     return;
 }
 
-/* 
+/*
  * **************************************************************************
  *  Implementation of Functions for the Multithreading Interface Support
  * **************************************************************************
@@ -314,7 +320,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
                                  unsigned char* b, unsigned char* e,
                                  unsigned char* m, int nbits) {
     static unsigned long long req_count = 0;
-    
+
     // Unpack data and copy to QAT friendly memory space
     int len = (nbits + 7) >> 3;
 
@@ -376,7 +382,8 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len,
+                                     BYTE_ALIGNMENT_8);
     if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
@@ -407,7 +414,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
 
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     if (NULL == _buffer_id) return HE_QAT_STATUS_INVALID_PARAM;
-    
+
     HE_QAT_PRINT_DBG("acquire_bnModExp_buffer #%u\n", _buffer_id);
 
     pthread_mutex_lock(&outstanding.mutex);
@@ -442,10 +449,11 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     return HE_QAT_STATUS_SUCCESS;
 }
 
-void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) {
+void release_bnModExp_buffer(unsigned int _buffer_id,
+                             unsigned int _batch_size) {
     unsigned int next_data_out = outstanding.buffer[_buffer_id].next_data_out;
     unsigned int j = 0;
-    
+
     HE_QAT_PRINT_DBG("release_bnModExp_buffer #%u\n", _buffer_id);
 
 #ifdef HE_QAT_PERF
@@ -461,12 +469,13 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 
         if (NULL == task) continue;
 
-        HE_QAT_PRINT_DBG("BatchSize %u Buffer #%u Request #%u Waiting\n", _batch_size,
-               _buffer_id, j);
+        HE_QAT_PRINT_DBG("BatchSize %u Buffer #%u Request #%u Waiting\n",
+                         _batch_size, _buffer_id, j);
 
         // Block and synchronize: Wait for the most recently offloaded request
-        // to complete processing. Mutex only needed for the conditional variable.
-        pthread_mutex_lock(&task->mutex); 
+        // to complete processing. Mutex only needed for the conditional
+        // variable.
+        pthread_mutex_lock(&task->mutex);
         while (HE_QAT_STATUS_READY != task->request_status)
             pthread_cond_wait(&task->ready, &task->mutex);
 
@@ -497,7 +506,7 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 
         // outstanding.buffer[_buffer_id].count--;
 
-	free(outstanding.buffer[_buffer_id].data[next_data_out]);
+        free(outstanding.buffer[_buffer_id].data[next_data_out]);
         outstanding.buffer[_buffer_id].data[next_data_out] = NULL;
 
         // Update for next thread on the next external iteration

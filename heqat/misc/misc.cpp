@@ -39,4 +39,3 @@ HE_QAT_STATUS bigNumberToBin(unsigned char* data, int nbits,
 
     return HE_QAT_STATUS_SUCCESS;
 }
-

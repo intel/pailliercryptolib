@@ -30,11 +30,11 @@ static volatile HE_QAT_STATUS context_state = HE_QAT_STATUS_INACTIVE;
 static pthread_mutex_t context_lock;
 
 // Global variable declarations
-static pthread_t         buffer_manager;
-static pthread_t         he_qat_runner;
-static pthread_attr_t    he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
+static pthread_t buffer_manager;
+static pthread_t he_qat_runner;
+static pthread_attr_t he_qat_inst_attr[HE_QAT_NUM_ACTIVE_INSTANCES];
 static HE_QAT_InstConfig he_qat_inst_config[HE_QAT_NUM_ACTIVE_INSTANCES];
-static HE_QAT_Config*    he_qat_config = NULL;
+static HE_QAT_Config* he_qat_config = NULL;
 
 // External global variables
 extern HE_QAT_RequestBuffer he_qat_buffer;
@@ -43,14 +43,17 @@ extern HE_QAT_OutstandingBuffer outstanding;
 /***********           Internal Services          ***********/
 // Start scheduler of work requests (consumer)
 extern void* schedule_requests(void* state);
-// Activate cpaCyInstances to run on background and poll responses from QAT accelerator
+// Activate cpaCyInstances to run on background and poll responses from QAT
+// accelerator
 extern void* start_instances(void* _inst_config);
-// Stop a running group of cpaCyInstances started with the "start_instances" service
+// Stop a running group of cpaCyInstances started with the "start_instances"
+// service
 extern void stop_instances(HE_QAT_Config* _config);
-// Stop running individual QAT instances from a list of cpaCyInstances (called by "stop_instances")
+// Stop running individual QAT instances from a list of cpaCyInstances (called
+// by "stop_instances")
 extern void stop_perform_op(void* _inst_config, unsigned num_inst);
-// Activate a cpaCyInstance to run on background and poll responses from QAT accelerator 
-// WARNING: Deprecated when "start_instances" becomes default.
+// Activate a cpaCyInstance to run on background and poll responses from QAT
+// accelerator WARNING: Deprecated when "start_instances" becomes default.
 extern void* start_perform_op(void* _inst_config);
 
 static Cpa16U numInstances = 0;
@@ -74,29 +77,31 @@ static CpaInstanceHandle get_qat_instance() {
             HE_QAT_PRINT_ERR("No CyInstances Found (%d).\n", numInstances);
             return NULL;
         }
-        
+
         HE_QAT_PRINT_DBG("Found %d CyInstances.\n", numInstances);
 
         if ((status == CPA_STATUS_SUCCESS) && (numInstances > 0)) {
             status = cpaCyGetInstances(numInstances, cyInstHandles);
-	    
+
             // List instances and their characteristics
             for (unsigned int i = 0; i < numInstances; i++) {
-                status = cpaCyInstanceGetInfo2(cyInstHandles[i],&info);
-                if (CPA_STATUS_SUCCESS != status) 
-                    return NULL;
-#ifdef HE_QAT_DEBUG	       
-                HE_QAT_PRINT("Vendor Name: %s\n",info.vendorName);
-                HE_QAT_PRINT("Part Name: %s\n",info.partName);
-                HE_QAT_PRINT("Inst Name: %s\n",info.instName);
-                HE_QAT_PRINT("Inst ID: %s\n",info.instID);
-                HE_QAT_PRINT("Node Affinity: %u\n",info.nodeAffinity);
+                status = cpaCyInstanceGetInfo2(cyInstHandles[i], &info);
+                if (CPA_STATUS_SUCCESS != status) return NULL;
+#ifdef HE_QAT_DEBUG
+                HE_QAT_PRINT("Vendor Name: %s\n", info.vendorName);
+                HE_QAT_PRINT("Part Name: %s\n", info.partName);
+                HE_QAT_PRINT("Inst Name: %s\n", info.instName);
+                HE_QAT_PRINT("Inst ID: %s\n", info.instID);
+                HE_QAT_PRINT("Node Affinity: %u\n", info.nodeAffinity);
                 HE_QAT_PRINT("Physical Instance:\n");
-                HE_QAT_PRINT("\tpackageId: %d\n",info.physInstId.packageId);
-                HE_QAT_PRINT("\tacceleratorId: %d\n",info.physInstId.acceleratorId);
-                HE_QAT_PRINT("\texecutionEngineId: %d\n",info.physInstId.executionEngineId);
-                HE_QAT_PRINT("\tbusAddress: %d\n",info.physInstId.busAddress);
-                HE_QAT_PRINT("\tkptAcHandle: %d\n",info.physInstId.kptAcHandle);
+                HE_QAT_PRINT("\tpackageId: %d\n", info.physInstId.packageId);
+                HE_QAT_PRINT("\tacceleratorId: %d\n",
+                             info.physInstId.acceleratorId);
+                HE_QAT_PRINT("\texecutionEngineId: %d\n",
+                             info.physInstId.executionEngineId);
+                HE_QAT_PRINT("\tbusAddress: %d\n", info.physInstId.busAddress);
+                HE_QAT_PRINT("\tkptAcHandle: %d\n",
+                             info.physInstId.kptAcHandle);
 #endif
             }
             HE_QAT_PRINT_DBG("Next Instance: %d.\n", nextInstance);
@@ -128,10 +133,11 @@ HE_QAT_STATUS acquire_qat_devices() {
 
     pthread_mutex_lock(&context_lock);
 
-    // Handle cases where acquire_qat_devices() is called when already active and running
-    if (HE_QAT_STATUS_ACTIVE == context_state) {       
-       pthread_mutex_unlock(&context_lock);
-       return HE_QAT_STATUS_SUCCESS;
+    // Handle cases where acquire_qat_devices() is called when already active
+    // and running
+    if (HE_QAT_STATUS_ACTIVE == context_state) {
+        pthread_mutex_unlock(&context_lock);
+        return HE_QAT_STATUS_SUCCESS;
     }
 
     // Initialize QAT memory pool allocator
@@ -139,7 +145,7 @@ HE_QAT_STATUS acquire_qat_devices() {
     if (CPA_STATUS_SUCCESS != status) {
         pthread_mutex_unlock(&context_lock);
         HE_QAT_PRINT_ERR("Failed to initialized memory driver.\n");
-        return HE_QAT_STATUS_FAIL; 
+        return HE_QAT_STATUS_FAIL;
     }
     HE_QAT_PRINT_DBG("QAT memory successfully initialized.\n");
 
@@ -148,7 +154,7 @@ HE_QAT_STATUS acquire_qat_devices() {
         pthread_mutex_unlock(&context_lock);
         HE_QAT_PRINT_ERR("Failed to start SAL user process SSL\n");
         qaeMemDestroy();
-        return HE_QAT_STATUS_FAIL; 
+        return HE_QAT_STATUS_FAIL;
     }
     HE_QAT_PRINT_DBG("SAL user process successfully started.\n");
 
@@ -217,7 +223,7 @@ HE_QAT_STATUS acquire_qat_devices() {
         he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
     }
 
-    he_qat_config = (HE_QAT_Config *) malloc(sizeof(HE_QAT_Config));
+    he_qat_config = (HE_QAT_Config*)malloc(sizeof(HE_QAT_Config));
     he_qat_config->inst_config = he_qat_inst_config;
     he_qat_config->count = HE_QAT_NUM_ACTIVE_INSTANCES;
     he_qat_config->running = 0;
@@ -252,7 +258,7 @@ HE_QAT_STATUS acquire_qat_devices() {
             "manager thread.\n");
         return HE_QAT_STATUS_FAIL;
     }
-    
+
     pthread_mutex_unlock(&context_lock);
 
     return HE_QAT_STATUS_SUCCESS;
@@ -262,10 +268,10 @@ HE_QAT_STATUS acquire_qat_devices() {
 /// Release QAT instances and tear down QAT execution environment.
 HE_QAT_STATUS release_qat_devices() {
     pthread_mutex_lock(&context_lock);
-    
+
     if (HE_QAT_STATUS_INACTIVE == context_state) {
-       pthread_mutex_unlock(&context_lock);
-       return HE_QAT_STATUS_SUCCESS;
+        pthread_mutex_unlock(&context_lock);
+        return HE_QAT_STATUS_SUCCESS;
     }
 
     stop_instances(he_qat_config);
@@ -291,9 +297,6 @@ HE_QAT_STATUS release_qat_devices() {
 }
 
 /// @brief  Retrieve and read context state.
-/// @return Possible return values are HE_QAT_STATUS_ACTIVE, 
-///         HE_QAT_STATUS_RUNNING, and HE_QAT_STATUS_INACTIVE. 
-HE_QAT_STATUS get_qat_context_state() {
-  return context_state;
-}
-
+/// @return Possible return values are HE_QAT_STATUS_ACTIVE,
+///         HE_QAT_STATUS_RUNNING, and HE_QAT_STATUS_INACTIVE.
+HE_QAT_STATUS get_qat_context_state() { return context_state; }
