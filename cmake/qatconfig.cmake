@@ -1,4 +1,5 @@
 
+# Setup ICP variables
 if(DEFINED ENV{ICP_ROOT})
 	message(STATUS "Environment variable ICP_ROOT is defined as $ENV{ICP_ROOT}.")
 else()
