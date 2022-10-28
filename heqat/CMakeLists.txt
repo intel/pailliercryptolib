@@ -1,5 +1,5 @@
 
-# HEQAT Lib source code
+# HE QAT Lib source code
 set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c
 	       ${HE_QAT_SRC_DIR}/context.c
 	       ${HE_QAT_SRC_DIR}/ctrl.c

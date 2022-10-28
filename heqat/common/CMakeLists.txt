@@ -1,6 +1,5 @@
 # Source files
-set(COMMON_SRC ${CMAKE_CURRENT_LIST_DIR}/cpa_sample_utils.c
-	       ${CMAKE_CURRENT_LIST_DIR}/utils.c)
+set(COMMON_SRC ${CMAKE_CURRENT_LIST_DIR}/utils.c)
 list(APPEND HE_QAT_SRC ${COMMON_SRC})
 set(HE_QAT_SRC ${HE_QAT_SRC} PARENT_SCOPE)
 

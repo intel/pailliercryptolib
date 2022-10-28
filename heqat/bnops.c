@@ -5,10 +5,10 @@
 #include "cpa_cy_ln.h"
 #include "icp_sal_poll.h"
 
-#include "heqat/common/cpa_sample_utils.h"
+#include "heqat/bnops.h"
 #include "heqat/common/consts.h"
 #include "heqat/common/types.h"
-#include "heqat/bnops.h"
+#include "heqat/common/utils.h"
 
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <assert.h>
+#include <string.h>
 #include <openssl/bn.h>
 
 #ifdef HE_QAT_SYNC_MODE
@@ -61,19 +62,22 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     Cpa8U* pExponent = NULL;
 
     // TODO(fdiasmor): Try it with 8-byte alignment.
-    CpaStatus status = CPA_STATUS_FAIL;
+    //CpaStatus status = CPA_STATUS_FAIL;
     // status = PHYS_CONTIG_ALLOC(&pBase, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
+    HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
+        if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         memcpy(pBase, b, len);
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
     // status = PHYS_CONTIG_ALLOC(&pExponent, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
     } else {
         printf("Contiguous memory allocation failed for pBase.\n");
@@ -81,21 +85,20 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     }
 
     // status = PHYS_CONTIG_ALLOC(&pModulus, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
-    // HE_QAT_TaskRequest request =
-    //           HE_QAT_PACK_MODEXP_REQUEST(pBase, pExponent, pModulus, r)
     // Pack it as a QAT Task Request
     HE_QAT_TaskRequest* request =
         (HE_QAT_TaskRequest*)calloc(1, sizeof(HE_QAT_TaskRequest));
     if (NULL == request) {
-        printf(
+        HE_QAT_PRINT_ERR(
             "HE_QAT_TaskRequest memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
@@ -104,7 +107,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     CpaCyLnModExpOpData* op_data =
         (CpaCyLnModExpOpData*)calloc(1, sizeof(CpaCyLnModExpOpData));
     if (NULL == op_data) {
-        printf("Cpa memory allocation failed in bnModExpPerformOp.\n");
+        HE_QAT_PRINT_ERR("Cpa memory allocation failed in bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
     }
     op_data->base.pData = pBase;
@@ -116,11 +119,12 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     request->op_data = (void*)op_data;
 
     // status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
-        printf(
+        HE_QAT_PRINT_ERR(
             "CpaFlatBuffer.pData memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
@@ -137,9 +141,7 @@ HE_QAT_STATUS HE_QAT_bnModExp(unsigned char* r, unsigned char* b,
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
 
-#ifdef HE_QAT_DEBUG
-    printf("BN ModExp interface call for request #%llu\n", req_count);
-#endif
+    HE_QAT_PRINT_DBG("BN ModExp interface call for request #%llu\n", req_count);
 
     // Submit request using producer function
     submit_request(&he_qat_buffer, (void*)request);
@@ -160,47 +162,55 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     HE_QAT_TaskRequest* request =
         (HE_QAT_TaskRequest*)calloc(1, sizeof(HE_QAT_TaskRequest));
     if (NULL == request) {
-        printf(
+        HE_QAT_PRINT_ERR(
             "HE_QAT_TaskRequest memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
     // TODO: @fdiasmor Try it with 8-byte alignment.
-    CpaStatus status = CPA_STATUS_FAIL;
-    status = PHYS_CONTIG_ALLOC(&pBase, len);
-    if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
+    //CpaStatus status = CPA_STATUS_FAIL;
+    HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+    //status = PHYS_CONTIG_ALLOC(&pBase, len);
+    //status = PHYS_CONTIG_ALLOC(&pBase, len);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         if (!BN_bn2binpad(b, pBase, len)) {
-            printf("BN_bn2binpad (base) failed in bnModExpPerformOp.\n");
-            PHYS_CONTIG_FREE(pBase);
+            HE_QAT_PRINT_ERR("BN_bn2binpad (base) failed in bnModExpPerformOp.\n");
+            //PHYS_CONTIG_FREE(pBase);
+            HE_QAT_MEM_FREE_CONTIG(pBase);
             return HE_QAT_STATUS_FAIL;
         }
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
-    status = PHYS_CONTIG_ALLOC(&pExponent, len);
-    if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
+    //status = PHYS_CONTIG_ALLOC(&pExponent, len);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         if (!BN_bn2binpad(e, pExponent, len)) {
-            printf("BN_bn2binpad (exponent) failed in bnModExpPerformOp.\n");
-            PHYS_CONTIG_FREE(pExponent);
+            HE_QAT_PRINT_ERR("BN_bn2binpad (exponent) failed in bnModExpPerformOp.\n");
+            //PHYS_CONTIG_FREE(pExponent);
+            HE_QAT_MEM_FREE_CONTIG(pExponent);
             return HE_QAT_STATUS_FAIL;
         }
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
-    status = PHYS_CONTIG_ALLOC(&pModulus, len);
-    if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
+    //status = PHYS_CONTIG_ALLOC(&pModulus, len);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         if (!BN_bn2binpad(m, pModulus, len)) {
-            printf("BN_bn2binpad failed in bnModExpPerformOp.\n");
-            PHYS_CONTIG_FREE(pModulus);
+            HE_QAT_PRINT_ERR("BN_bn2binpad failed in bnModExpPerformOp.\n");
+            //PHYS_CONTIG_FREE(pModulus);
+            HE_QAT_MEM_FREE_CONTIG(pModulus);
             return HE_QAT_STATUS_FAIL;
         }
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
@@ -219,11 +229,12 @@ HE_QAT_STATUS HE_QAT_BIGNUMModExp(BIGNUM* r, BIGNUM* b, BIGNUM* e, BIGNUM* m, in
     op_data->modulus.dataLenInBytes = len;
     request->op_data = (void*)op_data;
 
-    status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
-    if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
+    //status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
-        printf(
+        HE_QAT_PRINT_ERR(
             "CpaFlatBuffer.pData memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
@@ -275,20 +286,20 @@ void getBnModExpRequest(unsigned int batch_size) {
         time_taken = (task->end.tv_sec - task->start.tv_sec) * 1e6;
         time_taken =
             (time_taken + (task->end.tv_usec - task->start.tv_usec));  //*1e-6;
-        printf("%u time: %.1lfus\n", j, time_taken);
+        HE_QAT_PRINT("%u time: %.1lfus\n", j, time_taken);
 #endif
 
         // Free up QAT temporary memory
         CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
         if (op_data) {
-            PHYS_CONTIG_FREE(op_data->base.pData);
-            PHYS_CONTIG_FREE(op_data->exponent.pData);
-            PHYS_CONTIG_FREE(op_data->modulus.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->base.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->exponent.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->modulus.pData);
         }
         free(task->op_data);
         task->op_data = NULL;
         if (task->op_result.pData) {
-            PHYS_CONTIG_FREE(task->op_result.pData);
+            HE_QAT_MEM_FREE_CONTIG(task->op_result.pData);
         }
 
         // Move forward to wait for the next request that will be offloaded
@@ -308,7 +319,7 @@ void getBnModExpRequest(unsigned int batch_size) {
     time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
     time_taken =
         (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
-    printf("Batch Wall Time: %.1lfus\n", time_taken);
+    HE_QAT_PRINT("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
     return;
@@ -338,31 +349,35 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     Cpa8U* pExponent = NULL;
 
     // TODO(fdiasmor): Try it with 8-byte alignment.
-    CpaStatus status = CPA_STATUS_FAIL;
+    //CpaStatus status = CPA_STATUS_FAIL;
     // status = PHYS_CONTIG_ALLOC(&pBase, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pBase) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pBase, len, 8);
+    HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pBase, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pBase) {
         memcpy(pBase, b, len);
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
     // status = PHYS_CONTIG_ALLOC(&pExponent, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pExponent) {
+    // status = PHYS_CONTIG_ALLOC_ALIGNED(&pExponent, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pExponent, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pExponent) {
         memcpy(pExponent, e, len);
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
     // status = PHYS_CONTIG_ALLOC(&pModulus, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != pModulus) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&pModulus, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&pModulus, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != pModulus) {
         memcpy(pModulus, m, len);
     } else {
-        printf("Contiguous memory allocation failed for pBase.\n");
+        HE_QAT_PRINT_ERR("Contiguous memory allocation failed for pBase.\n");
         return HE_QAT_STATUS_FAIL;
     }
 
@@ -372,7 +387,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     HE_QAT_TaskRequest* request =
         (HE_QAT_TaskRequest*)calloc(1, sizeof(HE_QAT_TaskRequest));
     if (NULL == request) {
-        printf(
+        HE_QAT_PRINT_ERR(
             "HE_QAT_TaskRequest memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
@@ -393,11 +408,12 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     request->op_data = (void*)op_data;
 
     // status = PHYS_CONTIG_ALLOC(&request->op_result.pData, len);
-    status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
-    if (CPA_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
+    //status = PHYS_CONTIG_ALLOC_ALIGNED(&request->op_result.pData, len, 8);
+    status = HE_QAT_MEM_ALLOC_CONTIG(&request->op_result.pData, len, BYTE_ALIGNMENT_8);
+    if (HE_QAT_STATUS_SUCCESS == status && NULL != request->op_result.pData) {
         request->op_result.dataLenInBytes = len;
     } else {
-        printf(
+        HE_QAT_PRINT_ERR(
             "CpaFlatBuffer.pData memory allocation failed in "
             "bnModExpPerformOp.\n");
         return HE_QAT_STATUS_FAIL;
@@ -414,9 +430,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     pthread_mutex_init(&request->mutex, NULL);
     pthread_cond_init(&request->ready, NULL);
 
-#ifdef HE_QAT_DEBUG
-    printf("BN ModExp interface call for request #%llu\n", req_count);
-#endif
+    HE_QAT_PRINT_DBG("BN ModExp interface call for request #%llu\n", req_count);
 
     // Submit request using producer function
     submit_request(&outstanding.buffer[_buffer_id], (void*)request);
@@ -424,14 +438,10 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
     return HE_QAT_STATUS_SUCCESS;
 }
 
-/// @brief Frontend for multithreading support.
-/// @details Try to acquire an available buffer to store outstanding work requests sent by caller.  
-///          If none is available, it blocks further processing and waits until another caller's concurrent 
-///          thread releases one. This function must be called before
-///          calling HE_QAT_bnModExp_MT(.).
-/// @param[out] Pointer to memory space allocated by caller to hold the buffer ID of the buffer used to store caller's outstanding requests.
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     if (NULL == _buffer_id) return HE_QAT_STATUS_INVALID_PARAM;
+    
+    HE_QAT_PRINT_DBG("acquire_bnModExp_buffer #%u\n", _buffer_id);
 
     pthread_mutex_lock(&outstanding.mutex);
 
@@ -465,19 +475,11 @@ HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     return HE_QAT_STATUS_SUCCESS;
 }
 
-/// @brief Wait for request processing to complete and release previously acquired buffer. 
-/// @details Caution: It assumes acquire_bnModExp_buffer(&_buffer_id) to be called first
-/// to secure and be assigned an outstanding buffer for the target thread. 
-/// Equivalent to getBnModExpRequests() for the multithreading support interfaces.
-/// param[in] _buffer_id Buffer ID of the buffer to be released/unlock for reuse by the next concurrent thread.
-/// param[in] _batch_size Total number of requests to wait for completion before releasing the buffer.
 void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) {
     unsigned int next_data_out = outstanding.buffer[_buffer_id].next_data_out;
     unsigned int j = 0;
     
-#ifdef HE_QAT_DEBUG
-    printf("release_bnModExp_buffer #%u\n", _buffer_id);
-#endif
+    HE_QAT_PRINT_DBG("release_bnModExp_buffer #%u\n", _buffer_id);
 
 #ifdef HE_QAT_PERF
     struct timeval start_time, end_time;
@@ -492,10 +494,8 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
 
         if (NULL == task) continue;
 
-#ifdef HE_QAT_DEBUG
-        printf("BatchSize %u Buffer #%u Request #%u Waiting\n", _batch_size,
+        HE_QAT_PRINT_DBG("BatchSize %u Buffer #%u Request #%u Waiting\n", _batch_size,
                _buffer_id, j);
-#endif
 
         // Block and synchronize: Wait for the most recently offloaded request
         // to complete processing. Mutex only needed for the conditional variable.
@@ -507,28 +507,27 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
         time_taken = (task->end.tv_sec - task->start.tv_sec) * 1e6;
         time_taken =
             (time_taken + (task->end.tv_usec - task->start.tv_usec));  //*1e-6;
-        printf("%u time: %.1lfus\n", j, time_taken);
+        HE_QAT_PRINT("%u time: %.1lfus\n", j, time_taken);
 #endif
 
         // Free up QAT temporary memory
         CpaCyLnModExpOpData* op_data = (CpaCyLnModExpOpData*)task->op_data;
         if (op_data) {
-            PHYS_CONTIG_FREE(op_data->base.pData);
-            PHYS_CONTIG_FREE(op_data->exponent.pData);
-            PHYS_CONTIG_FREE(op_data->modulus.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->base.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->exponent.pData);
+            HE_QAT_MEM_FREE_CONTIG(op_data->modulus.pData);
         }
         free(task->op_data);
         task->op_data = NULL;
         if (task->op_result.pData) {
-            PHYS_CONTIG_FREE(task->op_result.pData);
+            HE_QAT_MEM_FREE_CONTIG(task->op_result.pData);
         }
 
         // Move forward to wait for the next request that will be offloaded
         pthread_mutex_unlock(&task->mutex);
 
-#ifdef HE_QAT_DEBUG
-        printf("Buffer #%u Request #%u Completed\n", _buffer_id, j);
-#endif
+        HE_QAT_PRINT_DBG("Buffer #%u Request #%u Completed\n", _buffer_id, j);
+
         // outstanding.buffer[_buffer_id].count--;
 
         free(outstanding.buffer[_buffer_id].data[next_data_out]);
@@ -545,7 +544,7 @@ void release_bnModExp_buffer(unsigned int _buffer_id, unsigned int _batch_size) 
     time_taken = (end_time.tv_sec - start_time.tv_sec) * 1e6;
     time_taken =
         (time_taken + (end_time.tv_usec - start_time.tv_usec));  //*1e-6;
-    printf("Batch Wall Time: %.1lfus\n", time_taken);
+    HE_QAT_PRINT("Batch Wall Time: %.1lfus\n", time_taken);
 #endif
 
     outstanding.buffer[_buffer_id].next_data_out = next_data_out;

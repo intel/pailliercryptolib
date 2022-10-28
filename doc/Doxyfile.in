@@ -5,8 +5,12 @@ PROJECT_NAME           = "Intel HE Acceleration Library for QAT"
 PROJECT_BRIEF          = "Intel Homomorphic Encryption Acceleration Library for QAT, accelerating the modular arithmetic operations used in partial homomorphic encryption on Intel QAT."
 
 OUTPUT_DIRECTORY       = @CMAKE_BINARY_DIR@/doc/doxygen
-INPUT                  = @CMAKE_SOURCE_DIR@/he_qat/include \
-                         @CMAKE_SOURCE_DIR@/misc \ 
+INPUT                  = @CMAKE_SOURCE_DIR@/heqat/include/heqat \
+                         @CMAKE_SOURCE_DIR@/heqat/include/heqat/common \
+                         @CMAKE_SOURCE_DIR@/heqat/include/heqat/misc \
+                         @CMAKE_SOURCE_DIR@/heqat \ 
+                         @CMAKE_SOURCE_DIR@/heqat/misc \ 
+                         @CMAKE_SOURCE_DIR@/heqat/common \ 
                          @CMAKE_SOURCE_DIR@/icp \
                          @CMAKE_SOURCE_DIR@/samples \
                          @CMAKE_SOURCE_DIR@/README.md 

@@ -7,8 +7,8 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-#include <string>
 #include <iomanip>
+#include <cstring>
 
 const unsigned int BATCH_SIZE = 48;
 
@@ -39,7 +39,7 @@ int main(int argc, const char** argv) {
 
         char* bn_str = BN_bn2hex(bn_mod);
 #ifdef HE_QAT_DEBUG
-        printf("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
+        HE_QAT_PRINT("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
                BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
 #endif
         OPENSSL_free(bn_str);
@@ -89,18 +89,18 @@ int main(int argc, const char** argv) {
         BigNumber big_num_exponent((Ipp32u)0);
         status = binToBigNumber(big_num_base, bn_base_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("Failed at binToBigNumber()\n");
+            HE_QAT_PRINT_ERR("Failed at binToBigNumber()\n");
             exit(1);
         }
         status = binToBigNumber(big_num_mod, bn_mod_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("Failed at binToBigNumber()\n");
+            HE_QAT_PRINT_ERR("Failed at binToBigNumber()\n");
             exit(1);
         }
         status =
             binToBigNumber(big_num_exponent, bn_exponent_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("Failed at binToBigNumber()\n");
+            HE_QAT_PRINT_ERR("Failed at binToBigNumber()\n");
             exit(1);
         }
 
@@ -111,25 +111,25 @@ int main(int argc, const char** argv) {
         // Make sure variables are reset
         if (memcmp(bn_base_data_, bn_mod_data_, len_) ||
             memcmp(bn_base_data_, bn_exponent_data_, len_)) {
-            PRINT_ERR("Pointers are not reset to zero!");
+            HE_QAT_PRINT_ERR("Pointers are not reset to zero!");
             exit(1);
         }
 
         start = high_resolution_clock::now();
         status = bigNumberToBin(bn_base_data_, bit_length, big_num_base);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("bn_base_data_: failed at bignumbertobin()\n");
+            HE_QAT_PRINT_ERR("bn_base_data_: failed at bigNumberToBin()\n");
             exit(1);
         }
         status = bigNumberToBin(bn_mod_data_, bit_length, big_num_mod);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("bn_base_data_: failed at bignumbertobin()\n");
+            HE_QAT_PRINT_ERR("bn_base_data_: failed at bigNumberToBin()\n");
             exit(1);
         }
         status =
             bigNumberToBin(bn_exponent_data_, bit_length, big_num_exponent);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("bn_base_data_: failed at bignumbertobin()\n");
+            HE_QAT_PRINT_ERR("bn_base_data_: failed at bigNumberToBin()\n");
             exit(1);
         }
         cvt_duration +=
@@ -154,34 +154,34 @@ int main(int argc, const char** argv) {
                         (ssl_duration.count() /
                          (double)(qat_duration.count() / BATCH_SIZE))) /
                        (mod + 1);
-        printf("Request #%u\t", mod + 1);
-        printf("Overhead: %.1luus", cvt_duration.count());
-        printf("\tOpenSSL: %.1lfus", ssl_avg_time);
-        printf("\tQAT: %.1lfus", qat_avg_time);
-        printf("\tSpeed-up: %.1lfx", avg_speed_up);
+        HE_QAT_PRINT("Request #%u\t", mod + 1);
+        HE_QAT_PRINT("Overhead: %.1luus", cvt_duration.count());
+        HE_QAT_PRINT("\tOpenSSL: %.1lfus", ssl_avg_time);
+        HE_QAT_PRINT("\tQAT: %.1lfus", qat_avg_time);
+        HE_QAT_PRINT("\tSpeed-up: %.1lfx", avg_speed_up);
 
         BIGNUM* qat_res = BN_new();
         BN_bin2bn(bn_remainder_data_, len_, qat_res);
 
         if (HE_QAT_STATUS_SUCCESS != status) {
-            PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+            HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
         }
 #ifdef HE_QAT_DEBUG
         else {
-            PRINT_DBG("\nQAT bnModExpOp finished\n");
+            HE_QAT_PRINT("\nQAT bnModExpOp finished\n");
         }
 #endif
 
         BigNumber big_num((Ipp32u)0);
         status = binToBigNumber(big_num, bn_remainder_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            printf("bn_remainder_data_: Failed at bigNumberToBin()\n");
+            HE_QAT_PRINT_ERR("bn_remainder_data_: Failed at bigNumberToBin()\n");
             exit(1);
         }
 
 #ifdef HE_QAT_DEBUG
         bn_str = BN_bn2hex(qat_res);
-        printf("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
+        HE_QAT_PRINT("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
                BN_num_bytes(qat_res), BN_num_bits(qat_res));
 #endif
 
@@ -190,16 +190,16 @@ int main(int argc, const char** argv) {
         ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
         std::string str;
         big_num.num2hex(str);
-        printf("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
+        HE_QAT_PRINT("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
                bit_len);
-        printf(
+        HE_QAT_PRINT(
             "---------------------################-----------------------\n");
 #endif
 
         if (BN_cmp(qat_res, ssl_res) != 0)
-            printf("\t** FAIL **\n");
+            HE_QAT_PRINT("\t** FAIL **\n");
         else
-            printf("\t** PASS **\n");
+            HE_QAT_PRINT("\t** PASS **\n");
 
         BN_free(bn_mod);
         BN_free(bn_base);

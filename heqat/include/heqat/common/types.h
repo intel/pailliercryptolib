@@ -14,15 +14,19 @@ extern "C" {
 #include "cpa_cy_im.h"
 #include "cpa_cy_ln.h"
 
-
 // C Libraries
 #include <pthread.h>
+#include <semaphore.h>
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
 #endif
 
-#include "heqat/common/cpa_sample_utils.h"
 #include "heqat/common/consts.h"
+
+struct completion_struct
+{
+    sem_t semaphore;
+};
 
 // Type definitions
 typedef enum { 
@@ -44,6 +48,13 @@ typedef enum {
     HE_QAT_OP_NONE = 0,  ///< No Operation (NO OP)
     HE_QAT_OP_MODEXP = 1 ///< QAT Modular Exponentiation
 } HE_QAT_OP;
+
+typedef enum { 
+    HE_QAT_NANOSEC = 1000000000,
+    HE_QAT_MICROSEC = 1000000, 
+    HE_QAT_MILLISEC = 1000,
+    HE_QAT_SEC = 1
+} HE_QAT_TIME_UNIT;
 
 typedef pthread_t HE_QAT_Inst;
 
@@ -98,7 +109,7 @@ typedef struct {
 typedef struct {
     unsigned long long id; ///< Work request ID. 
     // sem_t callback;
-    struct COMPLETION_STRUCT callback; ///< Synchronization object.
+    struct completion_struct callback; ///< Synchronization object.
     HE_QAT_OP op_type; ///< Work type: type of operation to be offloaded to QAT.
     CpaStatus op_status; ///< Status of the operation after completion.
     CpaFlatBuffer op_result; ///< Output of the operation in contiguous memory.
