@@ -1,4 +1,0 @@
-[submodule "module/heqat"]
-	path = module/heqat
-	url = https://github.com/intel-sandbox/libraries.security.cryptography.homomorphic-encryption.glade.project-destiny.git
-	branch = main
