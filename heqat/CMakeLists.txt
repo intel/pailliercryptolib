@@ -70,8 +70,6 @@ else()
   set_target_properties(he_qat PROPERTIES OUTPUT_NAME "he_qat")
 endif()
 
-install(TARGETS he_qat DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
 include(CMakePackageConfigHelpers)
 
 # config cmake config and target file

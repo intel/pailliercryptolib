@@ -24,7 +24,6 @@ set(ICP_INC_DIR ${ICP_API_DIR}/include
                 ${ICP_API_DIR}/include/dc
                 ${ICP_API_DIR}/include/lac)
 
-# Active macros for cpa_sample_utils
 add_definitions(-DDO_CRYPTO) 
 add_definitions(-DUSER_SPACE) 
 add_compile_options(-fPIC)
