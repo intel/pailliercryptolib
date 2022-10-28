@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 ###############################################################################
 
-macro(heqat_create_executable sample_case language dependencies)
+macro(heqat_create_executable test_case language dependencies)
   if(${language} STREQUAL "C" OR ${language} STREQUAL "c")
     set(extension "c")
   elseif(${language} STREQUAL "CXX" OR ${language} STREQUAL "cxx")
@@ -11,8 +11,8 @@ macro(heqat_create_executable sample_case language dependencies)
     message(FATAL_ERROR "Error language not supported. Options: C or CXX.")
   endif()
 
-  set(target sample_${sample_case})
-  add_executable(${target} test_${sample_case}.${extension})
+  set(target test_${test_case})
+  add_executable(${target} test_${test_case}.${extension})
   
   target_include_directories(${target} PUBLIC ${HE_QAT_INC_DIR})
   

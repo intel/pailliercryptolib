@@ -65,10 +65,8 @@ option(HE_QAT_MISC "Enable miscellaneous features" ON)
 option(HE_QAT_SYNC "Enable synchronous mode execution" OFF)
 option(HE_QAT_MT "Enable interfaces for multithreaded programs" ON)
 option(HE_QAT_PERF "Show request performance" OFF)
-option(HE_QAT_TEST "Enable testing" OFF)
+option(HE_QAT_TEST "Enable testing" ON)
 option(HE_QAT_OMP "Enable tests using OpenMP" ON)
-option(HE_QAT_SAMPLES "Enable examples" ON)
-option(HE_QAT_BENCHMARK "Enable benchmark" OFF)
 option(HE_QAT_DOCS "Enable document building" ON)
 option(HE_QAT_SHARED "Build shared library" ON)
 
@@ -170,26 +168,9 @@ include(cmake/qatconfig.cmake)
 # HE_QAT Library
 add_subdirectory(heqat)
 
-if(HE_QAT_TEST)
-  include(cmake/gtest.cmake)
-endif()
-if(HE_QAT_BENCHMARK)
-  include(cmake/gbenchmark.cmake)
-endif()
-
 #Validation test examples
-if(HE_QAT_SAMPLES)
-   add_subdirectory(samples)
-endif()
-
 if(HE_QAT_TEST)
   add_subdirectory(test)
-  add_custom_target(unittest COMMAND $<TARGET_FILE:he_qat_unittest> DEPENDS he_qat_unittest)
-endif()
-
-if(HE_QAT_BENCHMARK)
-  add_subdirectory(benchmark)
-  add_custom_target(benchmark COMMAND $<TARGET_FILE:he_qat_bench> DEPENDS he_qat_bench)
 endif()
 
 if(HE_QAT_DOCS)

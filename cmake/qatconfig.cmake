@@ -24,10 +24,6 @@ set(ICP_INC_DIR ${ICP_API_DIR}/include
                 ${ICP_API_DIR}/include/dc
                 ${ICP_API_DIR}/include/lac)
 
-add_definitions(-DDO_CRYPTO) 
-add_definitions(-DUSER_SPACE) 
-add_compile_options(-fPIC)
-
 add_library(libadf_static STATIC IMPORTED GLOBAL)
 add_library(libosal_static STATIC IMPORTED GLOBAL)
 add_library(libqat_static STATIC IMPORTED GLOBAL)
