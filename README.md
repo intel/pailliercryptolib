@@ -314,5 +314,7 @@ TODO
 
 # Contributors
 
-Fillipe D. M. de Souza (Lead)
+Fillipe Dias M. de Souza (Lead)
+Sejun Kim
+Pengfei Zhao
 
