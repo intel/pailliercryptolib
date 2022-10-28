@@ -101,16 +101,12 @@ endfunction()
 function(ipcl_define_icp_variables OutVariable)
   set(ICP_ROOT             $ENV{ICP_ROOT})
   set(ICP_BUILDOUTPUT_PATH ${ICP_ROOT}/build)
-
   set(ICP_BUILDSYSTEM_PATH ${ICP_ROOT}/quickassist/build_system)
   set(ICP_API_DIR          ${ICP_ROOT}/quickassist)
   set(ICP_LAC_DIR          ${ICP_ROOT}/quickassist/lookaside/access_layer)
   set(ICP_OSAL_DIR         ${ICP_ROOT}/quickassist/utilities/oasl)
   set(ICP_ADF_DIR          ${ICP_ROOT}/quickassist/lookaside/access_layer/src/qat_direct)
   set(CMN_ROOT             ${ICP_ROOT}/quickassist/utilities/libusdm_drv)
-  set(CPA_SAMPLES_DIR      ${ICP_ROOT}/quickassist/lookaside/access_layer/src/sample_code/functional)
-
-  add_definitions(-DUSER_SPACE)
 
   set(${OutVariable} ${ICP_API_DIR}/include
                   ${ICP_LAC_DIR}/include
@@ -118,5 +114,5 @@ function(ipcl_define_icp_variables OutVariable)
                   ${CMN_ROOT}
                   ${ICP_API_DIR}/include/dc
                   ${ICP_API_DIR}/include/lac
-                  ${CPA_SAMPLES_DIR}/include PARENT_SCOPE)
+                  PARENT_SCOPE)
 endfunction()

@@ -55,7 +55,7 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
 # include and install definition of cpu_features
 if(IPCL_DETECT_IFMA_RUNTIME)
 	target_include_directories(ipcl
-                PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
+        PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
 		PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
 	)
 	install(DIRECTORY ${CPUFEATURES_INC_DIR}/
@@ -69,7 +69,7 @@ endif()
 if(IPCL_ENABLE_QAT)
     ipcl_define_icp_variables(icp_inc_dir)
     target_include_directories(ipcl
-        PUBLIC "$<BUILD_INTERFACE:${icp_inc_dir}>"
+        PRIVATE "$<BUILD_INTERFACE:${icp_inc_dir}>"
     )
     target_include_directories(ipcl
         PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>"
