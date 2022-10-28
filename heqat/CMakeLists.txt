@@ -25,7 +25,7 @@ add_library(HE_QAT::he_qat ALIAS he_qat)
 target_include_directories(he_qat 
 	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers 
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> #Public headers
-	PRIVATE ${ICP_INC_DIR} #Private headers 
+	PUBLIC ${ICP_INC_DIR}
 )
 
 install(DIRECTORY ${HE_QAT_INC_DIR}/

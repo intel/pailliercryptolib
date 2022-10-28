@@ -23,10 +23,7 @@ find_package(Threads REQUIRED)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-include(../icp/CMakeLists.txt)
-
 add_definitions(-fpermissive)
 add_executable(example example.cpp)
-target_include_directories(example PRIVATE ${ICP_INC_DIR})
 target_link_libraries(example PRIVATE HE_QAT::he_qat)
 target_link_libraries(example PRIVATE OpenSSL::SSL)
