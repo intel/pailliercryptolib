@@ -34,10 +34,6 @@ add_dependencies(ext_he_qat ext_ipp-crypto)
 set(HEQAT_INC_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
 set(HEQAT_LIB_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
-# Bring up CPA variables
-include(${HEQAT_SRC_DIR}/cmake/qatconfig.cmake)
-list(APPEND HEQAT_INC_DIR ${ICP_INC_DIR})
-
 # Create heqat library interface
 if(IPCL_SHARED)
   add_library(libhe_qat INTERFACE)
@@ -56,6 +52,7 @@ if(IPCL_SHARED)
     DIRECTORY ${HEQAT_LIB_DIR}/
     DESTINATION "${IPCL_INSTALL_LIBDIR}/heqat"
     USE_SOURCE_PERMISSIONS
+    PATTERN "cmake" EXCLUDE
   )
 else()
   add_library(libhe_qat STATIC IMPORTED GLOBAL)

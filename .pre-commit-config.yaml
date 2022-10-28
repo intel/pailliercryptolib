@@ -7,7 +7,9 @@ repos:
       rev: v4.0.1
       hooks:
         - id: trailing-whitespace
+          exclude: cmake/ippcrypto_patch.patch
         - id: end-of-file-fixer
+          exclude: cmake/ippcrypto_patch.patch
         - id: check-merge-conflict
         - id: mixed-line-ending
         - id: check-byte-order-marker

@@ -44,7 +44,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
-set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
+set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wstringop-overflow=1")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl;${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
@@ -127,13 +127,13 @@ else()
     message(STATUS "Support RDRAND instruction: True")
     add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
   else()
-    message(WARNING 
+    message(WARNING
         "CPU doesn't support RDSEED and RDRAND instruction, using IPP-Crypto"
-        " S/W psuedo random number generator"
+        " S/W pseudo random number generator"
     )
   endif()
 endif()
-  
+
 set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}

@@ -67,20 +67,14 @@ if(IPCL_DETECT_IFMA_RUNTIME)
 endif()
 
 if(IPCL_ENABLE_QAT)
+    ipcl_define_icp_variables(icp_inc_dir)
     target_include_directories(ipcl
-        PRIVATE "$<BUILD_INTERFACE:${ICP_INC_DIR}>"
-        PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/icp>
+        PUBLIC "$<BUILD_INTERFACE:${icp_inc_dir}>"
     )
     target_include_directories(ipcl
         PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>"
         PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}/ipcl>
     )
-
-    install(DIRECTORY ${ICP_INC_DIR}/
-            DESTINATION ${IPCL_INSTALL_INCLUDEDIR}/icp
-            FILES_MATCHING
-            PATTERN "*.hpp"
-            PATTERN "*.h")
 
     install(DIRECTORY ${HEQAT_INC_DIR}/
             DESTINATION ${IPCL_INSTALL_INCLUDEDIR}

@@ -88,7 +88,7 @@ function(ipcl_check_qat_service_status)
   if(${QAT_SERVICE_STATUS} EQUAL "1")
     message(STATUS "qat_service is ACTIVE")
   else()
-    message(WARNING 
+    message(WARNING
       " qat_service is NOT ACTIVE!\n"
       " Since QAT is detected, compilation will continue however the"
       " qat_service need to be active to use the library.\n"
@@ -97,4 +97,26 @@ function(ipcl_check_qat_service_status)
     )
   endif()
 endfunction()
-    
+
+function(ipcl_define_icp_variables OutVariable)
+  set(ICP_ROOT             $ENV{ICP_ROOT})
+  set(ICP_BUILDOUTPUT_PATH ${ICP_ROOT}/build)
+
+  set(ICP_BUILDSYSTEM_PATH ${ICP_ROOT}/quickassist/build_system)
+  set(ICP_API_DIR          ${ICP_ROOT}/quickassist)
+  set(ICP_LAC_DIR          ${ICP_ROOT}/quickassist/lookaside/access_layer)
+  set(ICP_OSAL_DIR         ${ICP_ROOT}/quickassist/utilities/oasl)
+  set(ICP_ADF_DIR          ${ICP_ROOT}/quickassist/lookaside/access_layer/src/qat_direct)
+  set(CMN_ROOT             ${ICP_ROOT}/quickassist/utilities/libusdm_drv)
+  set(CPA_SAMPLES_DIR      ${ICP_ROOT}/quickassist/lookaside/access_layer/src/sample_code/functional)
+
+  add_definitions(-DUSER_SPACE)
+
+  set(${OutVariable} ${ICP_API_DIR}/include
+                  ${ICP_LAC_DIR}/include
+                  ${ICP_ADF_DIR}/include
+                  ${CMN_ROOT}
+                  ${ICP_API_DIR}/include/dc
+                  ${ICP_API_DIR}/include/lac
+                  ${CPA_SAMPLES_DIR}/include PARENT_SCOPE)
+endfunction()

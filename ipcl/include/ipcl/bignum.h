@@ -125,7 +125,7 @@ class BigNumber {
   // Support QAT data format
   static bool fromBin(BigNumber& bn, const unsigned char* data, int len);
   static bool toBin(unsigned char* data, int len, const BigNumber& bn);
-  static bool toBin(unsigned char** data, int *len, const BigNumber& bn);
+  static bool toBin(unsigned char** data, int* len, const BigNumber& bn);
 
  protected:
   bool create(const Ipp32u* pData, int length,

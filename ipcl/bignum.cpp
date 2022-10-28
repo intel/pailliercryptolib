@@ -18,7 +18,6 @@
 
 #include <cstdlib>
 #include <cstring>
-
 #include <iostream>
 
 //////////////////////////////////////////////////////////////////////
@@ -540,8 +539,7 @@ bool BigNumber::toBin(unsigned char* data, int len, const BigNumber& bn) {
   return true;
 }
 
-bool BigNumber::toBin(unsigned char** bin, int *len, const BigNumber& bn)
-{
+bool BigNumber::toBin(unsigned char** bin, int* len, const BigNumber& bn) {
   if (NULL == bin) return false;
   if (NULL == len) return false;
 
@@ -553,13 +551,15 @@ bool BigNumber::toBin(unsigned char** bin, int *len, const BigNumber& bn)
   // Revert it to big endian format
   int bitSizeLen = BITSIZE_WORD(bitSize) * 4;
   *len = bitSizeLen;
-  bin[0] = reinterpret_cast<unsigned char*>(malloc(bitSizeLen*sizeof(unsigned char)));
-  memset(bin[0],0,*len);
-  if(NULL == bin[0]) return false;
+  bin[0] = reinterpret_cast<unsigned char*>(
+      malloc(bitSizeLen * sizeof(unsigned char)));
+  memset(bin[0], 0, *len);
+  if (NULL == bin[0]) return false;
 
   unsigned char* data_out = bin[0];
   unsigned char* bn_data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
-  for (int i = 0; i < bitSizeLen; i++) data_out[bitSizeLen - 1 - i] = bn_data_[i];
+  for (int i = 0; i < bitSizeLen; i++)
+    data_out[bitSizeLen - 1 - i] = bn_data_[i];
 
   return true;
 }

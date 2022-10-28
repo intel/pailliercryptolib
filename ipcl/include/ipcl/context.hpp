@@ -11,19 +11,25 @@
 namespace ipcl {
 
 /**
- * Initialize device (CPU, QAT, or both) runtime context for the Paillier crypto services.
- * @details It must be called if there is intent of using QAT devices for compute acceleration.
- * @param[in] runtime_choice Acceptable values are "CPU", "cpu", "QAT", "qat", "HYBRID", "hybrid", "DEFAULT", "default". Anything other than the accepted values, including typos and absence thereof, will default to the "DEFAULT" runtime choice. 
- * @return true if runtime context has been properly initialized, false otherwise.
+ * Initialize device (CPU, QAT, or both) runtime context for the Paillier crypto
+ * services.
+ * @details It must be called if there is intent of using QAT devices for
+ * compute acceleration.
+ * @param[in] runtime_choice Acceptable values are "CPU", "cpu", "QAT", "qat",
+ * "HYBRID", "hybrid", "DEFAULT", "default". Anything other than the accepted
+ * values, including typos and absence thereof, will default to the "DEFAULT"
+ * runtime choice.
+ * @return true if runtime context has been properly initialized, false
+ * otherwise.
  */
 bool initializeContext(std::string runtime_choice);
 
 /**
  * Terminate runtime context.
- * @return true if runtime context has been properly terminated, false otherwise.
+ * @return true if runtime context has been properly terminated, false
+ * otherwise.
  */
 bool terminateContext(void);
-
 
 /**
  * Determine if QAT instances are running for IPCL.

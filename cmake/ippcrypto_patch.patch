@@ -1,7 +1,6 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-# applicable to https://github.com/intel/ipp-crypto/releases/tag/ippcp_2021.6
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index ddb61db..302ca95 100644
 --- a/CMakeLists.txt
@@ -11,9 +10,87 @@ index ddb61db..302ca95 100644
          VERSION ${PROJECT_VERSION}
          LANGUAGES C CXX)
 +include(GNUInstallDirs)
-
+ 
  if("${CMAKE_BUILD_TYPE}" STREQUAL "")
    message(STATUS "CMAKE_BUILD_TYPE is unset, defaulting to Release")
+diff --git a/sources/cmake/linux/Clang9.0.0.cmake b/sources/cmake/linux/Clang9.0.0.cmake
+index b99d637..4a0c5bc 100644
+--- a/sources/cmake/linux/Clang9.0.0.cmake
++++ b/sources/cmake/linux/Clang9.0.0.cmake
+@@ -100,7 +100,7 @@ if(${ARCH} MATCHES "ia32")
+ endif(${ARCH} MATCHES "ia32")
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warnings=errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Wno-stringop-overflow -Werror")
+ 
+ set(w7_opt "${w7_opt} -march=pentium4 -msse2")
+ set(s8_opt "${s8_opt} -march=core2 -mssse3")
+diff --git a/sources/cmake/linux/GNU8.2.0.cmake b/sources/cmake/linux/GNU8.2.0.cmake
+index 9c848d5..30ad189 100644
+--- a/sources/cmake/linux/GNU8.2.0.cmake
++++ b/sources/cmake/linux/GNU8.2.0.cmake
+@@ -96,7 +96,7 @@ if(${ARCH} MATCHES "ia32")
+ endif(${ARCH} MATCHES "ia32")
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warnings=errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Wno-stringop-overflow -Werror")
+ 
+ set(w7_opt "${w7_opt} -march=pentium4 -msse2")
+ set(s8_opt "${s8_opt} -march=core2 -mssse3")
+diff --git a/sources/cmake/linux/Intel19.0.0.cmake b/sources/cmake/linux/Intel19.0.0.cmake
+index ce0ee06..bbe4acc 100644
+--- a/sources/cmake/linux/Intel19.0.0.cmake
++++ b/sources/cmake/linux/Intel19.0.0.cmake
+@@ -99,7 +99,7 @@ if(CODE_COVERAGE)
+ endif()
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warning level = 3, treat warnings as errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -w3 -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -w3 -Wno-stringop-overflow -Werror")
+ # DEBUG flags Optimization level = 0, generation maximum GDB information (-g3)
+ set (CMAKE_C_FLAGS_DEBUG " -O0 -g3")
+ 
+diff --git a/sources/cmake/linux/IntelLLVM2021.3.0.cmake b/sources/cmake/linux/IntelLLVM2021.3.0.cmake
+index 73ab46a..bedc0a7 100644
+--- a/sources/cmake/linux/IntelLLVM2021.3.0.cmake
++++ b/sources/cmake/linux/IntelLLVM2021.3.0.cmake
+@@ -95,7 +95,7 @@ if(CODE_COVERAGE)
+ endif()
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warning level = 3, treat warnings as errors
+-set (CMAKE_C_FLAGS_RELEASE " -Ofast -DNDEBUG -Wall -Wno-unused-function -Wno-missing-braces -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -Ofast -DNDEBUG -Wall -Wno-unused-function -Wno-missing-braces -Wno-stringop-overflow -Werror")
+ 
+ # Alignment for structures on byte boundaries (= 16)
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Zp16")
+diff --git a/sources/cmake/macosx/AppleClang11.0.0.cmake b/sources/cmake/macosx/AppleClang11.0.0.cmake
+index 0ca0d30..604ebf3 100644
+--- a/sources/cmake/macosx/AppleClang11.0.0.cmake
++++ b/sources/cmake/macosx/AppleClang11.0.0.cmake
+@@ -99,7 +99,7 @@ if(${ARCH} MATCHES "ia32")
+ endif(${ARCH} MATCHES "ia32")
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warnings=errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Wno-stringop-overflow -Werror")
+ 
+ set(w7_opt "${w7_opt} -march=pentium4 -msse2")
+ set(s8_opt "${s8_opt} -march=core2 -mssse3")
+diff --git a/sources/cmake/macosx/Intel19.0.0.cmake b/sources/cmake/macosx/Intel19.0.0.cmake
+index 1250802..ffdf8db 100644
+--- a/sources/cmake/macosx/Intel19.0.0.cmake
++++ b/sources/cmake/macosx/Intel19.0.0.cmake
+@@ -86,7 +86,7 @@ if(CODE_COVERAGE)
+ endif()
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warning level = 3, treat warnings as errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -w3 -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -w3 -Wno-stringop-overflow -Werror")
+ 
+ # Compile for x64
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -arch_only x86_64")
 diff --git a/sources/ippcp/CMakeLists.txt b/sources/ippcp/CMakeLists.txt
 index dd5ef41..b60357e 100644
 --- a/sources/ippcp/CMakeLists.txt
@@ -26,7 +103,7 @@ index dd5ef41..b60357e 100644
 +            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
      list(APPEND IPPCP_LIB_DYNAMIC ${IPPCP_DYN_ITER})
    endif(DYNAMIC_LIB AND NOT MERGED_BLD)
-
+ 
 @@ -407,7 +407,7 @@ foreach(opt ${PLATFORM_LIST})
      set_target_properties(${IPPCP_ST_ITER} PROPERTIES PUBLIC_HEADER "${IPPCP_PUBLIC_HEADERS}")
      install(TARGETS ${IPPCP_ST_ITER}
@@ -34,16 +111,16 @@ index dd5ef41..b60357e 100644
 -            PUBLIC_HEADER DESTINATION "include")
 +            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
    endif()
-
+ 
    list(APPEND IPPCP_LIB_STATIC ${IPPCP_ST_ITER})
 @@ -482,7 +482,7 @@ if(MERGED_BLD)
-
+ 
    install(TARGETS ${IPPCP_LIB_MERGED}
            ARCHIVE DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
 -          PUBLIC_HEADER DESTINATION "include"
 +          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
            PRIVATE_HEADER DESTINATION "tools/${ARCH}/staticlib")
-
+ 
    set_source_files_properties(${DISPATCHER_C_SOURCES} pcpver.rc PROPERTIES INCLUDE_DIRECTORIES "${C_INCLUDE_DIRECTORIES}")
 @@ -521,7 +521,7 @@ if(MERGED_BLD)
      install(TARGETS ${IPPCP_LIB_PCS}
@@ -52,7 +129,7 @@ index dd5ef41..b60357e 100644
 -            PUBLIC_HEADER DESTINATION "include"
 +            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
              PRIVATE_HEADER DESTINATION "tools/${ARCH}/staticlib")
-
+ 
      if(WIN32)
 diff --git a/sources/ippcp/crypto_mb/src/CMakeLists.txt b/sources/ippcp/crypto_mb/src/CMakeLists.txt
 index f75f448..2f43255 100644
@@ -71,7 +148,7 @@ index f75f448..2f43255 100644
 -            PUBLIC_HEADER DESTINATION "include/crypto_mb")
 +            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
  endif()
-
+ 
  # Static library
 @@ -147,9 +147,9 @@ endif()
  if(MB_STANDALONE)
@@ -85,3 +162,81 @@ index f75f448..2f43255 100644
 -            PUBLIC_HEADER DESTINATION "include/crypto_mb")
 +            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
  endif()
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/Clang.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/Clang.cmake
+index 17bc125..77b14ee 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/Clang.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/Clang.cmake
+@@ -44,7 +44,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fpic -fPIC")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
+index b95f703..1be6ca7 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
+@@ -46,7 +46,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fcf-protection=full")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
+index 39862aa..35d49c1 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
+@@ -40,7 +40,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fcf-protection=full")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/IntelLLVM.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/IntelLLVM.cmake
+index 285c64a..b0f48bf 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/IntelLLVM.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/IntelLLVM.cmake
+@@ -40,7 +40,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fcf-protection=full")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/macosx/AppleClang.cmake b/sources/ippcp/crypto_mb/src/cmake/macosx/AppleClang.cmake
+index 5f6ff8c..fefd3a2 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/macosx/AppleClang.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/macosx/AppleClang.cmake
+@@ -40,7 +40,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fpic -fPIC")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/macosx/Intel.cmake b/sources/ippcp/crypto_mb/src/cmake/macosx/Intel.cmake
+index 1abac6e..40919a6 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/macosx/Intel.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/macosx/Intel.cmake
+@@ -33,7 +33,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fpic -fPIC")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
