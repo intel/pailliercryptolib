@@ -35,7 +35,7 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
              -DCMAKE_INSTALL_INCLUDEDIR=${IPPCRYPTO_DEST_INCLUDE_DIR}
   UPDATE_COMMAND ""
-  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/ippcrypto_patch.patch
+  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/patch/ippcrypto_patch.patch
   INSTALL_COMMAND make DESTDIR=${IPPCRYPTO_DESTDIR} install
 )
 

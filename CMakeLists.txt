@@ -43,12 +43,21 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/intel/ipcl")
 endif()
 
-set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
-set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wstringop-overflow=1")
+set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
+set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl;${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
+# Compiler version check - icx/icpx-2021.3.0 is supported
+if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 2021.3.0)
+    message(FATAL_ERROR
+    " ${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} is not supported."
+    " Please refer to Intel IPP-Crypto (https://github.com/intel/ipp-crypto"
+    " for more information.")
+  endif()
+endif()
 
 #---------------------------------------------------
 option(IPCL_TEST "Enable testing" ON)
