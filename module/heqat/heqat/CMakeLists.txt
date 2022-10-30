@@ -6,6 +6,10 @@ set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c
 	       ${HE_QAT_SRC_DIR}/context.c
 	       ${HE_QAT_SRC_DIR}/ctrl.c
 	       ${HE_QAT_SRC_DIR}/bnops.c
+         ${HE_QAT_SRC_DIR}/misc/misc.cpp
+         ${HE_QAT_SRC_DIR}/misc/utils.cpp
+         ${HE_QAT_SRC_DIR}/misc/bignum.cpp
+         ${HE_QAT_SRC_DIR}/common/utils.c
 )
 
 # Common utility functions, types and constants
@@ -24,15 +28,15 @@ endif()
 
 add_library(HE_QAT::he_qat ALIAS he_qat)
 
-target_include_directories(he_qat 
-	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers 
+target_include_directories(he_qat
+	PUBLIC $<BUILD_INTERFACE:${HE_QAT_INC_DIR}> #Public headers
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> #Public headers
 	PUBLIC ${ICP_INC_DIR}
 )
 
 install(DIRECTORY ${HE_QAT_INC_DIR}/
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
-	FILES_MATCHING 
+	FILES_MATCHING
 	PATTERN "*.hpp"
 	PATTERN "*.h")
 
@@ -52,7 +56,7 @@ else()
 endif()
 
 if(HE_QAT_MISC)
-  target_include_directories(he_qat PRIVATE ${IPPCP_DIR}/../../../include) 
+  target_include_directories(he_qat PRIVATE ${IPPCP_DIR}/../../../include)
   target_link_directories(he_qat PUBLIC ${IPPCP_DIR}/lib/intel64)
   if(HE_QAT_SHARED)
     target_link_libraries(he_qat PRIVATE IPPCP::ippcp)
@@ -110,4 +114,3 @@ install(FILES ${HE_QAT_CONFIG_FILENAME}
 
 export(EXPORT he_qatTargets
         FILE ${HE_QAT_TARGET_FILENAME})
-
