@@ -35,17 +35,17 @@ set(HEQAT_LIB_DIR ${HEQAT_DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDI
 
 # Create heqat library interface
 if(IPCL_SHARED)
-  add_library(libhe_qat INTERFACE)
-  add_dependencies(libhe_qat ext_he_qat)
+  add_library(he_qat INTERFACE)
+  add_dependencies(he_qat ext_he_qat)
 
   ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	  target_link_libraries(libhe_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat_debug.so)
+	  target_link_libraries(he_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat_debug.so)
   else()
-	  target_link_libraries(libhe_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat.so)
+	  target_link_libraries(he_qat INTERFACE ${HEQAT_LIB_DIR}/libhe_qat.so)
   endif()
-  target_include_directories(libhe_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})
+  target_include_directories(he_qat SYSTEM INTERFACE ${HEQAT_INC_DIR})
 
   install(
     DIRECTORY ${HEQAT_LIB_DIR}/
@@ -54,17 +54,17 @@ if(IPCL_SHARED)
     PATTERN "cmake" EXCLUDE
   )
 else()
-  add_library(libhe_qat STATIC IMPORTED GLOBAL)
-  add_dependencies(libhe_qat ext_he_qat)
+  add_library(he_qat STATIC IMPORTED GLOBAL)
+  add_dependencies(he_qat ext_he_qat)
 
   ExternalProject_Get_Property(ext_he_qat SOURCE_DIR BINARY_DIR)
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(libhe_qat PROPERTIES
+    set_target_properties(he_qat PROPERTIES
             IMPORTED_LOCATION ${HEQAT_LIB_DIR}/libhe_qat_debug.a
       INCLUDE_DIRECTORIES ${HEQAT_INC_DIR})
   else()
-    set_target_properties(libhe_qat PROPERTIES
+    set_target_properties(he_qat PROPERTIES
             IMPORTED_LOCATION ${HEQAT_LIB_DIR}/libhe_qat.a
       INCLUDE_DIRECTORIES ${HEQAT_INC_DIR})
   endif()

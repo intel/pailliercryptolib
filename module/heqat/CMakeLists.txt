@@ -3,12 +3,12 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-# The hekat or heqat (transcribed HqA.t) was an ancient Egyptian volume unit 
+# The hekat or heqat (transcribed HqA.t) was an ancient Egyptian volume unit
 # used to measure grain, bread, and beer.
 project(HE_QAT VERSION 1.3.2 LANGUAGES C CXX)
 
-include(CheckCCompilerFlag) 
-include(CheckCXXCompilerFlag) 
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(CMakePackageConfigHelpers)
 
 if(CMAKE_BUILD_TYPE)
@@ -28,9 +28,9 @@ else()
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_C_STANDARD 99) 
-set(CMAKE_C_STANDARD_REQUIRED ON) 
-set(CMAKE_CXX_STANDARD 11) 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS "-O2 -Wunused-variable -Wunused-function")
@@ -60,7 +60,6 @@ include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 # -------------------------------------------------------------------
-
 option(HE_QAT_MISC "Enable miscellaneous features" ON)
 option(HE_QAT_SYNC "Enable synchronous mode execution" OFF)
 option(HE_QAT_MT "Enable interfaces for multithreaded programs" ON)
@@ -83,8 +82,8 @@ endif()
 
 # Why?
 set(HE_QAT_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/he_qat")
-set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}) 
-set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/heqat) 
+set(HE_QAT_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(HE_QAT_SRC_DIR ${HE_QAT_ROOT_DIR}/heqat)
 set(HE_QAT_INC_DIR ${HE_QAT_ROOT_DIR}/heqat/include)
 
 if(HE_QAT_OMP)
@@ -146,7 +145,7 @@ if(NOT HE_QAT_SHARED)
   message(STATUS "OPENSSL_USE_STATIC_LIBS TRUE")
 else()
   set(OPENSSL_USE_STATIC_LIBS FALSE)
-  message(STATUS "OPENSSL_USE_STATIC_LIBS FALSE") 
+  message(STATUS "OPENSSL_USE_STATIC_LIBS FALSE")
 endif()
 find_package(OpenSSL REQUIRED)
 
@@ -185,4 +184,3 @@ if(HE_QAT_DOCS)
     endif()
   endif()
 endif()
-

@@ -6,18 +6,15 @@ set(HE_QAT_SRC ${HE_QAT_SRC_DIR}/cb.c
 	       ${HE_QAT_SRC_DIR}/context.c
 	       ${HE_QAT_SRC_DIR}/ctrl.c
 	       ${HE_QAT_SRC_DIR}/bnops.c
-         ${HE_QAT_SRC_DIR}/misc/misc.cpp
-         ${HE_QAT_SRC_DIR}/misc/utils.cpp
-         ${HE_QAT_SRC_DIR}/misc/bignum.cpp
          ${HE_QAT_SRC_DIR}/common/utils.c
 )
 
-# Common utility functions, types and constants
-add_subdirectory(common)
-
 # Helper functions for ippcrypto's BigNumber class
 if(HE_QAT_MISC)
-  add_subdirectory(misc)
+  list(APPEND HE_QAT_SRC          ${HE_QAT_SRC_DIR}/misc/misc.cpp
+  ${HE_QAT_SRC_DIR}/misc/utils.cpp
+  ${HE_QAT_SRC_DIR}/misc/bignum.cpp
+)
 endif()
 
 if(HE_QAT_SHARED)
