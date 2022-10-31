@@ -11,6 +11,18 @@
 namespace ipcl {
 
 /**
+ * Set the number of mod exp operatiions
+ * @param[in] total total number of mod exp operations.
+ * @param[in] qat number of mod exp operations using QAT
+ */
+void setHybridModExp(int total, int qat);
+
+/**
+ * Turn off hybrid mod exp.
+ */
+void setHybridModExpOff();
+
+/**
  * Modular exponentiation for multi BigNumber
  * @param[in] base base of the exponentiation
  * @param[in] exp pow of the exponentiation

@@ -9,6 +9,7 @@
 namespace ipcl {
 
 constexpr int IPCL_CRYPTO_MB_SIZE = 8;
+constexpr int IPCL_QAT_MODEXP_BATCH_SIZE = 1024;
 
 /**
  * Random generator wrapper.Generates a random unsigned Big Number of the

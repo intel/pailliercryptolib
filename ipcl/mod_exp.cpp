@@ -12,14 +12,34 @@
 #ifdef IPCL_USE_QAT
 #include <heqat/bnops.h>
 #include <heqat/common.h>
+
+#include <thread>  //NOLINT
 #endif
 
 #include "ipcl/util.hpp"
 
 namespace ipcl {
 
-#ifdef IPCL_USE_QAT
+static int g_hybrid_modexp_total = 0;
+static int g_hybrid_modexp_qat = 0;
 
+void setHybridModExp(int total, int qat) {
+#ifdef IPCL_USE_QAT
+  ERROR_CHECK((qat <= total) && (qat >= 0),
+              "setQatFlowSize: input size is incorrect");
+  g_hybrid_modexp_total = total;
+  g_hybrid_modexp_qat = qat;
+#endif  // IPCL_USE_QAT
+}
+
+void setHybridModExpOff() {
+#ifdef IPCL_USE_QAT
+  g_hybrid_modexp_total = 0;
+  g_hybrid_modexp_qat = 0;
+#endif  // IPCL_USE_QAT
+}
+
+#ifdef IPCL_USE_QAT
 // Multiple input QAT ModExp interface to offload computation to QAT
 static std::vector<BigNumber> heQatBnModExp(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
@@ -274,184 +294,6 @@ static std::vector<BigNumber> heQatBnModExp(
 
   return remainder;
 }
-
-// Multiple input QAT ModExp interface to offload computation to QAT
-static std::vector<BigNumber> heQatBnModExp(
-    const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
-    const std::vector<BigNumber>& modulus) {
-  static unsigned int counter = 0;
-  int nbits = modulus.front().BitSize();
-  int length = BITSIZE_WORD(nbits) * 4;
-  nbits = 8 * length;
-
-  HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-
-  // TODO(fdiasmor): Try replace calloc by alloca to see impact on performance.
-  unsigned char* bn_base_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_exponent_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_modulus_data_[IPCL_CRYPTO_MB_SIZE];
-  unsigned char* bn_remainder_data_[IPCL_CRYPTO_MB_SIZE];
-  for (int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    bn_base_data_[i] = reinterpret_cast<unsigned char*>(
-        malloc(length * sizeof(unsigned char)));
-    bn_exponent_data_[i] = reinterpret_cast<unsigned char*>(
-        malloc(length * sizeof(unsigned char)));
-    bn_modulus_data_[i] = reinterpret_cast<unsigned char*>(
-        malloc(length * sizeof(unsigned char)));
-    bn_remainder_data_[i] = reinterpret_cast<unsigned char*>(
-        malloc(length * sizeof(unsigned char)));
-
-    ERROR_CHECK(
-        bn_base_data_[i] != nullptr && bn_exponent_data_[i] != nullptr &&
-            bn_modulus_data_[i] != nullptr && bn_remainder_data_[i] != nullptr,
-        "qatMultiBuffExp: alloc memory for error");
-
-    memset(bn_base_data_[i], 0, length);
-    memset(bn_exponent_data_[i], 0, length);
-    memset(bn_modulus_data_[i], 0, length);
-    memset(bn_remainder_data_[i], 0, length);
-  }
-
-  // TODO(fdiasmor): Define and use IPCL_QAT_BATCH_SIZE instead of
-  // IPCL_CRYPTO_MB_SIZE.
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    bool ret = BigNumber::toBin(bn_base_data_[i], length, base[i]);
-    if (!ret) {
-      printf("bn_base_data_: failed at bigNumberToBin()\n");
-      exit(1);
-    }
-    ret = BigNumber::toBin(bn_exponent_data_[i], length, exponent[i]);
-    if (!ret) {
-      printf("bn_exponent_data_: failed at bigNumberToBin()\n");
-      exit(1);
-    }
-    ret = BigNumber::toBin(bn_modulus_data_[i], length, modulus[i]);
-    if (!ret) {
-      printf("bn_modulus_data_: failed at bigNumberToBin()\n");
-      exit(1);
-    }
-
-    unsigned char* bn_base_ =
-        reinterpret_cast<unsigned char*>(bn_base_data_[i]);
-    unsigned char* bn_exponent_ =
-        reinterpret_cast<unsigned char*>(bn_exponent_data_[i]);
-    unsigned char* bn_modulus_ =
-        reinterpret_cast<unsigned char*>(bn_modulus_data_[i]);
-    unsigned char* bn_remainder_ =
-        reinterpret_cast<unsigned char*>(bn_remainder_data_[i]);
-
-    status = HE_QAT_bnModExp(bn_remainder_, bn_base_, bn_exponent_, bn_modulus_,
-                             nbits);
-    if (HE_QAT_STATUS_SUCCESS != status) {
-      HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
-    }
-  }
-  getBnModExpRequest(IPCL_CRYPTO_MB_SIZE);
-
-  std::vector<BigNumber> remainder(IPCL_CRYPTO_MB_SIZE, 0);
-  // Collect results and pack them into BigNumber
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    unsigned char* bn_remainder_ = bn_remainder_data_[i];
-    bool ret = BigNumber::fromBin(remainder[i], bn_remainder_, length);
-    if (!ret) {
-      printf("bn_remainder_data_: failed at bignumbertobin()\n");
-      exit(1);
-    }
-  }
-
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    free(bn_base_data_[i]);
-    bn_base_data_[i] = NULL;
-    free(bn_exponent_data_[i]);
-    bn_exponent_data_[i] = NULL;
-    free(bn_modulus_data_[i]);
-    bn_modulus_data_[i] = NULL;
-  }
-
-  for (unsigned int i = 0; i < IPCL_CRYPTO_MB_SIZE; i++) {
-    free(bn_remainder_data_[i]);
-    bn_remainder_data_[i] = NULL;
-  }
-
-  return remainder;
-}
-
-// Single input QAT ModExp interface to offload computation to QAT
-static BigNumber heQatBnModExp(const BigNumber& base, const BigNumber& exponent,
-                               const BigNumber& modulus) {
-  static unsigned int counter = 0;
-  int nbits = modulus.BitSize();
-  int length = BITSIZE_WORD(nbits) * 4;
-  nbits = 8 * length;
-
-  HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
-
-  // TODO(fdiasmor): Try replace calloc by alloca to see impact on performance.
-  unsigned char* bn_base_data_ = NULL;
-  unsigned char* bn_exponent_data_ = NULL;
-  unsigned char* bn_modulus_data_ = NULL;
-  unsigned char* bn_remainder_data_ = NULL;
-
-  bn_base_data_ =
-      reinterpret_cast<unsigned char*>(malloc(length * sizeof(unsigned char)));
-  bn_exponent_data_ =
-      reinterpret_cast<unsigned char*>(malloc(length * sizeof(unsigned char)));
-  bn_modulus_data_ =
-      reinterpret_cast<unsigned char*>(malloc(length * sizeof(unsigned char)));
-  bn_remainder_data_ =
-      reinterpret_cast<unsigned char*>(malloc(length * sizeof(unsigned char)));
-
-  ERROR_CHECK(bn_base_data_ != nullptr && bn_exponent_data_ != nullptr &&
-                  bn_modulus_data_ != nullptr && bn_remainder_data_ != nullptr,
-              "qatMultiBuffExp: alloc memory for error");
-
-  memset(bn_base_data_, 0, length);
-  memset(bn_exponent_data_, 0, length);
-  memset(bn_modulus_data_, 0, length);
-  memset(bn_remainder_data_, 0, length);
-
-  bool ret = BigNumber::toBin(bn_base_data_, length, base);
-  if (!ret) {
-    printf("bn_base_data_: failed at bignumbertobin()\n");
-    exit(1);
-  }
-  ret = BigNumber::toBin(bn_exponent_data_, length, exponent);
-  if (!ret) {
-    printf("bn_exponent_data_: failed at bignumbertobin()\n");
-    exit(1);
-  }
-  ret = BigNumber::toBin(bn_modulus_data_, length, modulus);
-  if (!ret) {
-    printf("bn_modulus_data_: failed at bignumbertobin()\n");
-    exit(1);
-  }
-
-  status = HE_QAT_bnModExp(bn_remainder_data_, bn_base_data_, bn_exponent_data_,
-                           bn_modulus_data_, nbits);
-  if (HE_QAT_STATUS_SUCCESS != status) {
-    HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
-  }
-  getBnModExpRequest(1);
-
-  // Collect result and pack it into BigNumber
-  BigNumber remainder;
-  ret = BigNumber::fromBin(remainder, bn_remainder_data_, length);
-  if (!ret) {
-    printf("bn_remainder_data_: failed at bignumbertobin()\n");
-    exit(1);
-  }
-
-  free(bn_base_data_);
-  bn_base_data_ = NULL;
-  free(bn_exponent_data_);
-  bn_exponent_data_ = NULL;
-  free(bn_modulus_data_);
-  bn_modulus_data_ = NULL;
-  free(bn_remainder_data_);
-  bn_remainder_data_ = NULL;
-
-  return remainder;
-}
 #endif  // IPCL_USE_QAT
 
 static std::vector<BigNumber> ippMBModExp(const std::vector<BigNumber>& base,
@@ -603,82 +445,18 @@ std::vector<BigNumber> qatModExp(const std::vector<BigNumber>& base,
   std::size_t worksize = base.size();
   std::vector<BigNumber> remainder(worksize);
 
-  // remainder = heQatBnModExp(base, exp, mod);
-  remainder = heQatBnModExp(base, exp, mod, 1024);
+  remainder = heQatBnModExp(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
   return remainder;
 #else
   ERROR_CHECK(false, "qatModExp: Need to turn on IPCL_ENABLE_QAT");
 #endif  // IPCL_USE_QAT
 }
 
-std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
-                                 const std::vector<BigNumber>& exp,
-                                 const std::vector<BigNumber>& mod) {
+static std::vector<BigNumber> ippMBModExpWrapper(
+    const std::vector<BigNumber>& base, const std::vector<BigNumber>& exp,
+    const std::vector<BigNumber>& mod) {
   std::size_t v_size = base.size();
   std::vector<BigNumber> res(v_size);
-
-#ifdef IPCL_RUNTIME_MOD_EXP
-
-  // If there is only 1 big number, we don't need to use MBModExp
-  if (v_size == 1) {
-    res[0] = ippSBModExp(base[0], exp[0], mod[0]);
-    return res;
-  }
-
-  if (has_avx512ifma) {
-    std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
-    std::size_t num_chunk =
-        (v_size + IPCL_CRYPTO_MB_SIZE - 1) / IPCL_CRYPTO_MB_SIZE;
-#ifdef IPCL_USE_OMP
-    int omp_remaining_threads = OMPUtilities::MaxThreads;
-#pragma omp parallel for num_threads( \
-    OMPUtilities::assignOMPThreads(omp_remaining_threads, num_chunk))
-#endif  // IPCL_USE_OMP
-    for (std::size_t i = 0; i < num_chunk; i++) {
-      std::size_t chunk_size = IPCL_CRYPTO_MB_SIZE;
-      if ((i == (num_chunk - 1)) && (remainder > 0)) chunk_size = remainder;
-
-      std::size_t chunk_offset = i * IPCL_CRYPTO_MB_SIZE;
-
-      auto base_start = base.begin() + chunk_offset;
-      auto base_end = base_start + chunk_size;
-
-      auto exp_start = exp.begin() + chunk_offset;
-      auto exp_end = exp_start + chunk_size;
-
-      auto mod_start = mod.begin() + chunk_offset;
-      auto mod_end = mod_start + chunk_size;
-
-      auto base_chunk = std::vector<BigNumber>(base_start, base_end);
-      auto exp_chunk = std::vector<BigNumber>(exp_start, exp_end);
-      auto mod_chunk = std::vector<BigNumber>(mod_start, mod_end);
-
-      auto tmp = ippMBModExp(base_chunk, exp_chunk, mod_chunk);
-      std::copy(tmp.begin(), tmp.end(), res.begin() + chunk_offset);
-    }
-
-    return res;
-
-  } else {
-#ifdef IPCL_USE_OMP
-    int omp_remaining_threads = OMPUtilities::MaxThreads;
-#pragma omp parallel for num_threads( \
-    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
-#endif  // IPCL_USE_OMP
-    for (int i = 0; i < v_size; i++)
-      res[i] = ippSBModExp(base[i], exp[i], mod[i]);
-    return res;
-  }
-
-#else
-
-#ifdef IPCL_CRYPTO_MB_MOD_EXP
-
-  // If there is only 1 big number, we don't need to use MBModExp
-  if (v_size == 1) {
-    res[0] = ippSBModExp(base[0], exp[0], mod[0]);
-    return res;
-  }
 
   std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
   std::size_t num_chunk =
@@ -713,8 +491,13 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   }
 
   return res;
+}
 
-#else
+static std::vector<BigNumber> ippSBModExpWrapper(
+    const std::vector<BigNumber>& base, const std::vector<BigNumber>& exp,
+    const std::vector<BigNumber>& mod) {
+  std::size_t v_size = base.size();
+  std::vector<BigNumber> res(v_size);
 
 #ifdef IPCL_USE_OMP
   int omp_remaining_threads = OMPUtilities::MaxThreads;
@@ -723,8 +506,33 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++)
     res[i] = ippSBModExp(base[i], exp[i], mod[i]);
-  return res;
 
+  return res;
+}
+
+std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
+                                 const std::vector<BigNumber>& exp,
+                                 const std::vector<BigNumber>& mod) {
+  std::size_t v_size = base.size();
+  std::vector<BigNumber> res(v_size);
+
+  // If there is only 1 big number, we don't need to use MBModExp
+  if (v_size == 1) {
+    res[0] = ippSBModExp(base[0], exp[0], mod[0]);
+    return res;
+  }
+
+#ifdef IPCL_RUNTIME_MOD_EXP
+  if (has_avx512ifma) {
+    return ippMBModExpWrapper(base, exp, mod);
+  } else {
+    return ippSBModExpWrapper(base, exp, mod);
+  }
+#else
+#ifdef IPCL_CRYPTO_MB_MOD_EXP
+  return ippMBModExpWrapper(base, exp, mod);
+#else
+  return ippSBModExpWrapper(base, exp, mod);
 #endif  // IPCL_CRYPTO_MB_MOD_EXP
 #endif  // IPCL_RUNTIME_MOD_EXP
 }
@@ -733,7 +541,50 @@ std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,
                               const std::vector<BigNumber>& exp,
                               const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
-  return qatModExp(base, exp, mod);
+  if ((g_hybrid_modexp_total == 0) ||
+      (g_hybrid_modexp_total == g_hybrid_modexp_qat)) {
+    // use QAT only
+    return qatModExp(base, exp, mod);
+  } else if (g_hybrid_modexp_qat == 0) {
+    // use IPP only
+    return ippModExp(base, exp, mod);
+  } else {
+    // use QAT & IPP together
+    std::size_t v_size = base.size();
+    std::vector<BigNumber> res(v_size);
+
+    ERROR_CHECK(g_hybrid_modexp_total == v_size,
+                "modExp: hybrid modexp size is incorrect");
+    auto qat_base_start = base.begin();
+    auto qat_base_end = qat_base_start + g_hybrid_modexp_qat;
+
+    auto qat_exp_start = exp.begin();
+    auto qat_exp_end = qat_exp_start + g_hybrid_modexp_qat;
+
+    auto qat_mod_start = mod.begin();
+    auto qat_mod_end = qat_mod_start + g_hybrid_modexp_qat;
+
+    auto qat_base = std::vector<BigNumber>(qat_base_start, qat_base_end);
+    auto qat_exp = std::vector<BigNumber>(qat_exp_start, qat_exp_end);
+    auto qat_mod = std::vector<BigNumber>(qat_mod_start, qat_mod_end);
+
+    auto ipp_base = std::vector<BigNumber>(qat_base_end, base.end());
+    auto ipp_exp = std::vector<BigNumber>(qat_exp_end, exp.end());
+    auto ipp_mod = std::vector<BigNumber>(qat_mod_end, mod.end());
+
+    std::vector<BigNumber> qat_res, ipp_res;
+    std::thread qat_thread([&] {
+      qat_res = qatModExp(qat_base, qat_exp, qat_mod);
+      std::copy(qat_res.begin(), qat_res.end(), res.begin());
+    });
+
+    ipp_res = ippModExp(ipp_base, ipp_exp, ipp_mod);
+    std::copy(ipp_res.begin(), ipp_res.end(),
+              res.begin() + g_hybrid_modexp_qat);
+
+    qat_thread.join();
+    return res;
+  }
 #else
   return ippModExp(base, exp, mod);
 #endif  // IPCL_USE_QAT

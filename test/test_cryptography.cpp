@@ -2,17 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <climits>
-#include <iostream>
 #include <random>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "ipcl/ipcl.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 9;
+constexpr int SELF_DEF_NUM_VALUES = 19;
+constexpr int SELF_DEF_QAT_FLOW_SIZE = 10;
 
 TEST(CryptoTest, CryptoTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
+  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
@@ -30,6 +31,9 @@ TEST(CryptoTest, CryptoTest) {
   }
 
   pt = ipcl::PlainText(exp_value);
+
+  ipcl::setHybridModExp(num_values, num_qat);
+
   ct = key.pub_key->encrypt(pt);
   dt = key.priv_key->decrypt(ct);
 
@@ -150,6 +154,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   ipcl::PlainText pt;
   ipcl::CipherText ct;
+
+  ipcl::setHybridModExpOff();
 
   key.pub_key->setRandom(ir_bn_v);
 

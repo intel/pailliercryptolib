@@ -7,16 +7,9 @@
 
 #include "ipcl/ipcl.hpp"
 
-#define ADD_SAMPLE_KEY_LENGTH_ARGS Args({1024})->Args({2048})
-#define ADD_SAMPLE_VECTOR_SIZE_ARGS \
-  Args({16})                        \
-      ->Args({64})                  \
-      ->Args({128})                 \
-      ->Args({256})                 \
-      ->Args({512})                 \
-      ->Args({1024})                \
-      ->Args({2048})                \
-      ->Args({2100})
+#define MODEXP_ARG_MIN 0
+#define MODEXP_ARG_MAX 512
+#define MODEXP_ARG_STEP 64
 
 constexpr bool Enable_DJN = true;
 
@@ -62,8 +55,20 @@ const BigNumber HS_BN =
     "074e57217e1c57d11862f74486c7f2987e4d09cd6fb2923569b577de50e89e6965a27e18"
     "7a8a341a7282b385ef";
 
-static void BM_Add_CTCT(benchmark::State& state) {
-  size_t dsize = state.range(0);
+// (qatModExp, ippModExp)
+static void customArgs(benchmark::internal::Benchmark* b) {
+  for (int i = MODEXP_ARG_MIN; i <= MODEXP_ARG_MAX; i += MODEXP_ARG_STEP) {
+    int j = MODEXP_ARG_MAX - i;
+    b->Args({i, j});
+  }
+}
+
+static void BM_Hybrid_ModExp(benchmark::State& state) {
+  ipcl::setHybridModExpOff();
+
+  int64_t qat_size = state.range(0);
+  int64_t ipp_size = state.range(1);
+  int64_t dsize = ipp_size + qat_size;
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -74,30 +79,34 @@ static void BM_Add_CTCT(benchmark::State& state) {
   pub_key->setRandom(r_bn_v);
   pub_key->setHS(HS_BN);
 
-  std::vector<BigNumber> exp_bn1_v(dsize), exp_bn2_v(dsize);
-  for (int i = 0; i < dsize; i++) {
-    exp_bn1_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
-    exp_bn2_v[i] = Q_BN + BigNumber((unsigned int)(i * 1024));
-  }
+  std::vector<BigNumber> exp_bn_v(dsize);
+  for (size_t i = 0; i < dsize; i++)
+    exp_bn_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
 
-  ipcl::PlainText pt1(exp_bn1_v);
-  ipcl::PlainText pt2(exp_bn2_v);
+  ipcl::PlainText pt(exp_bn_v);
 
-  ipcl::CipherText ct1 = pub_key->encrypt(pt1);
-  ipcl::CipherText ct2 = pub_key->encrypt(pt2);
+  BigNumber lambda = priv_key->getLambda();
+  std::vector<BigNumber> pow(dsize, lambda);
+  std::vector<BigNumber> m(dsize, n * n);
 
-  ipcl::CipherText sum;
-  for (auto _ : state) sum = ct1 + ct2;
+  ipcl::CipherText ct = pub_key->encrypt(pt);
+  std::vector<BigNumber> res(dsize);
+  ipcl::setHybridModExp(dsize, qat_size);
+  for (auto _ : state) res = ipcl::modExp(ct.getTexts(), pow, m);  // decryptRAW
 
   delete pub_key;
   delete priv_key;
 }
-BENCHMARK(BM_Add_CTCT)
-    ->Unit(benchmark::kMicrosecond)
-    ->ADD_SAMPLE_VECTOR_SIZE_ARGS;
+BENCHMARK(BM_Hybrid_ModExp)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 
-static void BM_Add_CTPT(benchmark::State& state) {
-  size_t dsize = state.range(0);
+static void BM_Hybrid_Encrypt(benchmark::State& state) {
+  // need to reset, otherwise will be affected by the previous benchmark
+  // (i.e. BM_Hybrid_ModExp)
+  ipcl::setHybridModExpOff();
+
+  int64_t qat_size = state.range(0);
+  int64_t ipp_size = state.range(1);
+  int64_t dsize = ipp_size + qat_size;
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -108,29 +117,61 @@ static void BM_Add_CTPT(benchmark::State& state) {
   pub_key->setRandom(r_bn_v);
   pub_key->setHS(HS_BN);
 
-  std::vector<BigNumber> exp_bn1_v(dsize), exp_bn2_v(dsize);
-  for (int i = 0; i < dsize; i++) {
-    exp_bn1_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
-    exp_bn2_v[i] = Q_BN + BigNumber((unsigned int)(i * 1024));
-  }
+  std::vector<BigNumber> exp_bn_v(dsize);
+  for (size_t i = 0; i < dsize; i++)
+    exp_bn_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
+  ipcl::PlainText pt(exp_bn_v);
 
-  ipcl::PlainText pt1(exp_bn1_v);
-  ipcl::PlainText pt2(exp_bn2_v);
-
-  ipcl::CipherText ct1 = pub_key->encrypt(pt1);
-
-  ipcl::CipherText sum;
-  for (auto _ : state) sum = ct1 + pt2;
+  ipcl::CipherText ct;
+  ipcl::setHybridModExp(dsize, qat_size);
+  for (auto _ : state) ct = pub_key->encrypt(pt);
 
   delete pub_key;
   delete priv_key;
 }
-BENCHMARK(BM_Add_CTPT)
-    ->Unit(benchmark::kMicrosecond)
-    ->ADD_SAMPLE_VECTOR_SIZE_ARGS;
+BENCHMARK(BM_Hybrid_Encrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 
-static void BM_Mul_CTPT(benchmark::State& state) {
-  size_t dsize = state.range(0);
+static void BM_Hybrid_Decrypt(benchmark::State& state) {
+  // need to reset, otherwise will be affected by the previous benchmark
+  // (i.e. BM_Hybrid_Encrypt)
+  ipcl::setHybridModExpOff();
+
+  int64_t qat_size = state.range(0);
+  int64_t ipp_size = state.range(1);
+  int64_t dsize = ipp_size + qat_size;
+
+  BigNumber n = P_BN * Q_BN;
+  int n_length = n.BitSize();
+  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
+  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+
+  std::vector<BigNumber> r_bn_v(dsize, R_BN);
+  pub_key->setRandom(r_bn_v);
+  pub_key->setHS(HS_BN);
+
+  std::vector<BigNumber> exp_bn_v(dsize);
+  for (size_t i = 0; i < dsize; i++)
+    exp_bn_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
+
+  ipcl::PlainText pt(exp_bn_v), dt;
+  ipcl::CipherText ct = pub_key->encrypt(pt);
+  ipcl::setHybridModExp(dsize, qat_size);
+  for (auto _ : state) dt = priv_key->decrypt(ct);
+
+  delete pub_key;
+  delete priv_key;
+}
+BENCHMARK(BM_Hybrid_Decrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
+
+static void BM_Hybrid_MulCTPT(benchmark::State& state) {
+  // need to reset, otherwise will be affected by the previous benchmark
+  // (i.e. BM_Hybrid_Decrypt)
+  ipcl::setHybridModExpOff();
+
+  int64_t qat_size = state.range(0);
+  int64_t ipp_size = state.range(1);
+  int64_t dsize = ipp_size + qat_size;
+
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
   ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
@@ -150,13 +191,11 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   ipcl::PlainText pt2(exp_bn2_v);
 
   ipcl::CipherText ct1 = pub_key->encrypt(pt1);
-
   ipcl::CipherText product;
+  ipcl::setHybridModExp(dsize, qat_size);
   for (auto _ : state) product = ct1 * pt2;
 
   delete pub_key;
   delete priv_key;
 }
-BENCHMARK(BM_Mul_CTPT)
-    ->Unit(benchmark::kMicrosecond)
-    ->ADD_SAMPLE_VECTOR_SIZE_ARGS;
+BENCHMARK(BM_Hybrid_MulCTPT)->Unit(benchmark::kMicrosecond)->Apply(customArgs);

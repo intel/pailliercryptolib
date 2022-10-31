@@ -3,7 +3,8 @@
 
 set(IPCL_BENCH_SRC main.cpp
   bench_cryptography.cpp
-  bench_ops.cpp)
+  bench_ops.cpp
+  bench_hybrid.cpp)
 
 add_executable(bench_ipcl ${IPCL_BENCH_SRC})
 target_include_directories(bench_ipcl PRIVATE
