@@ -42,13 +42,18 @@ ExternalProject_Add(
 set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
 set(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib/${IPPCRYPTO_ARCH})
 if(IPCL_SHARED)
-  add_library(libippcrypto INTERFACE)
-  add_dependencies(libippcrypto ext_ipp-crypto)
+  add_library(IPPCP INTERFACE)
+  add_library(IPPCP::ippcp ALIAS IPPCP)
+
+  add_dependencies(IPPCP ext_ipp-crypto)
 
   ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libippcrypto INTERFACE ${IPPCRYPTO_LIB_DIR}/libippcp.so ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so)
-  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
+  target_link_libraries(IPPCP INTERFACE
+    ${IPPCRYPTO_LIB_DIR}/libippcp.so
+    ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so
+  )
+  target_include_directories(IPPCP SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
 
   install(
     DIRECTORY ${IPPCRYPTO_LIB_DIR}/
@@ -57,20 +62,20 @@ if(IPCL_SHARED)
   )
 else()
 
-  add_library(libippcrypto::ippcp STATIC IMPORTED GLOBAL)
-  add_library(libippcrypto::crypto_mb STATIC IMPORTED GLOBAL)
+  add_library(IPPCP::ippcp STATIC IMPORTED GLOBAL)
+  add_library(IPPCP::crypto_mb STATIC IMPORTED GLOBAL)
 
-  add_dependencies(libippcrypto::ippcp ext_ipp-crypto)
-  add_dependencies(libippcrypto::crypto_mb ext_ipp-crypto)
+  add_dependencies(IPPCP::ippcp ext_ipp-crypto)
+  add_dependencies(IPPCP::crypto_mb ext_ipp-crypto)
 
   find_package(OpenSSL REQUIRED)
 
-  set_target_properties(libippcrypto::ippcp PROPERTIES
+  set_target_properties(IPPCP::ippcp PROPERTIES
             IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libippcp.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )
 
-  set_target_properties(libippcrypto::crypto_mb PROPERTIES
+  set_target_properties(IPPCP::crypto_mb PROPERTIES
             IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )

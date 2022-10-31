@@ -75,7 +75,7 @@ if(IPCL_ENABLE_QAT)
   ipcl_detect_qat()
   if(IPCL_FOUND_QAT)
     add_compile_definitions(IPCL_USE_QAT)
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/heqat")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/heqat")
     if(IPCL_USE_QAT_LITE)
       add_compile_definitions(IPCL_USE_QAT_LITE)
       message(STATUS "QAT Lite enabled - IPCL_USE_QAT_LITE set to ON")
@@ -173,12 +173,6 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(Threads REQUIRED)
 
 # find package: OpenSSL config
-if(IPCL_SHARED)
-  set(OPENSSL_USE_STATIC_LIBS TRUE)
-  message(STATUS "OPENSSL_USE_STATIC_LIBS:    TRUE" )
-else()
-  message(STATUS "OPENSSL_USE_STATIC_LIBS:    FALSE" )
-endif()
 find_package(OpenSSL REQUIRED)
 
 # External dependencies
@@ -188,7 +182,12 @@ if(IPCL_DETECT_IFMA_RUNTIME)
 endif()
 
 if(IPCL_ENABLE_QAT)
-  include(module/heqat.cmake)
+  # preset values for including HE_QAT
+  set(HE_QAT_MISC OFF) # revisit later on
+  set(HE_QAT_DOCS ${IPCL_DOCS})
+  set(HE_QAT_SHARED ${IPCL_SHARED})
+  set(HE_QAT_TEST OFF)
+  add_subdirectory(module/heqat)
 endif()
 
 if(IPCL_TEST)

@@ -71,16 +71,12 @@ if(IPCL_ENABLE_QAT)
     target_include_directories(ipcl
         PRIVATE "$<BUILD_INTERFACE:${icp_inc_dir}>"
     )
-    target_include_directories(ipcl
-        PRIVATE "$<BUILD_INTERFACE:${HEQAT_INC_DIR}>"
-        PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}/ipcl>
-    )
 
-    install(DIRECTORY ${HEQAT_INC_DIR}/
-            DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
-            FILES_MATCHING
-            PATTERN "*.hpp"
-            PATTERN "*.h")
+
+    target_include_directories(ipcl
+        PRIVATE "$<BUILD_INTERFACE:${HE_QAT_INC_DIR}>"
+        PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}/heqat>
+    )
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -93,20 +89,21 @@ if(IPCL_ENABLE_OMP)
 endif()
 
 if(IPCL_SHARED)
-	target_link_libraries(ipcl PRIVATE libippcrypto)
+	target_link_libraries(ipcl PRIVATE IPPCP::ippcp)
 	if(IPCL_DETECT_IFMA_RUNTIME)
-            target_link_libraries(ipcl PRIVATE libcpu_features)
+        target_link_libraries(ipcl PRIVATE libcpu_features)
 	endif()
 	if(IPCL_ENABLE_QAT)
 	    target_link_libraries(ipcl PRIVATE he_qat udev z)
 	endif()
 else()
-	ipcl_create_archive(ipcl libippcrypto::ippcp)
-	ipcl_create_archive(ipcl libippcrypto::crypto_mb)
+    ipcl_create_archive(ipcl IPPCP::crypto_mb)
+    ipcl_create_archive(ipcl IPPCP::ippcp)
 	if(IPCL_ENABLE_QAT)
-            ipcl_create_archive(ipcl he_qat)
-            target_link_libraries(ipcl PRIVATE udev z)
-        endif()
+        ipcl_create_archive(ipcl he_qat)
+        target_link_libraries(ipcl PRIVATE udev z)
+    endif()
+
 	if(IPCL_DETECT_IFMA_RUNTIME)
             ipcl_create_archive(ipcl libcpu_features)
 	endif()

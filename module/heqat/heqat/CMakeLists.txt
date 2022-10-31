@@ -32,7 +32,7 @@ target_include_directories(he_qat
 )
 
 install(DIRECTORY ${HE_QAT_INC_DIR}/
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	FILES_MATCHING
 	PATTERN "*.hpp"
 	PATTERN "*.h")
@@ -52,13 +52,17 @@ else()
   heqat_create_archive(he_qat libusdm_drv_static)
 endif()
 
+if(NOT HE_QAT_STANDALONE)
+  add_dependencies(he_qat IPPCP::ippcp)
+endif()
+
 if(HE_QAT_MISC)
-  target_include_directories(he_qat PRIVATE ${IPPCP_DIR}/../../../include)
-  target_link_directories(he_qat PUBLIC ${IPPCP_DIR}/lib/intel64)
+  target_include_directories(he_qat PRIVATE ${IPPCP_INC_DIR})
+  target_link_directories(he_qat PRIVATE ${IPPCP_LIB_DIR})
   if(HE_QAT_SHARED)
     target_link_libraries(he_qat PRIVATE IPPCP::ippcp)
   else()
-    heqat_create_archive (he_qat IPPCP::ippcp)
+    heqat_create_archive(he_qat IPPCP::ippcp)
   endif()
 endif()
 
@@ -100,9 +104,9 @@ configure_package_config_file(
 install(
     TARGETS he_qat
     EXPORT he_qatTargets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${HE_QAT_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${HE_QAT_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${HE_QAT_INSTALL_LIBDIR}
     )
 
 install(FILES ${HE_QAT_CONFIG_FILENAME}
