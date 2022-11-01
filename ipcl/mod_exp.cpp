@@ -522,19 +522,17 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
     return res;
   }
 
-#ifdef IPCL_RUNTIME_MOD_EXP
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
   if (has_avx512ifma) {
     return ippMBModExpWrapper(base, exp, mod);
   } else {
     return ippSBModExpWrapper(base, exp, mod);
   }
-#else
-#ifdef IPCL_CRYPTO_MB_MOD_EXP
+#elif IPCL_CRYPTO_MB_MOD_EXP
   return ippMBModExpWrapper(base, exp, mod);
 #else
   return ippSBModExpWrapper(base, exp, mod);
-#endif  // IPCL_CRYPTO_MB_MOD_EXP
-#endif  // IPCL_RUNTIME_MOD_EXP
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 }
 
 std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,

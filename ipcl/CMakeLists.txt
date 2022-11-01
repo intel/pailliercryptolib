@@ -53,7 +53,7 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
         PATTERN "*.h")
 
 # include and install definition of cpu_features
-if(IPCL_DETECT_IFMA_RUNTIME)
+if(IPCL_DETECT_CPU_RUNTIME)
 	target_include_directories(ipcl
         PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
 		PRIVATE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
@@ -90,7 +90,7 @@ endif()
 
 if(IPCL_SHARED)
 	target_link_libraries(ipcl PRIVATE IPPCP::ippcp)
-	if(IPCL_DETECT_IFMA_RUNTIME)
+	if(IPCL_DETECT_CPU_RUNTIME)
         target_link_libraries(ipcl PRIVATE libcpu_features)
 	endif()
 	if(IPCL_ENABLE_QAT)
@@ -104,8 +104,8 @@ else()
         target_link_libraries(ipcl PRIVATE udev z)
     endif()
 
-	if(IPCL_DETECT_IFMA_RUNTIME)
-            ipcl_create_archive(ipcl libcpu_features)
+	if(IPCL_DETECT_CPU_RUNTIME)
+        ipcl_create_archive(ipcl libcpu_features)
 	endif()
 endif()
 

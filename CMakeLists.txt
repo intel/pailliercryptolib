@@ -68,7 +68,7 @@ option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_THREAD_COUNT "The max number of threads used by OpenMP(If the value is OFF/0, it is determined at runtime)" OFF)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
-option(IPCL_DETECT_IFMA_RUNTIME "Detect AVX512/IFMA instructions during runtime" OFF)
+option(IPCL_DETECT_CPU_RUNTIME "Detect CPU supported instructions during runtime" OFF)
 option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
 
 if(IPCL_ENABLE_QAT)
@@ -92,18 +92,37 @@ if(IPCL_ENABLE_OMP)
     endif()
 endif()
 
-if(IPCL_DETECT_IFMA_RUNTIME)
-  add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+if(IPCL_DETECT_CPU_RUNTIME)
+  # add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+  add_compile_definitions(IPCL_RUNTIME_DETECT_CPU_FEATURES)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/cpufeatures")
 else()
-  # check whether cpu support avx512 flag
+  # check whether cpu support avx512ifma instructions
   if(IPCL_DEBUG_DISABLE_AVX512IFMA)
-    message(STATUS "Support AVX512IFMA: False")
+    message(STATUS "Support AVX512IFMA instruction: False")
   else()
     ipcl_detect_lscpu_flag("avx512ifma" FALSE)
     if(IPCL_FOUND_avx512ifma)
       add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
       message(STATUS "Support AVX512IFMA instruction: True")
+    endif()
+  endif()
+
+  # check whether cpu support rdseed/rdrand instructions
+  ipcl_detect_lscpu_flag("rdseed" FALSE)
+  if(IPCL_FOUND_rdseed)
+    message(STATUS "Support RDSEED instruction: True")
+    add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
+  else()
+    ipcl_detect_lscpu_flag("rdrand" FALSE)
+    if(IPCL_FOUND_rdrand)
+      message(STATUS "Support RDRAND instruction: True")
+      add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
+    else()
+      message(WARNING
+          "CPU doesn't support RDSEED and RDRAND instruction, using IPP-Crypto"
+          " S/W pseudo random number generator"
+      )
     endif()
   endif()
 endif()
@@ -123,25 +142,9 @@ else()
 endif()
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
-message(STATUS "IPCL_DETECT_IFMA_RUNTIME:   ${IPCL_DETECT_IFMA_RUNTIME}")
+message(STATUS "IPCL_DETECT_CPU_RUNTIME:    ${IPCL_DETECT_CPU_RUNTIME}")
 
 # check whether cpu support rdseed or rdrand instruction
-ipcl_detect_lscpu_flag("rdseed" FALSE)
-if(IPCL_FOUND_rdseed)
-  message(STATUS "Support RDSEED instruction: True")
-  add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
-else()
-  ipcl_detect_lscpu_flag("rdrand" FALSE)
-  if(IPCL_FOUND_rdrand)
-    message(STATUS "Support RDRAND instruction: True")
-    add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
-  else()
-    message(WARNING
-        "CPU doesn't support RDSEED and RDRAND instruction, using IPP-Crypto"
-        " S/W pseudo random number generator"
-    )
-  endif()
-endif()
 
 set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -177,7 +180,8 @@ find_package(OpenSSL REQUIRED)
 
 # External dependencies
 include(cmake/ippcrypto.cmake)
-if(IPCL_DETECT_IFMA_RUNTIME)
+
+if(IPCL_DETECT_CPU_RUNTIME)
   include(cmake/cpufeatures.cmake)
 endif()
 
