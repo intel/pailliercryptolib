@@ -8,12 +8,12 @@
 #include "gtest/gtest.h"
 #include "ipcl/ipcl.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 19;
-constexpr int SELF_DEF_QAT_FLOW_SIZE = 10;
+constexpr int SELF_DEF_NUM_VALUES = 18;
+constexpr float SELF_DEF_HYBRID_QAT_RATIO = 0.5;
 
 TEST(CryptoTest, CryptoTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
@@ -32,7 +32,7 @@ TEST(CryptoTest, CryptoTest) {
 
   pt = ipcl::PlainText(exp_value);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct = key.pub_key->encrypt(pt);
   dt = key.priv_key->decrypt(ct);
@@ -155,7 +155,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   ipcl::PlainText pt;
   ipcl::CipherText ct;
 
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
   key.pub_key->setRandom(ir_bn_v);
 

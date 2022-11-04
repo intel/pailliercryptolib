@@ -9,8 +9,7 @@
 int main() {
   ipcl::initializeContext("QAT");
 
-  const uint32_t num_total = 19;
-  const uint32_t num_qat = 10;
+  const uint32_t num_total = 20;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
@@ -29,12 +28,12 @@ int main() {
 
   pt = ipcl::PlainText(exp_value);
 
-  ipcl::setHybridModExp(num_total, num_qat);
+  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
 
   ct = key.pub_key->encrypt(pt);
   dt = key.priv_key->decrypt(ct);
 
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
   for (int i = 0; i < num_total; i++) {
     std::vector<uint32_t> v = dt.getElementVec(i);

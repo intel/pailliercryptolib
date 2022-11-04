@@ -149,6 +149,15 @@ std::vector<BigNumber> CipherText::raw_mul(
     const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
   std::size_t v_size = a.size();
   std::vector<BigNumber> sq(v_size, m_pubkey->getNSQ());
+
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (v_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_MULTIPLY;
+    setHybridRatio(qat_ratio);
+  }
+
   return modExp(a, b, sq);
 }
 

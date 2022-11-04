@@ -7,9 +7,16 @@
 
 #include "ipcl/ipcl.hpp"
 
-#define MODEXP_ARG_MIN 0
-#define MODEXP_ARG_MAX 512
-#define MODEXP_ARG_STEP 64
+#define BENCH_HYBRID_DETAIL 1
+
+#define INPUT_BN_NUM_MAX 256
+#define INPUT_BN_NUM_MIN 16
+#define INPUT_BN_NUM_GROWTH_RATE 2
+
+// scale it from [0, 1] to [0, 100]
+#define HYBRID_QAT_RATIO_MAX 100
+#define HYBRID_QAT_RATIO_MIN 0
+#define HYBRID_QAT_RATIO_STEP 10
 
 constexpr bool Enable_DJN = true;
 
@@ -55,20 +62,26 @@ const BigNumber HS_BN =
     "074e57217e1c57d11862f74486c7f2987e4d09cd6fb2923569b577de50e89e6965a27e18"
     "7a8a341a7282b385ef";
 
-// (qatModExp, ippModExp)
+// (data_size, qat_ratio)
 static void customArgs(benchmark::internal::Benchmark* b) {
-  for (int i = MODEXP_ARG_MIN; i <= MODEXP_ARG_MAX; i += MODEXP_ARG_STEP) {
-    int j = MODEXP_ARG_MAX - i;
-    b->Args({i, j});
+  for (int i = INPUT_BN_NUM_MIN; i <= INPUT_BN_NUM_MAX;
+       i *= INPUT_BN_NUM_GROWTH_RATE) {
+#if BENCH_HYBRID_DETAIL
+    for (int j = HYBRID_QAT_RATIO_MIN; j <= HYBRID_QAT_RATIO_MAX;
+         j += HYBRID_QAT_RATIO_STEP) {
+      b->Args({i, j});
+    }
+#else
+    b->Args({i});
+#endif
   }
 }
 
 static void BM_Hybrid_ModExp(benchmark::State& state) {
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
-  int64_t qat_size = state.range(0);
-  int64_t ipp_size = state.range(1);
-  int64_t dsize = ipp_size + qat_size;
+  int64_t dsize = state.range(0);
+  float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -91,7 +104,13 @@ static void BM_Hybrid_ModExp(benchmark::State& state) {
 
   ipcl::CipherText ct = pub_key->encrypt(pt);
   std::vector<BigNumber> res(dsize);
-  ipcl::setHybridModExp(dsize, qat_size);
+
+#if BENCH_HYBRID_DETAIL
+  ipcl::setHybridRatio(qat_ratio);
+#else
+  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+#endif
+
   for (auto _ : state) res = ipcl::modExp(ct.getTexts(), pow, m);  // decryptRAW
 
   delete pub_key;
@@ -102,11 +121,10 @@ BENCHMARK(BM_Hybrid_ModExp)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_Encrypt(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_ModExp)
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
-  int64_t qat_size = state.range(0);
-  int64_t ipp_size = state.range(1);
-  int64_t dsize = ipp_size + qat_size;
+  int64_t dsize = state.range(0);
+  float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -121,9 +139,14 @@ static void BM_Hybrid_Encrypt(benchmark::State& state) {
   for (size_t i = 0; i < dsize; i++)
     exp_bn_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
   ipcl::PlainText pt(exp_bn_v);
-
   ipcl::CipherText ct;
-  ipcl::setHybridModExp(dsize, qat_size);
+
+#if BENCH_HYBRID_DETAIL
+  ipcl::setHybridRatio(qat_ratio);
+#else
+  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+#endif
+
   for (auto _ : state) ct = pub_key->encrypt(pt);
 
   delete pub_key;
@@ -134,11 +157,10 @@ BENCHMARK(BM_Hybrid_Encrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_Decrypt(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_Encrypt)
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
-  int64_t qat_size = state.range(0);
-  int64_t ipp_size = state.range(1);
-  int64_t dsize = ipp_size + qat_size;
+  int64_t dsize = state.range(0);
+  float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -155,7 +177,13 @@ static void BM_Hybrid_Decrypt(benchmark::State& state) {
 
   ipcl::PlainText pt(exp_bn_v), dt;
   ipcl::CipherText ct = pub_key->encrypt(pt);
-  ipcl::setHybridModExp(dsize, qat_size);
+
+#if BENCH_HYBRID_DETAIL
+  ipcl::setHybridRatio(qat_ratio);
+#else
+  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+#endif
+
   for (auto _ : state) dt = priv_key->decrypt(ct);
 
   delete pub_key;
@@ -166,11 +194,10 @@ BENCHMARK(BM_Hybrid_Decrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_MulCTPT(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_Decrypt)
-  ipcl::setHybridModExpOff();
+  ipcl::setHybridOff();
 
-  int64_t qat_size = state.range(0);
-  int64_t ipp_size = state.range(1);
-  int64_t dsize = ipp_size + qat_size;
+  int64_t dsize = state.range(0);
+  float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -192,7 +219,13 @@ static void BM_Hybrid_MulCTPT(benchmark::State& state) {
 
   ipcl::CipherText ct1 = pub_key->encrypt(pt1);
   ipcl::CipherText product;
-  ipcl::setHybridModExp(dsize, qat_size);
+
+#if BENCH_HYBRID_DETAIL
+  ipcl::setHybridRatio(qat_ratio);
+#else
+  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+#endif
+
   for (auto _ : state) product = ct1 * pt2;
 
   delete pub_key;

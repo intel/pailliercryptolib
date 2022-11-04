@@ -62,6 +62,14 @@ PlainText PrivateKey::decrypt(const CipherText& ct) const {
   std::vector<BigNumber> pt_bn(ct_size);
   std::vector<BigNumber> ct_bn = ct.getTexts();
 
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (ct_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_DECRYPT;
+    setHybridRatio(qat_ratio);
+  }
+
   if (m_enable_crt)
     decryptCRT(pt_bn, ct_bn);
   else

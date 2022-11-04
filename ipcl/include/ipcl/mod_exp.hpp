@@ -11,16 +11,55 @@
 namespace ipcl {
 
 /**
- * Set the number of mod exp operatiions
- * @param[in] total total number of mod exp operations.
- * @param[in] qat number of mod exp operations using QAT
+ * Hybrid mode type
  */
-void setHybridModExp(int total, int qat);
+enum class HybridMode {
+  OPTIMAL = 95,
+  QAT = 100,
+  PREF_QAT90 = 90,
+  PREF_QAT80 = 80,
+  PREF_QAT70 = 70,
+  PREF_QAT60 = 60,
+  HALF = 50,
+  PREF_IPP60 = 40,
+  PREF_IPP70 = 30,
+  PREF_IPP80 = 20,
+  PREF_IPP90 = 10,
+  IPP = 0,
+  UNDEFINED = -1
+};
+
+/**
+ * Set hybrid mode
+ * @param[in] mode The type of hybrid mode
+ */
+void setHybridMode(HybridMode mode);
+
+/**
+ * Set the number of mod exp operatiions
+ * @param[in] Proportion calculated with QAT
+ */
+void setHybridRatio(float qat_ratio);
 
 /**
  * Turn off hybrid mod exp.
  */
-void setHybridModExpOff();
+void setHybridOff();
+
+/**
+ * Get current hybrid qat ratio
+ */
+float getHybridRatio();
+
+/**
+ * Get current hybrid mode
+ */
+HybridMode getHybridMode();
+
+/**
+ * Whether current hybrid mode is OPTIMAL
+ */
+bool isHybridOptimal();
 
 /**
  * Modular exponentiation for multi BigNumber

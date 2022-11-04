@@ -121,6 +121,14 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt empty PlainText");
   std::vector<BigNumber> ct_bn_v(pt_size);
 
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
+    setHybridRatio(qat_ratio);
+  }
+
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
   return CipherText(this, ct_bn_v);
 }

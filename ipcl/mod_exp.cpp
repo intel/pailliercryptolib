@@ -8,35 +8,61 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <thread>  //NOLINT
 
 #ifdef IPCL_USE_QAT
 #include <heqat/bnops.h>
 #include <heqat/common.h>
-
-#include <thread>  //NOLINT
 #endif
 
 #include "ipcl/util.hpp"
 
 namespace ipcl {
 
-static int g_hybrid_modexp_total = 0;
-static int g_hybrid_modexp_qat = 0;
+static thread_local struct {
+  float ratio;
+  HybridMode mode;
+} g_hybrid_params = {0.0, HybridMode::UNDEFINED};
 
-void setHybridModExp(int total, int qat) {
+static inline float scale_down(int value, float scale = 100.0) {
+  return value / scale;
+}
+
+static inline int scale_up(float value, int scale = 100) {
+  return value * scale;
+}
+
+void setHybridRatio(float ratio) {
 #ifdef IPCL_USE_QAT
-  ERROR_CHECK((qat <= total) && (qat >= 0),
-              "setQatFlowSize: input size is incorrect");
-  g_hybrid_modexp_total = total;
-  g_hybrid_modexp_qat = qat;
+  ERROR_CHECK((ratio <= 1.0) && (ratio >= 0),
+              "setHybridRatio: Hybrid modexp qat ratio is NOT correct");
+  g_hybrid_params.ratio = ratio;
+  g_hybrid_params.mode = HybridMode::UNDEFINED;
 #endif  // IPCL_USE_QAT
 }
 
-void setHybridModExpOff() {
+void setHybridMode(HybridMode mode) {
 #ifdef IPCL_USE_QAT
-  g_hybrid_modexp_total = 0;
-  g_hybrid_modexp_qat = 0;
+  g_hybrid_params.mode = mode;
+  int mode_value = static_cast<std::underlying_type<HybridMode>::type>(mode);
+  float ratio = scale_down(mode_value);
+  setHybridRatio(ratio);
 #endif  // IPCL_USE_QAT
+}
+
+void setHybridOff() {
+#ifdef IPCL_USE_QAT
+  g_hybrid_params.mode = HybridMode::UNDEFINED;
+  g_hybrid_params.ratio = 0.0;
+#endif  // IPCL_USE_QAT
+}
+
+float getHybridRatio() { return g_hybrid_params.ratio; }
+
+HybridMode getHybridMode() { return g_hybrid_params.mode; }
+
+bool isHybridOptimal() {
+  return (g_hybrid_params.mode == HybridMode::OPTIMAL) ? true : false;
 }
 
 #ifdef IPCL_USE_QAT
@@ -441,12 +467,7 @@ std::vector<BigNumber> qatModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& exp,
                                  const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
-  // TODO(fdiasmor): Slice with custom batches, test OMP
-  std::size_t worksize = base.size();
-  std::vector<BigNumber> remainder(worksize);
-
-  remainder = heQatBnModExp(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
-  return remainder;
+  return heQatBnModExp(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
 #else
   ERROR_CHECK(false, "qatModExp: Need to turn on IPCL_ENABLE_QAT");
 #endif  // IPCL_USE_QAT
@@ -539,28 +560,34 @@ std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,
                               const std::vector<BigNumber>& exp,
                               const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
-  if ((g_hybrid_modexp_total == 0) ||
-      (g_hybrid_modexp_total == g_hybrid_modexp_qat)) {
+// if QAT is ON, OMP is OFF --> use QAT only
+#if !defined(IPCL_USE_OMP)
+  return qatModExp(base, exp, mod);
+#else
+  ERROR_CHECK(g_hybrid_params.ratio >= 0.0 && g_hybrid_params.ratio <= 1.0,
+              "modExp: hybrid modexp qat ratio is incorrect");
+  std::size_t v_size = base.size();
+  std::size_t hybrid_qat_size =
+      static_cast<std::size_t>(g_hybrid_params.ratio * v_size);
+
+  if (hybrid_qat_size == v_size) {
     // use QAT only
     return qatModExp(base, exp, mod);
-  } else if (g_hybrid_modexp_qat == 0) {
+  } else if (hybrid_qat_size == 0) {
     // use IPP only
     return ippModExp(base, exp, mod);
   } else {
     // use QAT & IPP together
-    std::size_t v_size = base.size();
     std::vector<BigNumber> res(v_size);
 
-    ERROR_CHECK(g_hybrid_modexp_total == v_size,
-                "modExp: hybrid modexp size is incorrect");
     auto qat_base_start = base.begin();
-    auto qat_base_end = qat_base_start + g_hybrid_modexp_qat;
+    auto qat_base_end = qat_base_start + hybrid_qat_size;
 
     auto qat_exp_start = exp.begin();
-    auto qat_exp_end = qat_exp_start + g_hybrid_modexp_qat;
+    auto qat_exp_end = qat_exp_start + hybrid_qat_size;
 
     auto qat_mod_start = mod.begin();
-    auto qat_mod_end = qat_mod_start + g_hybrid_modexp_qat;
+    auto qat_mod_end = qat_mod_start + hybrid_qat_size;
 
     auto qat_base = std::vector<BigNumber>(qat_base_start, qat_base_end);
     auto qat_exp = std::vector<BigNumber>(qat_exp_start, qat_exp_end);
@@ -577,12 +604,12 @@ std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,
     });
 
     ipp_res = ippModExp(ipp_base, ipp_exp, ipp_mod);
-    std::copy(ipp_res.begin(), ipp_res.end(),
-              res.begin() + g_hybrid_modexp_qat);
+    std::copy(ipp_res.begin(), ipp_res.end(), res.begin() + hybrid_qat_size);
 
     qat_thread.join();
     return res;
   }
+#endif  // IPCL_USE_OMP
 #else
   return ippModExp(base, exp, mod);
 #endif  // IPCL_USE_QAT

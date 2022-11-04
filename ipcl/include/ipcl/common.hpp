@@ -11,6 +11,12 @@ namespace ipcl {
 constexpr int IPCL_CRYPTO_MB_SIZE = 8;
 constexpr int IPCL_QAT_MODEXP_BATCH_SIZE = 1024;
 
+constexpr int IPCL_WORKLOAD_SIZE_THRESHOLD = 128;
+
+constexpr float IPCL_HYBRID_MODEXP_RATIO_FULL = 1.0;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_ENCRYPT = 0.25;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_DECRYPT = 0.12;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_MULTIPLY = 0.18;
 /**
  * Random generator wrapper.Generates a random unsigned Big Number of the
  * specified bit length

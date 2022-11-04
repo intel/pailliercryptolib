@@ -8,8 +8,8 @@
 #include "gtest/gtest.h"
 #include "ipcl/ipcl.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 17;
-constexpr int SELF_DEF_QAT_FLOW_SIZE = 10;
+constexpr int SELF_DEF_NUM_VALUES = 14;
+constexpr float SELF_DEF_HYBRID_QAT_RATIO = 0.5;
 
 void CtPlusCt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
               const ipcl::CipherText& ct2, const ipcl::keyPair key) {
@@ -125,7 +125,7 @@ void PtMultiplyCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
 
 TEST(OperationTest, CtPlusCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -144,7 +144,7 @@ TEST(OperationTest, CtPlusCtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
   ct2 = key.pub_key->encrypt(pt2);
@@ -169,7 +169,7 @@ TEST(OperationTest, CtPlusCtTest) {
 
 TEST(OperationTest, CtPlusCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -188,7 +188,7 @@ TEST(OperationTest, CtPlusCtArrayTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
   ct2 = key.pub_key->encrypt(pt2);
@@ -213,7 +213,7 @@ TEST(OperationTest, CtPlusCtArrayTest) {
 
 TEST(OperationTest, CtPlusPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -232,7 +232,7 @@ TEST(OperationTest, CtPlusPtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -256,7 +256,7 @@ TEST(OperationTest, CtPlusPtTest) {
 
 TEST(OperationTest, CtPlusPtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -275,7 +275,7 @@ TEST(OperationTest, CtPlusPtArrayTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -299,7 +299,7 @@ TEST(OperationTest, CtPlusPtArrayTest) {
 
 TEST(OperationTest, CtMultiplyPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -318,7 +318,7 @@ TEST(OperationTest, CtMultiplyPtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -342,7 +342,7 @@ TEST(OperationTest, CtMultiplyPtTest) {
 
 TEST(OperationTest, CtMultiplyZeroPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -362,7 +362,7 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -386,7 +386,7 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
 
 TEST(OperationTest, CtMultiplyPtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -405,7 +405,7 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -429,7 +429,7 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
 
 TEST(OperationTest, AddSubTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -448,7 +448,7 @@ TEST(OperationTest, AddSubTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
   ct2 = key.pub_key->encrypt(pt2);
@@ -473,7 +473,7 @@ TEST(OperationTest, AddSubTest) {
 
 TEST(OperationTest, PtPlusCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -492,7 +492,7 @@ TEST(OperationTest, PtPlusCtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -516,7 +516,7 @@ TEST(OperationTest, PtPlusCtTest) {
 
 TEST(OperationTest, PtPlusCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -535,7 +535,7 @@ TEST(OperationTest, PtPlusCtArrayTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -559,7 +559,7 @@ TEST(OperationTest, PtPlusCtArrayTest) {
 
 TEST(OperationTest, PtMultiplyCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -578,7 +578,7 @@ TEST(OperationTest, PtMultiplyCtTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 
@@ -602,7 +602,7 @@ TEST(OperationTest, PtMultiplyCtTest) {
 
 TEST(OperationTest, PtMultiplyCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
-  const uint32_t num_qat = SELF_DEF_QAT_FLOW_SIZE;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
   ipcl::keyPair key = ipcl::generateKeypair(2048);
 
@@ -621,7 +621,7 @@ TEST(OperationTest, PtMultiplyCtArrayTest) {
   pt1 = ipcl::PlainText(exp_value1);
   pt2 = ipcl::PlainText(exp_value2);
 
-  ipcl::setHybridModExp(num_values, num_qat);
+  ipcl::setHybridRatio(qat_ratio);
 
   ct1 = key.pub_key->encrypt(pt1);
 

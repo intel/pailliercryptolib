@@ -85,6 +85,10 @@ if(IPCL_ENABLE_QAT)
   endif()
 endif()
 
+if(IPCL_THREAD_COUNT LESS_EQUAL 1)
+  set(IPCL_ENABLE_OMP OFF)
+endif()
+
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
     if(IPCL_THREAD_COUNT)
