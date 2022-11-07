@@ -40,7 +40,7 @@ static bool initializeQATContext() {
 bool initializeContext(const std::string runtime_choice) {
 #ifdef IPCL_USE_QAT
   hasQAT = true;
-  switch (runtimeMap.at(runtime_choice) 1) {
+  switch (runtimeMap.at(runtime_choice)) {
     case RuntimeValue::QAT:
       return initializeQATContext();
     case RuntimeValue::CPU:
