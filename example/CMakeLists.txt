@@ -11,5 +11,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(IPCL 2.0.0 REQUIRED HINTS ${IPCL_HINT_DIR})
 
-add_executable(test test.cpp)
-target_link_libraries(test PRIVATE IPCL::ipcl)
+set(examples encrypt_decrypt add_mul hybridmode)
+foreach(ex IN LISTS examples)
+  add_executable(example_${ex} example_${ex}.cpp)
+  target_link_libraries(example_${ex} PRIVATE IPCL::ipcl)
+endforeach()

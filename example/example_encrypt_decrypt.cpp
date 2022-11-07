@@ -1,10 +1,15 @@
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+/*
+  Example of encryption and decryption
+*/
 #include <climits>
-#include <ipcl/ipcl.hpp>
+#include <iostream>
 #include <random>
 #include <vector>
+
+#include "ipcl/ipcl.hpp"
 
 int main() {
   ipcl::initializeContext("QAT");
@@ -14,9 +19,6 @@ int main() {
   ipcl::keyPair key = ipcl::generateKeypair(2048, true);
 
   std::vector<uint32_t> exp_value(num_total);
-  ipcl::PlainText pt;
-  ipcl::CipherText ct;
-  ipcl::PlainText dt;
 
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -26,20 +28,26 @@ int main() {
     exp_value[i] = dist(rng);
   }
 
-  pt = ipcl::PlainText(exp_value);
+  ipcl::PlainText pt = ipcl::PlainText(exp_value);
 
   ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
 
-  ct = key.pub_key->encrypt(pt);
-  dt = key.priv_key->decrypt(ct);
+  ipcl::CipherText ct = key.pub_key->encrypt(pt);
+  ipcl::PlainText dt = key.priv_key->decrypt(ct);
 
   ipcl::setHybridOff();
 
+  // verify result
+  bool verify = true;
   for (int i = 0; i < num_total; i++) {
     std::vector<uint32_t> v = dt.getElementVec(i);
-    bool chk = v[0] == exp_value[i];
-    std::cout << (chk ? "pass" : "fail") << std::endl;
+    if (v[0] != exp_value[i]) {
+      verify = false;
+      break;
+    }
   }
+  std::cout << "Test pt == dec(enc(pt)) -- " << (verify ? "pass" : "fail")
+            << std::endl;
 
   delete key.pub_key;
   delete key.priv_key;

@@ -14,14 +14,14 @@ namespace ipcl {
 
 ///>  Default behavior is selected at runtime and implementation dependent
 enum class RuntimeValue { DEFAULT, CPU, QAT, HYBRID };
-std::map<std::string, RuntimeValue> runtimeMap = {
+const std::map<std::string, RuntimeValue> runtimeMap = {
     {"DEFAULT", RuntimeValue::DEFAULT}, {"default", RuntimeValue::DEFAULT},
     {"CPU", RuntimeValue::CPU},         {"cpu", RuntimeValue::CPU},
     {"QAT", RuntimeValue::QAT},         {"qat", RuntimeValue::QAT},
     {"HYBRID", RuntimeValue::HYBRID},   {"hybrid", RuntimeValue::HYBRID}};
 
 enum class FeatureValue { AVX512IFMA, QAT4XXX };
-std::map<std::string, FeatureValue> hasFeatureMap = {
+const std::map<std::string, FeatureValue> hasFeatureMap = {
     {"avx512", FeatureValue::AVX512IFMA},
     {"avx512ifma", FeatureValue::AVX512IFMA},
     {"4xxx", FeatureValue::QAT4XXX},
@@ -37,10 +37,10 @@ static bool initializeQATContext() {
 }
 #endif
 
-bool initializeContext(std::string runtime_choice) {
+bool initializeContext(const std::string runtime_choice) {
 #ifdef IPCL_USE_QAT
   hasQAT = true;
-  switch (runtimeMap[runtime_choice]) {
+  switch (runtimeMap.at(runtime_choice) 1) {
     case RuntimeValue::QAT:
       return initializeQATContext();
     case RuntimeValue::CPU:

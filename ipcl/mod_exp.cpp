@@ -22,7 +22,7 @@ namespace ipcl {
 static thread_local struct {
   float ratio;
   HybridMode mode;
-} g_hybrid_params = {0.0, HybridMode::UNDEFINED};
+} g_hybrid_params = {0.0, HybridMode::OPTIMAL};
 
 static inline float scale_down(int value, float scale = 100.0) {
   return value / scale;

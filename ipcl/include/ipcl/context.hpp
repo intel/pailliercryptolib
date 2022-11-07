@@ -22,7 +22,7 @@ namespace ipcl {
  * @return true if runtime context has been properly initialized, false
  * otherwise.
  */
-bool initializeContext(std::string runtime_choice);
+bool initializeContext(const std::string runtime_choice);
 
 /**
  * Terminate runtime context.

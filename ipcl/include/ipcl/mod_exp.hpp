@@ -57,7 +57,7 @@ float getHybridRatio();
 HybridMode getHybridMode();
 
 /**
- * Whether current hybrid mode is OPTIMAL
+ * Check current hybrid mode is OPTIMAL
  */
 bool isHybridOptimal();
 

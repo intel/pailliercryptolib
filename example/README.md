@@ -7,8 +7,9 @@ This document provides an example program for using the Intel Paillier Cryptosys
   - [Installation](#installation)
   - [Linking and Running Applications](#linking-and-running-applications)
     - [Building with CMake](#building-with-cmake)
-    - [Manually Compiling](#manually-compiling)
   - [Using Intel Paillier Cryptosystem Library](#using-intel-paillier-cryptosystem-library)
+    - [Enabling QAT usage](#enabling-qat-usage)
+    - [Hybrid mode configuration](#hybrid-mode-configuration)
     - [Data handling](#data-handling)
       - [```ipcl::PlainText``` Constructor](#ipclplaintext-constructor)
       - [Accessing data](#accessing-data)
@@ -34,7 +35,7 @@ For more details about the build configuration options, please refer to the buil
 
 Before proceeding after the library is installed, it is useful to setup an environment variable to point to the installation location.
 ```bash
-export IPCL_DIR=/path/to/install/
+export IPCL_DIR=/path/to/ipcl/install/
 ```
 
 ### Building with CMake
@@ -42,26 +43,44 @@ A more convenient way to use the library is via the `find_package` functionality
 In your external applications, add the following lines to your `CMakeLists.txt`.
 
 ```bash
-find_package(IPCL 1.1.4
+find_package(IPCL 2.0.0
     HINTS ${IPCL_HINT_DIR}
     REQUIRED)
 target_link_libraries(${TARGET} IPCL::ipcl)
 ```
 
-If the library is installed globally, `IPCL_DIR` or `IPCL_HINT_DIR` flag is not needed. If `IPCL_DIR` is properly set, `IPCL_HINT_DIR` is not needed as well. Otherwise `IPCL_HINT_DIR` should be the directory containing `IPCLCOnfig.cmake`, under `${CMAKE_INSTALL_PREFIX}/lib/cmake/ipcl-1.1.4/`
-
-### Manually Compiling
-In order to directly use `g++` or `clang++` to compile an example code, it can be done by:
-```bash
-# gcc
-g++ test.cpp -o test -L${IPCL_DIR}/lib -I${IPCL_DIR}/include -lipcl -fopenmp -lnuma -lcrypto
-
-# clang
-clang++ test.cpp -o test -L${IPCL_DIR}/lib -I${IPCL_DIR}/include -lipcl -fopenmp -lnuma -lcrypto
-```
-
+If the library is installed globally, `IPCL_DIR` or `IPCL_HINT_DIR` flag is not needed. If environment variable `IPCL_DIR` is set, `IPCL_HINT_DIR` is not needed as well. Otherwise `IPCL_HINT_DIR` should be the directory containing `IPCLCOnfig.cmake`, under `${CMAKE_INSTALL_PREFIX}/lib/cmake/ipcl-2.0.0/`
 
 ## Using Intel Paillier Cryptosystem Library
+
+### Enabling QAT usage
+When QAT is enabled while building the library with the flag ```IPCL_ENABLE_QAT=ON```, it is essential to initialize and release the HE QAT context.
+```C++
+// Initialize HE QAT context
+ipcl::initializeContext("QAT");
+
+// perform IPCL operations
+auto ct = key.pub_key->encrypt(pt);
+auto dec_pt = key.priv_key->decrypt(ct);
+
+// Release HE QAT context
+ipcl::terminateContext();
+```
+If QAT is disabled, ```ipcl::initializeContext("QAT")``` statement will not do anything, thus safe to include in any codes using the library.
+
+### Hybrid mode configuration
+The main accelerated operation - modular exponentiation - can be performed by either IPP-Crypto or the HE QAT. Our library provides a configurable method to distribute the workload between these two methods.
+```C++
+// Use optimal mode
+ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+
+// Use IPP-Crypto modexp only
+ipcl::setHybridMode(ipcl::HybridMode::IPP);
+
+// Use QAT modexp only
+ipcl::setHybridMode(ipcl::HybridMode::QAT);
+```
+By default, the hybrid mode is set to ```ipcl::HybridMode::OPTIMAL```. For more details about the modes, please refer to [```mod_exp.hpp```](../ipcl/include/ipcl/mod_exp.hpp#L16).
 
 ### Data handling
 The library uses a container - ```ipcl::PlainText``` for encryption inputs and decryption outputs as well as plaintext HE operations.
