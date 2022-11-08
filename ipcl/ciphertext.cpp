@@ -155,7 +155,7 @@ std::vector<BigNumber> CipherText::raw_mul(
     float qat_ratio = (v_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
                           ? IPCL_HYBRID_MODEXP_RATIO_FULL
                           : IPCL_HYBRID_MODEXP_RATIO_MULTIPLY;
-    setHybridRatio(qat_ratio);
+    setHybridRatio(qat_ratio, false);
   }
 
   return modExp(a, b, sq);

@@ -126,7 +126,7 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
     float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
                           ? IPCL_HYBRID_MODEXP_RATIO_FULL
                           : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
-    setHybridRatio(qat_ratio);
+    setHybridRatio(qat_ratio, false);
   }
 
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);

@@ -38,8 +38,9 @@ void setHybridMode(HybridMode mode);
 /**
  * Set the number of mod exp operatiions
  * @param[in] Proportion calculated with QAT
+ * @param[in] rest_mode Whether reset the mode to UNDIFINED(default is true)
  */
-void setHybridRatio(float qat_ratio);
+void setHybridRatio(float qat_ratio, bool reset_mode = true);
 
 /**
  * Turn off hybrid mod exp.

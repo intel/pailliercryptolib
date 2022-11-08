@@ -67,7 +67,7 @@ PlainText PrivateKey::decrypt(const CipherText& ct) const {
     float qat_ratio = (ct_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
                           ? IPCL_HYBRID_MODEXP_RATIO_FULL
                           : IPCL_HYBRID_MODEXP_RATIO_DECRYPT;
-    setHybridRatio(qat_ratio);
+    setHybridRatio(qat_ratio, false);
   }
 
   if (m_enable_crt)

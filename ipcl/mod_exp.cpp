@@ -32,28 +32,26 @@ static inline int scale_up(float value, int scale = 100) {
   return value * scale;
 }
 
-void setHybridRatio(float ratio) {
+void setHybridRatio(float ratio, bool reset_mode) {
 #ifdef IPCL_USE_QAT
   ERROR_CHECK((ratio <= 1.0) && (ratio >= 0),
               "setHybridRatio: Hybrid modexp qat ratio is NOT correct");
   g_hybrid_params.ratio = ratio;
-  g_hybrid_params.mode = HybridMode::UNDEFINED;
+  if (reset_mode) g_hybrid_params.mode = HybridMode::UNDEFINED;
 #endif  // IPCL_USE_QAT
 }
 
 void setHybridMode(HybridMode mode) {
 #ifdef IPCL_USE_QAT
-  g_hybrid_params.mode = mode;
   int mode_value = static_cast<std::underlying_type<HybridMode>::type>(mode);
   float ratio = scale_down(mode_value);
-  setHybridRatio(ratio);
+  g_hybrid_params = {ratio, mode};
 #endif  // IPCL_USE_QAT
 }
 
 void setHybridOff() {
 #ifdef IPCL_USE_QAT
-  g_hybrid_params.mode = HybridMode::UNDEFINED;
-  g_hybrid_params.ratio = 0.0;
+  g_hybrid_params = {0.0, HybridMode::UNDEFINED};
 #endif  // IPCL_USE_QAT
 }
 
