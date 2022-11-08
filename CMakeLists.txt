@@ -152,7 +152,9 @@ endif()
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
 message(STATUS "IPCL_DETECT_CPU_RUNTIME:    ${IPCL_DETECT_CPU_RUNTIME}")
-
+if(IPCL_INTERNAL_PYTHON_BUILD)
+  message(STATUS "IPCL_INTERNAL_PYTHON_BUILD: ${IPCL_INTERNAL_PYTHON_BUILD}")
+endif()
 # check whether cpu support rdseed or rdrand instruction
 
 set(IPCL_FORWARD_CMAKE_ARGS
