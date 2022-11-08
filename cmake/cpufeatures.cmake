@@ -34,8 +34,19 @@ if(IPCL_SHARED)
 
   target_include_directories(libcpu_features SYSTEM
                             INTERFACE ${CPUFEATURES_INC_DIR})
-  target_link_libraries(libcpu_features
-                        INTERFACE ${CPUFEATURES_LIB_DIR}/libcpu_features.a)
+  # ipcl python build
+  if(IPCL_PYTHON_BUILD)
+    target_link_libraries(libcpu_features INTERFACE
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cpufeatures/libcpu_features.a)
+
+    add_custom_command(TARGET ext_cpufeatures
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${CPUFEATURES_LIB_DIR} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cpufeatures
+    )
+  else()
+    target_link_libraries(libcpu_features INTERFACE
+      ${CPUFEATURES_LIB_DIR}/libcpu_features.a)
+  endif()
 
   install(
     DIRECTORY ${CPUFEATURES_LIB_DIR}/

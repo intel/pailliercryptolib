@@ -49,11 +49,25 @@ if(IPCL_SHARED)
 
   ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(IPPCP INTERFACE
-    ${IPPCRYPTO_LIB_DIR}/libippcp.so
-    ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so
-  )
   target_include_directories(IPPCP SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
+
+  # if ipcl python build
+  if(IPCL_PYTHON_BUILD)
+    target_link_libraries(IPPCP INTERFACE
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libippcp.so
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libcrypto_mb.so
+    )
+
+    add_custom_command(TARGET ext_ipp-crypto
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${IPPCRYPTO_LIB_DIR} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto
+    )
+  else()
+    target_link_libraries(IPPCP INTERFACE
+      ${IPPCRYPTO_LIB_DIR}/libippcp.so
+      ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so
+    )
+  endif()
 
   install(
     DIRECTORY ${IPPCRYPTO_LIB_DIR}/

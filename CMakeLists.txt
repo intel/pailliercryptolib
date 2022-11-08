@@ -69,7 +69,7 @@ option(IPCL_THREAD_COUNT "The max number of threads used by OpenMP(If the value 
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 option(IPCL_DETECT_CPU_RUNTIME "Detect CPU supported instructions during runtime" OFF)
-option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
+option(IPCL_PYTHON_BUILD "Additional steps for IPCL_Python build" OFF)
 
 if(IPCL_ENABLE_QAT)
   ipcl_detect_qat()
@@ -102,14 +102,10 @@ if(IPCL_DETECT_CPU_RUNTIME)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ipcl/cpufeatures")
 else()
   # check whether cpu support avx512ifma instructions
-  if(IPCL_DEBUG_DISABLE_AVX512IFMA)
-    message(STATUS "Support AVX512IFMA instruction: False")
-  else()
-    ipcl_detect_lscpu_flag("avx512ifma" FALSE)
-    if(IPCL_FOUND_avx512ifma)
-      add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
-      message(STATUS "Support AVX512IFMA instruction: True")
-    endif()
+  ipcl_detect_lscpu_flag("avx512ifma" FALSE)
+  if(IPCL_FOUND_avx512ifma)
+    add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+    message(STATUS "Support AVX512IFMA instruction: True")
   endif()
 
   # check whether cpu support rdseed/rdrand instructions
