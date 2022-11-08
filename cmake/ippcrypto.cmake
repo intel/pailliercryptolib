@@ -52,7 +52,7 @@ if(IPCL_SHARED)
   target_include_directories(IPPCP SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
 
   # if ipcl python build
-  if(IPCL_PYTHON_BUILD)
+  if(IPCL_INTERNAL_PYTHON_BUILD)
     target_link_libraries(IPPCP INTERFACE
       ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libippcp.so
       ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libcrypto_mb.so

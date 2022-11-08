@@ -35,7 +35,7 @@ if(IPCL_SHARED)
   target_include_directories(libcpu_features SYSTEM
                             INTERFACE ${CPUFEATURES_INC_DIR})
   # ipcl python build
-  if(IPCL_PYTHON_BUILD)
+  if(IPCL_INTERNAL_PYTHON_BUILD)
     target_link_libraries(libcpu_features INTERFACE
       ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cpufeatures/libcpu_features.a)
 
