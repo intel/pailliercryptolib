@@ -150,7 +150,7 @@ typedef struct {
 
 // One for each consumer
 typedef struct {
-    unsigned long long id;  ///< Work request ID. NOLINT
+    unsigned long long id;  ///< Work request ID.
     // sem_t callback;
     struct completion_struct callback;  ///< Synchronization object.
     HE_QAT_OP

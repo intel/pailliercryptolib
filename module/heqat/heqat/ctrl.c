@@ -40,17 +40,17 @@ HE_QAT_RequestBuffer
 HE_QAT_OutstandingBuffer
     outstanding;  ///< This is the data structure that holds outstanding
                   ///< requests from separate active threads calling the API.
-volatile unsigned long response_count =  // NOLINT [runtime/int]
+volatile unsigned long response_count =
     0;  ///< Counter of processed requests and it is used to help control
         ///< throttling.
-static volatile unsigned long request_count =  // NOLINT [runtime/int]
+static volatile unsigned long request_count =
     0;  ///< Counter of received requests and it is used to help control
         ///< throttling.
-static unsigned long restart_threshold =  // NOLINT [runtime/int]
+static unsigned long restart_threshold =
     NUM_PKE_SLICES *
     HE_QAT_NUM_ACTIVE_INSTANCES;  ///< Number of concurrent requests allowed to
                                   ///< be sent to accelerator at once.
-static unsigned long max_pending =  // NOLINT [runtime/int]
+static unsigned long max_pending =
     (2 * NUM_PKE_SLICES *
      HE_QAT_NUM_ACTIVE_INSTANCES);  ///< Number of requests sent to the
                                     ///< accelerator that are pending
@@ -285,8 +285,7 @@ void* schedule_requests(void* context_state) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_STATUS* active =
-        (HE_QAT_STATUS*)context_state;  // NOLINT [readability/casting]
+    HE_QAT_STATUS* active = (HE_QAT_STATUS*)context_state;
 
     HE_QAT_TaskRequestList outstanding_requests;
     for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
@@ -317,8 +316,7 @@ static void* start_inst_polling(void* _inst_config) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_InstConfig* config =
-        (HE_QAT_InstConfig*)_inst_config;  // NOLINT [readability/casting]
+    HE_QAT_InstConfig* config = (HE_QAT_InstConfig*)_inst_config;
 
     if (NULL == config->inst_handle) return NULL;
 
@@ -367,15 +365,12 @@ void* start_instances(void* _config) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_Config* config =
-        (HE_QAT_Config*)_config;  // NOLINT [readability/casting]
+    HE_QAT_Config* config = (HE_QAT_Config*)_config;
     instance_count = config->count;
 
     HE_QAT_PRINT_DBG("Instance Count: %d\n", instance_count);
     pthread_t* polling_thread =
-        (pthread_t*)malloc(  // NOLINT [readability/casting]
-            sizeof(pthread_t) *
-            instance_count);  // NOLINT [readability/casting]
+        (pthread_t*)malloc(sizeof(pthread_t) * instance_count);
     if (NULL == polling_thread) {
         HE_QAT_PRINT_ERR(
             "Failed in start_instances: polling_thread is NULL.\n");
@@ -383,8 +378,7 @@ void* start_instances(void* _config) {
     }
 
     unsigned* request_count_per_instance =
-        (unsigned*)malloc(                       // NOLINT [readability/casting]
-            sizeof(unsigned) * instance_count);  // NOLINT [readability/casting]
+        (unsigned*)malloc(sizeof(unsigned) * instance_count);
     if (NULL == request_count_per_instance) {
         HE_QAT_PRINT_ERR(
             "Failed in start_instances: polling_thread is NULL.\n");
@@ -423,8 +417,7 @@ void* start_instances(void* _config) {
         // Start QAT instance and start polling
         if (pthread_create(&polling_thread[j], config->inst_config[j].attr,
                            start_inst_polling,
-                           (void*)&(config->inst_config[j])) !=  // NOLINT
-            0) {
+                           (void*)&(config->inst_config[j])) != 0) {
             HE_QAT_PRINT_ERR(
                 "Failed at creating and starting polling thread.\n");
             pthread_exit(NULL);
@@ -451,9 +444,8 @@ void* start_instances(void* _config) {
         HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n",
                          next_instance);
 
-        unsigned long pending =  // NOLINT [runtime/int]
-            request_count - response_count;
-        unsigned long available =  // NOLINT [runtime/int]
+        unsigned long pending = request_count - response_count;
+        unsigned long available =
             max_pending - ((pending < max_pending) ? pending : max_pending);
 
         HE_QAT_PRINT_DBG(
@@ -509,9 +501,7 @@ void* start_instances(void* _config) {
                         config->inst_config[next_instance].inst_handle,
                         (CpaCyGenFlatBufCbFunc)
                             request->callback_func,  // lnModExpCallback,
-                        (void*)request,         // NOLINT [readability/casting]
-                        (CpaCyLnModExpOpData*)  // NOLINT [readability/casting]
-                        request->op_data,
+                        (void*)request, (CpaCyLnModExpOpData*)request->op_data,
                         &request->op_result);
                     retry++;
                     break;
@@ -594,8 +584,7 @@ void* start_perform_op(void* _inst_config) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_InstConfig* config =
-        (HE_QAT_InstConfig*)_inst_config;  // NOLINT [readability/casting]
+    HE_QAT_InstConfig* config = (HE_QAT_InstConfig*)_inst_config;
 
     CpaStatus status = CPA_STATUS_FAIL;
 
@@ -622,7 +611,7 @@ void* start_perform_op(void* _inst_config) {
     // Start QAT instance and start polling
     pthread_t polling_thread;
     if (pthread_create(&polling_thread, config->attr, start_inst_polling,
-                       (void*)config) != 0) {  // NOLINT [readability/casting]
+                       (void*)config) != 0) {
         HE_QAT_PRINT_ERR("Failed at creating and starting polling thread.\n");
         pthread_exit(NULL);
     }
@@ -644,9 +633,8 @@ void* start_perform_op(void* _inst_config) {
         HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n",
                          config->inst_id);
 
-        unsigned long pending =  // NOLINT [runtime/int]
-            request_count - response_count;
-        unsigned long available =  // NOLINT [runtime/int]
+        unsigned long pending = request_count - response_count;
+        unsigned long available =
             max_pending - ((pending < max_pending) ? pending : max_pending);
 
         HE_QAT_PRINT_DBG(
@@ -707,9 +695,7 @@ void* start_perform_op(void* _inst_config) {
                         config->inst_handle,
                         (CpaCyGenFlatBufCbFunc)
                             request->callback_func,  // lnModExpCallback,
-                        (void*)request,         // NOLINT [readability/casting]
-                        (CpaCyLnModExpOpData*)  // NOLINT [readability/casting]
-                        request->op_data,
+                        (void*)request, (CpaCyLnModExpOpData*)request->op_data,
                         &request->op_result);
                     retry++;
                     break;

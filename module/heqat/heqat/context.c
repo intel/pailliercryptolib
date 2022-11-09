@@ -223,15 +223,13 @@ HE_QAT_STATUS acquire_qat_devices() {
         he_qat_inst_config[i].attr = &he_qat_inst_attr[i];
     }
 
-    he_qat_config = (HE_QAT_Config*)malloc(  // NOLINT [readability/casting]
-        sizeof(HE_QAT_Config));              // NOLINT [readability/casting]
+    he_qat_config = (HE_QAT_Config*)malloc(sizeof(HE_QAT_Config));
     he_qat_config->inst_config = he_qat_inst_config;
     he_qat_config->count = HE_QAT_NUM_ACTIVE_INSTANCES;
     he_qat_config->running = 0;
     he_qat_config->active = 0;
 
-    pthread_create(&he_qat_runner, NULL, start_instances,
-                   (void*)he_qat_config);  // NOLINT [readability/casting]
+    pthread_create(&he_qat_runner, NULL, start_instances, (void*)he_qat_config);
     HE_QAT_PRINT_DBG("Created processing threads.\n");
 
     // Dispatch the qat instances to run independently in the background
@@ -242,9 +240,8 @@ HE_QAT_STATUS acquire_qat_devices() {
     context_state = HE_QAT_STATUS_ACTIVE;
 
     // Launch buffer manager thread to schedule incoming requests
-    if (0 != pthread_create(
-                 &buffer_manager, NULL, schedule_requests,
-                 (void*)&context_state)) {  // NOLINT [readability/casting]
+    if (0 != pthread_create(&buffer_manager, NULL, schedule_requests,
+                            (void*)&context_state)) {
         pthread_mutex_unlock(&context_lock);
         release_qat_devices();
         HE_QAT_PRINT_ERR(

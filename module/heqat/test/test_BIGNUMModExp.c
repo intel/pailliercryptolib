@@ -130,5 +130,5 @@ int main(int argc, const char** argv) {
     // Tear down QAT runtime context
     release_qat_devices();
 
-    return (int)status;  // NOLINT
+    return (int)status;
 }
