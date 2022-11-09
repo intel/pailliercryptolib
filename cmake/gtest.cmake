@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
+include(GNUInstallDirs)
 
 set(GTEST_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gtest)
 set(GTEST_GIT_REPO_URL https://github.com/google/googletest.git)

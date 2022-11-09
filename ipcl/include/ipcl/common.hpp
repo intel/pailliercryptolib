@@ -17,6 +17,7 @@ constexpr float IPCL_HYBRID_MODEXP_RATIO_FULL = 1.0;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_ENCRYPT = 0.25;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_DECRYPT = 0.12;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_MULTIPLY = 0.18;
+
 /**
  * Random generator wrapper.Generates a random unsigned Big Number of the
  * specified bit length

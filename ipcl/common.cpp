@@ -5,8 +5,6 @@
 
 #include <crypto_mb/exp.h>
 
-#include <iostream>
-
 #include "ipcl/util.hpp"
 
 namespace ipcl {
