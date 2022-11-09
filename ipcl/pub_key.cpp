@@ -123,13 +123,9 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
 
   // If hybrid OPTIMAL mode is used, use a special ratio
   if (isHybridOptimal()) {
-#ifdef IPCL_USE_OMP
     float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
                           ? IPCL_HYBRID_MODEXP_RATIO_FULL
                           : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
-#else
-    float qat_ratio = IPCL_HYBRID_MODEXP_RATIO_FULL;
-#endif  // IPCL_USE_OMP
     setHybridRatio(qat_ratio, false);
   }
 
