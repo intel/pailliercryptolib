@@ -25,6 +25,9 @@ endif()
 add_library(IPCL::ipcl ALIAS ipcl)
 
 set_target_properties(ipcl PROPERTIES PUBLIC_HEADER ${IPCL_PUBLIC_HEADER})
+set_target_properties(ipcl PROPERTIES
+    BUILD_WITH_INSTALL_RPATH FALSE
+    LINK_FLAGS "-Wl,-rpath,'$ORIGIN' -Wl,-rpath,'$ORIGIN'/ippcrypto -Wl,-rpath,'$ORIGIN'/cpufeatures")
 
 target_include_directories(ipcl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -71,7 +74,6 @@ if(IPCL_ENABLE_QAT)
     target_include_directories(ipcl
         PRIVATE "$<BUILD_INTERFACE:${icp_inc_dir}>"
     )
-
 
     target_include_directories(ipcl
         PRIVATE "$<BUILD_INTERFACE:${HE_QAT_INC_DIR}>"
