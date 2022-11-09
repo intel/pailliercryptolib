@@ -64,9 +64,13 @@ PlainText PrivateKey::decrypt(const CipherText& ct) const {
 
   // If hybrid OPTIMAL mode is used, use a special ratio
   if (isHybridOptimal()) {
+#ifdef IPCL_USE_OMP
     float qat_ratio = (ct_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
                           ? IPCL_HYBRID_MODEXP_RATIO_FULL
                           : IPCL_HYBRID_MODEXP_RATIO_DECRYPT;
+#else
+    float qat_ratio = IPCL_HYBRID_MODEXP_RATIO_FULL;
+#endif  // IPCL_USE_OMP
     setHybridRatio(qat_ratio, false);
   }
 
