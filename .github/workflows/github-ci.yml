@@ -60,7 +60,7 @@ jobs:
       # Build library
       - name: Build the repository
         run: |
-          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_ENABLE_QAT=ON
           cmake --build build --target all -j
 
       # Unit tests and examples
@@ -94,7 +94,7 @@ jobs:
       # Build library
       - name: Build the repository
         run: |
-          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_SHARED=OFF
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_ENABLE_QAT=ON -DIPCL_SHARED=OFF
           cmake --build build --target all -j
 
       # Unit tests and examples
