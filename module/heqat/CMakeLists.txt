@@ -51,10 +51,7 @@ if(HE_QAT_STANDALONE)
   endif()
 endif()
 
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/heqat")
-
-message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-
+set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/${CMAKE_INSTALL_LIBDIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 # -------------------------------------------------------------------
@@ -93,6 +90,21 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-DHE_QAT_DEBUG)
 else()
   set(HE_QAT_DEBUG OFF)
+endif()
+
+if(HE_QAT_STANDALONE)
+  message(STATUS "CMAKE_BUILD_TYPE:           ${CMAKE_BUILD_TYPE}")
+  message(STATUS "CMAKE_C_COMPILER:           ${CMAKE_C_COMPILER}")
+  message(STATUS "CMAKE_CXX_COMPILER:         ${CMAKE_CXX_COMPILER}")
+  message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "HE_QAT_MISC:                ${HE_QAT_MISC}")
+  message(STATUS "HE_QAT_SYNC:                ${HE_QAT_SYNC}")
+  message(STATUS "HE_QAT_MT:                  ${HE_QAT_MT}")
+  message(STATUS "HE_QAT_PERF:                ${HE_QAT_PERF}")
+  message(STATUS "HE_QAT_TEST:                ${HE_QAT_TEST}")
+  message(STATUS "HE_QAT_OMP:                 ${HE_QAT_OMP}")
+  message(STATUS "HE_QAT_DOCS:                ${HE_QAT_DOCS}")
+  message(STATUS "HE_QAT_SHARED:              ${HE_QAT_SHARED}")
 endif()
 
 if(HE_QAT_MISC)

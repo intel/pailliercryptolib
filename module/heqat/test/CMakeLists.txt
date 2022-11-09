@@ -13,11 +13,11 @@ macro(heqat_create_executable test_case language dependencies)
 
   set(target test_${test_case})
   add_executable(${target} test_${test_case}.${extension})
-  
+
   target_include_directories(${target} PUBLIC ${HE_QAT_INC_DIR})
-  
+
   target_link_libraries(${target} PUBLIC he_qat)
-  
+
   if(NOT ${dependencies} STREQUAL "")
     message(STATUS "Target: ${target} Additional Dependencies: ${${dependencies}}")
     target_link_libraries(${target} PUBLIC ${${dependencies}})
@@ -40,17 +40,17 @@ if(HE_QAT_MISC)
   add_compile_options(-fpermissive)
 
   list(APPEND EXECUTABLE_DEPENDENCIES IPPCP::ippcp)
-  
+
   # Sample showing how to convert from/to BigNumber to/from CpaFlatBuffer
   heqat_create_executable(bnConversion cxx EXECUTABLE_DEPENDENCIES)
 
   # Sample showing how to use bnModExp API
-  heqat_create_executable(bnModExp CXX EXECUTABLE_DEPENDENCIES) 
+  heqat_create_executable(bnModExp CXX EXECUTABLE_DEPENDENCIES)
 
-  if(OpenMP_CXX_FOUND) 
+  if(OpenMP_CXX_FOUND)
     list(APPEND EXECUTABLE_DEPENDENCIES OpenMP::OpenMP_CXX)
     # Sample showing how to use bnModExp_MT API for multithreaded applications
-    heqat_create_executable(bnModExp_MT CXX EXECUTABLE_DEPENDENCIES) 
+    heqat_create_executable(bnModExp_MT CXX EXECUTABLE_DEPENDENCIES)
   endif()
 endif()
 

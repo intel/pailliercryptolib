@@ -1,16 +1,26 @@
 # Intel Homomorphic Encryption (HE) Acceleration Library for Quick Assist Technology (QAT)
-Intel Homomorphic Encryption Acceleration Library for QAT (HE QAT Lib) is an open-source library which provides accelerated performance for homomorphic encryption (HE) math functions involving multi-precision numbers and modular arithmetic. This library is written in C99. 
+Intel Homomorphic Encryption Acceleration Library for QAT (HE QAT Lib) is an open-source library which provides accelerated performance for homomorphic encryption (HE) math functions involving multi-precision numbers and modular arithmetic. This library is written in C99.
 
 ## Contents
-- [Intel Homomorphic Encryption Acceleration Library for QAT](#intel-homomorphic-encryption-library-for-qat)
+- [Intel Homomorphic Encryption (HE) Acceleration Library for Quick Assist Technology (QAT)](#intel-homomorphic-encryption-he-acceleration-library-for-quick-assist-technology-qat)
   - [Contents](#contents)
   - [Introduction](#introduction)
-  - [Building the Library](#building-the-library)
+  - [Building the HE QAT Library](#building-the-he-qat-library)
     - [Requirements](#requirements)
     - [Dependencies](#dependencies)
     - [Instructions](#instructions)
+      - [Installing Dependencies](#installing-dependencies)
+      - [Installing OpenSSL](#installing-openssl)
+      - [Installing QAT Software Stack](#installing-qat-software-stack)
+      - [Setup Environment](#setup-environment)
+      - [Building the Library](#building-the-library)
+      - [Configuring QAT endpoints](#configuring-qat-endpoints)
+      - [Configuration Options](#configuration-options)
+      - [Running Samples](#running-samples)
+      - [Running All Samples](#running-all-samples)
   - [Troubleshooting](#troubleshooting)
   - [Testing and Benchmarking](#testing-and-benchmarking)
+- [Contributors](#contributors)
 <!-- - [Standardization](#standardization) -->
 - [Contributors](#contributors)
 
@@ -19,18 +29,18 @@ Intel Homomorphic Encryption Acceleration Library for QAT (HE QAT Lib) is an ope
 This library currently only offers acceleration of modular exponentiation of multi-precision numbers, i.e. large numbers whose precision range from 1024 to 8192 bits. Current stage of implementation supports modular exponentiation of big numbers encoded with OpenSSL `BIGNUM` data type, `ippcrypto`'s `BigNumber` class and octet strings encoded with `unsigned char`. More details about the modes of operation and characteristics of the execution flow are described below:
 
  - Synchronous: API calls will submit requests that will be executed in the order they are first issued by the host caller, i.e. a series of modular exponentiation operation requests will be offloaded for processing by the accelerator in the order they are issued.
- 
+
  - Asynchronous: API calls will submit requests that will NOT necessarily be executed in the order they are first issued by the host caller, i.e. a sequence of multiple requests for the modular exponentiation operation could be scheduled out of order and executed concurrently by the accelerator; thus, completed out of order.
 
  - Blocking: API calls will be blocked until work request processing completion. Internally, the next buffered work request waits for completion of the processing of the most recently offloaded request to the accelerator.
- 
+
   - Non-Blocking: API calls will be non-blocking, it does not wait for completion of the work request to return from call. After multiple non-blocking calls to the API, a blocking function to wait for the requests to complete processing must be called. Internally, non-blocking request submissions are scheduled to the accelerator asynchronously. When there are multiple requests from concurrent API callers, the requests are not guaranteed to be processed in order of arrival.
 
  - Batch Support: The internal buffers are set accommodate up to 1024 requests at a time so that the maximum number of non-blocking API calls is 1024 for each concurrent thread caller. Therefore, only up to 1024 requests can be exercised asynchronously from the application side, be it from a single `for loop` or static code block. Finally, in order to collect the requests, a call to the `getBnModExpRequest()` function must be performed to wait for completion of all submitted asynchronous requests. On multithreaded mode, the blocking function to be called at the end of the code block shall be `release_bnModExp_buffer()`.
- 
+
  - Multithreading Support: This feature permits the API to be called by concurrently threads running on the host. Effective multithreading support relies on a separate buffer that admits outstanding work requests. This buffer is acquired before an API call to submit work requests to the accelerator. This is accomplished by first calling `acquire_bnModExp_buffer()` to reserve an internal buffer to store outstanding requests from the host API caller.
 
- - Multiple Instances: The library accesses all logical instances from all visible and configured QAT endpoints at the creation of the QAT runtime context. Therefore, if 8 QAT endpoints are available, it will attempt to use them all, including all the total number of logical instances configured per process. 
+ - Multiple Instances: The library accesses all logical instances from all visible and configured QAT endpoints at the creation of the QAT runtime context. Therefore, if 8 QAT endpoints are available, it will attempt to use them all, including all the total number of logical instances configured per process.
 
 >> _**Note**_: Current implementation does not verify if the instance/endpoint has the capabilities needed by the library. For example, the library needs access to the _asym_ capabilities like `CyLnModExp`, therefore if the configuration file of an endpoint happens to be configured to not offer it, the application will exit with an error at some point during execution.
 
@@ -82,8 +92,8 @@ In the example above, the platform is a dual-socket server with Sapphire Rapids 
 #### Installing Dependencies
 
 ```
-sudo apt install yasm zlib1g 
-sudo apt update -y 
+sudo apt install yasm zlib1g
+sudo apt update -y
 sudo apt install -y libsystemd-dev
 sudo apt install -y pciutils (tested with version=3.6.4)
 sudo apt install -y libudev-dev
@@ -122,7 +132,7 @@ $ sudo make -j
 $ sudo make install
 ```
 
-Add `$USER` to the `qat` group. Must logout and log back in to take effect. 
+Add `$USER` to the `qat` group. Must logout and log back in to take effect.
 
 ```
 $ sudo usermod -aG qat $USER
@@ -143,9 +153,9 @@ sudo systemctl status qat_service.service
 
 If all checks out, following the instructions below to build the HE QAT library.
 
-#### Setup Environment 
+#### Setup Environment
 
-This step is required. Note that if the step [Installing QAT Software Stack](#installing-qat-software-stack) has just been performed, then the exact path of the installation is known, i.e. 
+This step is required. Note that if the step [Installing QAT Software Stack](#installing-qat-software-stack) has just been performed, then the exact path of the installation is known, i.e.
 
 ```
 export ICP_ROOT=$HOME/QAT
@@ -153,18 +163,18 @@ export ICP_ROOT=$HOME/QAT
 
 Alternatively, if the system has a pre-built QAT software stack installed, the script `auto_find_qat_install.sh` can used to help automatically find the path where it was installed (see command below). The script `auto_find_qat_install.sh` assumes that the QAT package is installed in a single location, such that if multiple installations are available at different locations, the script may produce undetermined behavior.
 
- - Explicity way:
+ - Explicit way:
 ```
 export ICP_ROOT=$(./auto_find_qat_install.sh)
 ```
- - Implicity way:
+ - Implicit way:
 ```
 source setup_env.sh
 ```
 
 #### Building the Library
 
-Follow the steps in the sections [Installing QAT Software Stack](#installing-qat-software-stack) and [Setup Environment](#setup-environment) before attempting to build the library. 
+Follow the steps in the sections [Installing QAT Software Stack](#installing-qat-software-stack) and [Setup Environment](#setup-environment) before attempting to build the library.
 
 - How to build without `BigNumber` support
 
@@ -204,9 +214,9 @@ $ sudo cmake --install _build
 
 #### Configuring QAT endpoints
 
-Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured. 
+Before trying to run any application or example that uses the HE QAT Lib, the QAT endpoints must be configured.
 The default configuration provided in this release is the optimal configuration to provide computing acceleration support for [IPCL](https://github.com/intel/pailliercryptolib).
-The boilerplate configurations can be found in the `config` directory. 
+The boilerplate configurations can be found in the `config` directory.
 
 ```
 ./scripts/setup_devices.sh
@@ -237,21 +247,21 @@ Test showing creation and teardown of the QAT runtime environment:
 
 ```
 ./build/samples/sample_context
-``` 
+```
 
 Test showing functional correctness and performance using BIGNUM data as input:
 
 ```
 ./build/samples/sample_BIGNUMModExp
-``` 
+```
 
-If built with `HE_QAT_MISC=ON`, then the following samples below are also available to try. 
+If built with `HE_QAT_MISC=ON`, then the following samples below are also available to try.
 
 Test showing data conversion between `BigNumber` and `CpaFlatBuffer` formats:
 
 ```
 ./build/samples/sample_bnConversion
-``` 
+```
 
 Test showing functional correctness and performance using `BigNumber` data types:
 
@@ -272,7 +282,7 @@ HEQATLIB_ROOT_DIR=$PWD ./scripts/run.sh
 
 ## Troubleshooting
 
-- **Issue #1** 
+- **Issue #1**
 
 ```
 xuser@ubuntu-guest:~/heqat$ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHE_QAT_MISC=ON
@@ -290,7 +300,7 @@ CMake Error at CMakeLists.txt:93 (find_package):
   FOUND.
 ```
 
-To resolve the error below simply create the symbolic link `/opt/ipp-crypto/lib/intel64/libippcp.a` from the apropriate static ippcp library that was compiled. For example: 
+To resolve the error below simply create the symbolic link `/opt/ipp-crypto/lib/intel64/libippcp.a` from the appropriate static ippcp library that was compiled. For example:
 
 ```
 xuser@ubuntu-guest:/opt/ipp-crypto/lib/intel64$ ls -lha
@@ -318,6 +328,5 @@ Main contributors to this project, sorted by alphabetical order of last name are
   - [Fillipe Dias M. de Souza](https://www.linkedin.com/in/fillipe-d-m-de-souza-a8281820) (lead)
   - [Xiaoran Fang](https://github.com/fangxiaoran)
   - [Jingyi Jin](https://www.linkedin.com/in/jingyi-jin-655735)
-  - [Sejun Kim](https://www.linkedin.com/in/sejun-kim-2b1b4866) 
+  - [Sejun Kim](https://www.linkedin.com/in/sejun-kim-2b1b4866)
   - [Pengfei Zhao](https://github.com/justalittlenoob)
-

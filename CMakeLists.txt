@@ -45,7 +45,7 @@ endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
-set(CMAKE_INSTALL_RPATH "$ORIGIN/${CMAKE_INSTALL_LIBDIR};$ORIGIN/ippcrypto")
+set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/${CMAKE_INSTALL_LIBDIR};$ORIGIN/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 

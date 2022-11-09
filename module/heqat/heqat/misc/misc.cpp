@@ -12,7 +12,7 @@ HE_QAT_STATUS binToBigNumber(BigNumber& bn, const unsigned char* data,
     if (nbits <= 0) return HE_QAT_STATUS_INVALID_PARAM;
     int len_ = (nbits + 7) >> 3;  // nbits/8;
 
-    // Create BigNumber containg input data passed as argument
+    // Create BigNumber containing input data passed as argument
     bn = BigNumber(reinterpret_cast<const Ipp32u*>(data), BITSIZE_WORD(nbits));
     Ipp32u* ref_bn_data_ = NULL;
     ippsRef_BN(NULL, NULL, &ref_bn_data_, BN(bn));

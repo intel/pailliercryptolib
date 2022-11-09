@@ -1,9 +1,6 @@
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "heqat/heqat.h"
-
-#include <chrono>
 #include <time.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
@@ -11,10 +8,11 @@
 
 #include <iomanip>
 #include <cstring>
+#include <chrono>  // NOLINT [build/c++11]
+
+#include "heqat/heqat.h"
 
 const unsigned int BATCH_SIZE = 48;
-
-using namespace std::chrono;
 
 int main(int argc, const char** argv) {
     const int bit_length = 4096;
@@ -42,7 +40,7 @@ int main(int argc, const char** argv) {
         char* bn_str = BN_bn2hex(bn_mod);
 #ifdef HE_QAT_DEBUG
         HE_QAT_PRINT("BIGNUM: %s num_bytes: %d num_bits: %d\n", bn_str,
-               BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
+                     BN_num_bytes(bn_mod), BN_num_bits(bn_mod));
 #endif
         OPENSSL_free(bn_str);
 
@@ -58,15 +56,16 @@ int main(int argc, const char** argv) {
 
         // Perform OpenSSL ModExp Op
         BIGNUM* ssl_res = BN_new();
-        auto start = high_resolution_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         BN_mod_exp(ssl_res, bn_base, bn_exponent, bn_mod, ctx);
-        auto stop = high_resolution_clock::now();
-        auto ssl_duration = duration_cast<microseconds>(stop - start);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto ssl_duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
         int len_ = (bit_length + 7) >> 3;
 
         // Start QAT timer (including data conversion overhead)
-        start = high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
         unsigned char* bn_base_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
         if (NULL == bn_base_data_) exit(1);
@@ -82,8 +81,9 @@ int main(int argc, const char** argv) {
         unsigned char* bn_remainder_data_ =
             (unsigned char*)calloc(len_, sizeof(unsigned char));
         if (NULL == bn_remainder_data_) exit(1);
-        stop = high_resolution_clock::now();
-        auto cvt_duration = duration_cast<microseconds>(stop - start);
+        stop = std::chrono::high_resolution_clock::now();
+        auto cvt_duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
         // Simulate input number in BigNumber representation
         BigNumber big_num_base((Ipp32u)0);
@@ -117,7 +117,7 @@ int main(int argc, const char** argv) {
             exit(1);
         }
 
-        start = high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
         status = bigNumberToBin(bn_base_data_, bit_length, big_num_base);
         if (HE_QAT_STATUS_SUCCESS != status) {
             HE_QAT_PRINT_ERR("bn_base_data_: failed at bigNumberToBin()\n");
@@ -134,28 +134,32 @@ int main(int argc, const char** argv) {
             HE_QAT_PRINT_ERR("bn_base_data_: failed at bigNumberToBin()\n");
             exit(1);
         }
-        cvt_duration +=
-            duration_cast<microseconds>(high_resolution_clock::now() - start);
+        cvt_duration += std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - start);
 
         // Perform BigNumber modular exponentiation on QAT
-        start = high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
         for (unsigned int b = 0; b < BATCH_SIZE; b++)
             status =
                 HE_QAT_bnModExp(bn_remainder_data_, bn_base_data_,
                                 bn_exponent_data_, bn_mod_data_, bit_length);
         getBnModExpRequest(BATCH_SIZE);
-        stop = high_resolution_clock::now();
-        auto qat_duration = duration_cast<microseconds>(stop - start);
+        stop = std::chrono::high_resolution_clock::now();
+        auto qat_duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
         ssl_avg_time =
-            (mod * ssl_avg_time + ((double)(ssl_duration.count()))) / (mod + 1);
-        qat_avg_time = (mod * qat_avg_time +
-                        ((double)(qat_duration.count())) / BATCH_SIZE) /
-                       (mod + 1);
-        avg_speed_up = (mod * avg_speed_up +
-                        (ssl_duration.count() /
-                         (double)(qat_duration.count() / BATCH_SIZE))) /
-                       (mod + 1);
+            (mod * ssl_avg_time + (static_cast<double>(ssl_duration.count()))) /
+            (mod + 1);
+        qat_avg_time =
+            (mod * qat_avg_time +
+             (static_cast<double>(qat_duration.count())) / BATCH_SIZE) /
+            (mod + 1);
+        avg_speed_up =
+            (mod * avg_speed_up +
+             (ssl_duration.count() /
+              static_cast<double>(qat_duration.count() / BATCH_SIZE))) /
+            (mod + 1);
         HE_QAT_PRINT("Request #%u\t", mod + 1);
         HE_QAT_PRINT("Overhead: %.1luus", cvt_duration.count());
         HE_QAT_PRINT("\tOpenSSL: %.1lfus", ssl_avg_time);
@@ -169,22 +173,22 @@ int main(int argc, const char** argv) {
             HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
         }
 #ifdef HE_QAT_DEBUG
-        else {
+        else
             HE_QAT_PRINT("\nQAT bnModExpOp finished\n");
-        }
 #endif
 
         BigNumber big_num((Ipp32u)0);
         status = binToBigNumber(big_num, bn_remainder_data_, bit_length);
         if (HE_QAT_STATUS_SUCCESS != status) {
-            HE_QAT_PRINT_ERR("bn_remainder_data_: Failed at bigNumberToBin()\n");
+            HE_QAT_PRINT_ERR(
+                "bn_remainder_data_: Failed at bigNumberToBin()\n");
             exit(1);
         }
 
 #ifdef HE_QAT_DEBUG
         bn_str = BN_bn2hex(qat_res);
         HE_QAT_PRINT("Bin: %s num_bytes(%d) num_bits(%d)\n", bn_str,
-               BN_num_bytes(qat_res), BN_num_bits(qat_res));
+                     BN_num_bytes(qat_res), BN_num_bits(qat_res));
 #endif
 
 #ifdef HE_QAT_DEBUG
@@ -192,8 +196,8 @@ int main(int argc, const char** argv) {
         ippsRef_BN(NULL, &bit_len, NULL, BN(big_num));
         std::string str;
         big_num.num2hex(str);
-        HE_QAT_PRINT("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(), len_,
-               bit_len);
+        HE_QAT_PRINT("BigNumber:  %s num_bytes: %d num_bits: %d\n", str.c_str(),
+                     len_, bit_len);
         HE_QAT_PRINT(
             "---------------------################-----------------------\n");
 #endif
@@ -221,5 +225,5 @@ int main(int argc, const char** argv) {
     // Tear down QAT runtime context
     release_qat_devices();
 
-    return (int)status;
+    return static_cast<int>(status);
 }

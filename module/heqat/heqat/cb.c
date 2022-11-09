@@ -18,7 +18,7 @@
 static pthread_mutex_t
     response_mutex;  ///< It protects against race condition on response_count
                      ///< due to concurrent callback events.
-extern volatile unsigned long
+extern volatile unsigned long  // NOLINT
     response_count;  ///< It counts the number of requests completed by the
                      ///< accelerator.
 
@@ -39,10 +39,10 @@ void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status,
     // Check if input data for the op is available and do something
     if (NULL != pCallbackTag) {
         // Read request data
-        request = (HE_QAT_TaskRequest*)pCallbackTag;
+        request = (HE_QAT_TaskRequest*)pCallbackTag;  // NOLINT
 
         pthread_mutex_lock(&response_mutex);
-        // Global track of reponses by accelerator
+        // Global track of responses by accelerator
         response_count += 1;
         pthread_mutex_unlock(&response_mutex);
 
@@ -56,7 +56,7 @@ void HE_QAT_BIGNUMModExpCallback(void* pCallbackTag, CpaStatus status,
 
                 BIGNUM* r = BN_bin2bn(request->op_result.pData,
                                       request->op_result.dataLenInBytes,
-                                      (BIGNUM*)request->op_output);
+                                      (BIGNUM*)request->op_output);  // NOLINT
                 if (NULL == r) request->request_status = HE_QAT_STATUS_FAIL;
 #ifdef HE_QAT_PERF
                 gettimeofday(&request->end, NULL);
@@ -93,10 +93,10 @@ void HE_QAT_bnModExpCallback(void* pCallbackTag, CpaStatus status,
     // Check if input data for the op is available and do something
     if (NULL != pCallbackTag) {
         // Read request data
-        request = (HE_QAT_TaskRequest*)pCallbackTag;
+        request = (HE_QAT_TaskRequest*)pCallbackTag;  // NOLINT
 
         pthread_mutex_lock(&response_mutex);
-        // Global track of reponses by accelerator
+        // Global track of responses by accelerator
         response_count += 1;
         pthread_mutex_unlock(&response_mutex);
 

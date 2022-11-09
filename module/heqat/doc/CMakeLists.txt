@@ -18,7 +18,7 @@ add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
                    MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
                    COMMENT "Generating Doxygen documentation")
 
-add_custom_target(docs ALL DEPENDS ${DOXYGEN_INDEX_FILE}) 
+add_custom_target(docs ALL DEPENDS ${DOXYGEN_INDEX_FILE})
 
 install(DIRECTORY
     ${CMAKE_BINARY_DIR}/doc/doxygen

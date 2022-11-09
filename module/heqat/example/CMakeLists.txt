@@ -10,8 +10,8 @@ set(HE_QAT_HINT_DIR ${CMAKE_PREFIX_PATH})
 message(STATUS "CMAKE_PREFIX_PATH ${HE_QAT_HINT_DIR}")
 
 # Example using source
-find_package(HE_QAT 1.3.2 
-	     HINTS ${HE_QAT_HINT_DIR} 
+find_package(HE_QAT 1.3.2
+	     HINTS ${HE_QAT_HINT_DIR}
 	     REQUIRED)
 if(NOT TARGET HE_QAT::he_qat)
   message(FATAL_ERROR "TARGET HE_QAT::he_qat not found")

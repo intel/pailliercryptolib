@@ -2,10 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
-include(GNUInstallDirs)
 
 set(GBENCHMARK_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gbenchmark)
-
 set(GBENCHMARK_SRC_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark/)
 set(GBENCHMARK_BUILD_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark-build/)
 set(GBENCHMARK_REPO_URL https://github.com/google/benchmark.git)

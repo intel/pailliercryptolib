@@ -11,17 +11,17 @@
 extern "C" {
 #endif
 
-// QATLib Headers
-#include "cpa.h"
-#include "cpa_cy_im.h"
-#include "cpa_cy_ln.h"
-
 // C Libraries
 #include <pthread.h>
 #include <semaphore.h>
 #ifdef HE_QAT_PERF
 #include <sys/time.h>
 #endif
+
+// QATLib Headers
+#include <cpa.h>
+#include <cpa_cy_im.h>
+#include <cpa_cy_ln.h>
 
 #include "heqat/common/consts.h"
 
@@ -150,11 +150,11 @@ typedef struct {
 
 // One for each consumer
 typedef struct {
-    unsigned long long id;  ///< Work request ID.
+    unsigned long long id;  ///< Work request ID. NOLINT
     // sem_t callback;
     struct completion_struct callback;  ///< Synchronization object.
     HE_QAT_OP
-        op_type;  ///< Work type: type of operation to be offloaded to QAT.
+    op_type;  ///< Work type: type of operation to be offloaded to QAT.
     CpaStatus op_status;      ///< Status of the operation after completion.
     CpaFlatBuffer op_result;  ///< Output of the operation in contiguous memory.
     // CpaCyLnModExpOpData op_data;

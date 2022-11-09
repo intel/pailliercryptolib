@@ -3,32 +3,33 @@
 /// @file heqat/bnops.h
 ///
 /// @details
-/// 	In this file, functions for Big Number operations accelerated by the
-/// 	QuickAssist (QAT) co-processor are specified.
+///     In this file, functions for Big Number operations accelerated by the
+///     QuickAssist (QAT) co-processor are specified.
 ///
 /// @note
-/// 	Unless otherwise specified, Big numbers are represented by octet strings
-/// 	and stored in memory as pointers of type unsigned char*. On the QAT API
-/// the 	octect string is copied into a data structure of type CpaFlatBuffer. The
-/// octet 	strings representing Big Numbers are encoded with compliance to PKCA#1
-/// v2.1, 	section 4, which is consistent with ASN.1 syntax.
+///     Unless otherwise specified, Big numbers are represented by octet strings
+///     and stored in memory as pointers of type unsigned char*. On the QAT API
+///     the octet string is copied into a data structure of type
+///     CpaFlatBuffer. The octet strings representing Big Numbers are encoded
+///     with compliance to PKCA#1 v2.1, section 4, which is consistent with
+///     ASN.1 syntax.
+///     The largest number supported here has 8192 bits, i.e. numbers from 0 to
+///     2^(8192)-1. If the number is N, then the bit length is defined by n =
+///     floor(log2(N))+1. The memory buffer b to hold such number N needs to
+///     have at least M = ceiling(n/8) bytes allocated. In general, it will be
+///     larger and a power of 2, e.g. total bytes allocated is T=128 for
+///     numbers having up to n=1024 bits, total bytes allocated is T=256 for
+///     numbers having up to n=2048 bits, and so forth. Finally, the big number
+///     N is stored in `big endian` format, i.e. the least significant byte
+///     (LSB) is located at index [T-1], whereas the most significant byte is
+///     stored at [T-M].
 ///
-///      The largest number supported here has 8192 bits, i.e. numbers from 0 to
-///      2^(8192)-1. If the number is N, then the bit length is defined by n =
-///      floor(log2(N))+1. The memory buffer b to hold such number N needs to
-///      have at least M = ceiling(n/8) bytes allocated. In general, it will be
-///      larger and a power of 2, e.g. total bytes allocated is T=128 for
-///      numbers having up to n=1024 bits, total bytes allocated is T=256 for
-///      numbers having up to n=2048 bits, and so forth. Finally, the big number
-///      N is stored in `big endian` format, i.e. the least significant byte
-///      (LSB) is located at index [T-1], whereas the most significant byte is
-///      stored at [T-M].
-///
-/// 	The API client is responsible for allocation and release of their memory
-/// spaces of 	the function arguments. Allocated memory spaces must be
-/// contiguous. Once a function 	is called, the ownership of the memory spaces is
-/// transfered to the function until 	their completion such that concurrent usage
-/// by the client during excution may result 	in undefined behavior.
+///     The API client is responsible for allocation and release of their memory
+///     spaces of the function arguments. Allocated memory spaces must be
+///     contiguous. Once a function is called, the ownership of the memory
+///     spaces is transferred to the function until their completion such
+///     that concurrent usage by the client during execution may result in
+///     undefined behavior.
 
 // New compilers
 #pragma once
@@ -41,9 +42,9 @@
 extern "C" {
 #endif
 
-#include "heqat/common/types.h"
-
 #include <openssl/bn.h>
+
+#include "heqat/common/types.h"
 
 /// @brief Performs modular exponentiation using BIGNUM data structure.
 ///
