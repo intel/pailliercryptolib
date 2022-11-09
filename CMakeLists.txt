@@ -91,6 +91,8 @@ if(IPCL_ENABLE_QAT)
     else()
       message(STATUS "QAT Lite disabled - IPCL_USE_QAT_LITE set to OFF")
     endif()
+  else()
+    set(IPCL_ENABLE_QAT OFF)
   endif()
 endif()
 
