@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_
+#define MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_
 
 #include <stddef.h>
 
@@ -31,4 +31,4 @@
  */
 size_t strlen_safe(const char* dest, size_t dmax = RSIZE_MAX_STR);
 
-#endif  // _UTILS_H_
+#endif  // MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_

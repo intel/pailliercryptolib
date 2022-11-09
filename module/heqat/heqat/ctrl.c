@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 /// @file heqat/ctrl.c
 
-// QAT-API headers
-#include <cpa.h>
-#include <cpa_cy_im.h>
-#include <cpa_cy_ln.h>
-#include <icp_sal_poll.h>
+// C support libraries
+#include <stdio.h>
+#include <pthread.h>
+#include <assert.h>
+#include <openssl/bn.h>
 
 // Global variables used to hold measured performance numbers.
 #ifdef HE_QAT_PERF
@@ -15,11 +15,11 @@ struct timeval start_time, end_time;
 double time_taken = 0.0;
 #endif
 
-// C support libraries
-#include <stdio.h>
-#include <pthread.h>
-#include <assert.h>
-#include <openssl/bn.h>
+// QAT-API headers
+#include <cpa.h>
+#include <cpa_cy_im.h>
+#include <cpa_cy_ln.h>
+#include <icp_sal_poll.h>
 
 // Local headers
 #include "heqat/common/utils.h"
@@ -40,17 +40,17 @@ HE_QAT_RequestBuffer
 HE_QAT_OutstandingBuffer
     outstanding;  ///< This is the data structure that holds outstanding
                   ///< requests from separate active threads calling the API.
-volatile unsigned long response_count =
+volatile unsigned long response_count =  // NOLINT [runtime/int]
     0;  ///< Counter of processed requests and it is used to help control
         ///< throttling.
-static volatile unsigned long request_count =
+static volatile unsigned long request_count =  // NOLINT [runtime/int]
     0;  ///< Counter of received requests and it is used to help control
         ///< throttling.
-static unsigned long restart_threshold =
+static unsigned long restart_threshold =  // NOLINT [runtime/int]
     NUM_PKE_SLICES *
     HE_QAT_NUM_ACTIVE_INSTANCES;  ///< Number of concurrent requests allowed to
                                   ///< be sent to accelerator at once.
-static unsigned long max_pending =
+static unsigned long max_pending =  // NOLINT [runtime/int]
     (2 * NUM_PKE_SLICES *
      HE_QAT_NUM_ACTIVE_INSTANCES);  ///< Number of requests sent to the
                                     ///< accelerator that are pending
@@ -278,15 +278,15 @@ static void pull_outstanding_requests(
 /// internal buffer, from which requests are ready to be submitted to the device
 /// for processing.
 /// @param[in] context_state A volatile integer variable used to activate
-/// (val>0) or
-///		     disactive (val=0) the scheduler.
+/// (val>0) or disactive (val=0) the scheduler.
 void* schedule_requests(void* context_state) {
     if (NULL == context_state) {
         HE_QAT_PRINT_DBG("Failed at buffer_manager: argument is NULL.\n");
         pthread_exit(NULL);
     }
 
-    HE_QAT_STATUS* active = (HE_QAT_STATUS*)context_state;
+    HE_QAT_STATUS* active =
+        (HE_QAT_STATUS*)context_state;  // NOLINT [readability/casting]
 
     HE_QAT_TaskRequestList outstanding_requests;
     for (unsigned int i = 0; i < HE_QAT_BUFFER_SIZE; i++) {
@@ -309,8 +309,7 @@ void* schedule_requests(void* context_state) {
 
 /// @brief Poll responses from a specific QAT instance.
 /// @param[in] _inst_config Instance configuration containing the parameter
-/// 			    values to start and poll responses from the
-/// accelerator.
+/// values to start and poll responses from the accelerator.
 static void* start_inst_polling(void* _inst_config) {
     if (NULL == _inst_config) {
         HE_QAT_PRINT_ERR(
@@ -318,7 +317,8 @@ static void* start_inst_polling(void* _inst_config) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_InstConfig* config = (HE_QAT_InstConfig*)_inst_config;
+    HE_QAT_InstConfig* config =
+        (HE_QAT_InstConfig*)_inst_config;  // NOLINT [readability/casting]
 
     if (NULL == config->inst_handle) return NULL;
 
@@ -336,30 +336,25 @@ static void* start_inst_polling(void* _inst_config) {
 }
 
 /// @brief
-///	Initialize and start multiple instances, their polling thread,
-///	and a single processing thread.
+/// Initialize and start multiple instances, their polling thread,
+/// and a single processing thread.
 ///
 /// @details
-/// 	It initializes multiple QAT instances and launches their respective
-/// independent
-///	polling threads that will listen to responses to requests sent to the
-/// accelerators 	concurrently. Then, it becomes the thread that collect
-/// the incoming requests stored 	in a shared buffer and send them to the
-/// accelerator
-/// for processing. This is the only 	processing thread for requests handled
-/// by multiple instances -- unlike when using
-///     multiple instances with the `start_perform_op` function, in which case
-///     each instance
-///	has a separate processing thread. The implementation of the multiple
-/// instance support 	using `start_perform_op` is obsolete and slower. The way
-/// is
-/// using this function, which 	delivers better performance. The scheduling of
-/// request offloads uses a 	round-robin approach. It collects multiple
-/// requests from the internal buffer and then 	send them to the multiple
-/// accelerator instances to process in a round-robin fashion. 	It was designed
-/// to support
-/// processing requests of different operation types but 	currently only
-/// supports Modular Exponentiation.
+/// It initializes multiple QAT instances and launches their respective
+/// independent polling threads that will listen to responses to requests sent
+/// to the accelerators concurrently. Then, it becomes the thread that collect
+/// the incoming requests stored in a shared buffer and send them to the
+/// accelerator for processing. This is the only processing thread for requests
+/// handled by multiple instances -- unlike when using multiple instances with
+/// the `start_perform_op` function, in which case each instance has a separate
+/// processing thread. The implementation of the multiple instance support using
+/// `start_perform_op` is obsolete and slower. The way is using this function,
+/// which delivers better performance. The scheduling of request offloads uses a
+/// round-robin approach. It collects multiple requests from the internal buffer
+/// and then  send them to the multiple accelerator instances to process in a
+/// round-robin fashion. It was designed to support processing requests of
+/// different operation types but currently only supports Modular
+/// Exponentiation.
 ///
 /// @param[in] _config Data structure containing the configuration of multiple
 /// instances.
@@ -372,12 +367,15 @@ void* start_instances(void* _config) {
         pthread_exit(NULL);
     }
 
-    HE_QAT_Config* config = (HE_QAT_Config*)_config;
+    HE_QAT_Config* config =
+        (HE_QAT_Config*)_config;  // NOLINT [readability/casting]
     instance_count = config->count;
 
     HE_QAT_PRINT_DBG("Instance Count: %d\n", instance_count);
     pthread_t* polling_thread =
-        (pthread_t*)malloc(sizeof(pthread_t) * instance_count);
+        (pthread_t*)malloc(  // NOLINT [readability/casting]
+            sizeof(pthread_t) *
+            instance_count);  // NOLINT [readability/casting]
     if (NULL == polling_thread) {
         HE_QAT_PRINT_ERR(
             "Failed in start_instances: polling_thread is NULL.\n");
@@ -385,7 +383,8 @@ void* start_instances(void* _config) {
     }
 
     unsigned* request_count_per_instance =
-        (unsigned*)malloc(sizeof(unsigned) * instance_count);
+        (unsigned*)malloc(                       // NOLINT [readability/casting]
+            sizeof(unsigned) * instance_count);  // NOLINT [readability/casting]
     if (NULL == request_count_per_instance) {
         HE_QAT_PRINT_ERR(
             "Failed in start_instances: polling_thread is NULL.\n");
@@ -424,7 +423,8 @@ void* start_instances(void* _config) {
         // Start QAT instance and start polling
         if (pthread_create(&polling_thread[j], config->inst_config[j].attr,
                            start_inst_polling,
-                           (void*)&(config->inst_config[j])) != 0) {
+                           (void*)&(config->inst_config[j])) !=  // NOLINT
+            0) {
             HE_QAT_PRINT_ERR(
                 "Failed at creating and starting polling thread.\n");
             pthread_exit(NULL);
@@ -437,7 +437,6 @@ void* start_instances(void* _config) {
 
         config->inst_config[j].active = 1;
         config->inst_config[j].running = 1;
-
     }  // for loop
 
     HE_QAT_TaskRequestList outstanding_requests;
@@ -452,8 +451,9 @@ void* start_instances(void* _config) {
         HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n",
                          next_instance);
 
-        unsigned long pending = request_count - response_count;
-        unsigned long available =
+        unsigned long pending =  // NOLINT [runtime/int]
+            request_count - response_count;
+        unsigned long available =  // NOLINT [runtime/int]
             max_pending - ((pending < max_pending) ? pending : max_pending);
 
         HE_QAT_PRINT_DBG(
@@ -509,7 +509,9 @@ void* start_instances(void* _config) {
                         config->inst_config[next_instance].inst_handle,
                         (CpaCyGenFlatBufCbFunc)
                             request->callback_func,  // lnModExpCallback,
-                        (void*)request, (CpaCyLnModExpOpData*)request->op_data,
+                        (void*)request,         // NOLINT [readability/casting]
+                        (CpaCyLnModExpOpData*)  // NOLINT [readability/casting]
+                        request->op_data,
                         &request->op_result);
                     retry++;
                     break;
@@ -526,7 +528,6 @@ void* start_instances(void* _config) {
                     HE_QAT_PRINT_DBG("RETRY count = %u\n", retry);
                     pthread_exit(NULL);  // halt the whole system
                 }
-
             } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
             // Ensure every call to perform operation is blocking for each
@@ -566,7 +567,6 @@ void* start_instances(void* _config) {
             // Reset pointer
             outstanding_requests.request[i] = NULL;
             request = NULL;
-
         }  // for loop over batch of requests
         outstanding_requests.count = 0;
     }
@@ -574,27 +574,28 @@ void* start_instances(void* _config) {
 }
 
 /// @brief
-/// 	Start independent processing and polling threads for an instance.
+///  Start independent processing and polling threads for an instance.
 ///
 /// @details
-/// 	It initializes a QAT instance and launches its polling thread to listen
+///  It initializes a QAT instance and launches its polling thread to listen
 ///     to responses (request outputs) from the accelerator. It is also
 ///     reponsible
-///	to collect requests from the internal buffer and send them to the
-/// accelerator 	periodiacally. It was designed to extend to receiving
-/// and offloading 	requests of different operation types but currently only
-/// supports Modular 	Exponentiation.
+/// to collect requests from the internal buffer and send them to the
+/// accelerator  periodiacally. It was designed to extend to receiving
+/// and offloading  requests of different operation types but currently only
+/// supports Modular  Exponentiation.
 ///
 /// @param[in] _inst_config Data structure containing the configuration of a
 /// single
-///			    instance.
+///       instance.
 void* start_perform_op(void* _inst_config) {
     if (NULL == _inst_config) {
         HE_QAT_PRINT_ERR("Failed in start_perform_op: _inst_config is NULL.\n");
         pthread_exit(NULL);
     }
 
-    HE_QAT_InstConfig* config = (HE_QAT_InstConfig*)_inst_config;
+    HE_QAT_InstConfig* config =
+        (HE_QAT_InstConfig*)_inst_config;  // NOLINT [readability/casting]
 
     CpaStatus status = CPA_STATUS_FAIL;
 
@@ -621,7 +622,7 @@ void* start_perform_op(void* _inst_config) {
     // Start QAT instance and start polling
     pthread_t polling_thread;
     if (pthread_create(&polling_thread, config->attr, start_inst_polling,
-                       (void*)config) != 0) {
+                       (void*)config) != 0) {  // NOLINT [readability/casting]
         HE_QAT_PRINT_ERR("Failed at creating and starting polling thread.\n");
         pthread_exit(NULL);
     }
@@ -643,8 +644,9 @@ void* start_perform_op(void* _inst_config) {
         HE_QAT_PRINT_DBG("Try reading request from buffer. Inst #%d\n",
                          config->inst_id);
 
-        unsigned long pending = request_count - response_count;
-        unsigned long available =
+        unsigned long pending =  // NOLINT [runtime/int]
+            request_count - response_count;
+        unsigned long available =  // NOLINT [runtime/int]
             max_pending - ((pending < max_pending) ? pending : max_pending);
 
         HE_QAT_PRINT_DBG(
@@ -672,7 +674,7 @@ void* start_perform_op(void* _inst_config) {
         // operation
         read_request_list(&outstanding_requests, &he_qat_buffer, max_requests);
 
-        //	// Try consume data from butter to perform requested operation
+        // // Try consume data from butter to perform requested operation
         //        HE_QAT_TaskRequest* request =
         //            (HE_QAT_TaskRequest*)read_request(&he_qat_buffer);
         //
@@ -705,7 +707,9 @@ void* start_perform_op(void* _inst_config) {
                         config->inst_handle,
                         (CpaCyGenFlatBufCbFunc)
                             request->callback_func,  // lnModExpCallback,
-                        (void*)request, (CpaCyLnModExpOpData*)request->op_data,
+                        (void*)request,         // NOLINT [readability/casting]
+                        (CpaCyLnModExpOpData*)  // NOLINT [readability/casting]
+                        request->op_data,
                         &request->op_result);
                     retry++;
                     break;
@@ -722,7 +726,6 @@ void* start_perform_op(void* _inst_config) {
                     HE_QAT_PRINT_DBG("RETRY count: %u\n", retry);
                     HE_QAT_SLEEP(600, HE_QAT_MICROSEC);
                 }
-
             } while (CPA_STATUS_RETRY == status && retry < HE_QAT_MAX_RETRY);
 
             // Ensure every call to perform operation is blocking for each
@@ -751,7 +754,6 @@ void* start_perform_op(void* _inst_config) {
             // Reset pointer
             outstanding_requests.request[i] = NULL;
             request = NULL;
-
         }  // for loop over batch of requests
         outstanding_requests.count = 0;
 
@@ -768,17 +770,17 @@ void* start_perform_op(void* _inst_config) {
 }
 
 /// @brief
-/// 	Stop specified number of instances from running.
+///  Stop specified number of instances from running.
 ///
 /// @details
-/// 	Stop first 'num_inst' number of cpaCyInstance(s), including their
-/// polling 	and running threads. Stop runnning and polling instances.
+///  Stop first 'num_inst' number of cpaCyInstance(s), including their
+/// polling  and running threads. Stop runnning and polling instances.
 ///     Release QAT instances handles.
 ///
 /// @param[in] config List of all created QAT instances and their
 /// configurations.
 /// @param[in] num_inst Unsigned integer number indicating first number of
-/// 			instances to be terminated.
+///    instances to be terminated.
 void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
     if (NULL == config) return;
 
@@ -818,8 +820,8 @@ void stop_perform_op(HE_QAT_InstConfig* config, unsigned num_inst) {
 
 /// @brief Stop all running instances.
 /// @details
-/// 	Stop all running instances after calling `start_instances()`.
-///	It will set the states of the instances to terminate gracefully.
+///  Stop all running instances after calling `start_instances()`.
+/// It will set the states of the instances to terminate gracefully.
 /// @param[in] _config All QAT instances configurations holding their states.
 void stop_instances(HE_QAT_Config* _config) {
     if (NULL == _config) return;

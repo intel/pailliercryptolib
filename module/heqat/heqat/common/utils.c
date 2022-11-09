@@ -1,11 +1,11 @@
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "heqat/common/utils.h"
-#include "heqat/common/types.h"
-
 #include <openssl/err.h>
 #include <openssl/rand.h>
+
+#include "heqat/common/utils.h"
+#include "heqat/common/types.h"
 
 BIGNUM* generateTestBNData(int nbits) {
     if (!RAND_status()) return NULL;

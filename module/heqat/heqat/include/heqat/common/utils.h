@@ -4,8 +4,8 @@
 
 #pragma once
 
-#ifndef HE_QAT_UTILS_H_
-#define HE_QAT_UTILS_H_
+#ifndef MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_
+#define MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_
 
 #ifdef __cplusplus
 #define HE_QAT_RESTRICT __restrict__
@@ -13,16 +13,16 @@
 #define HE_QAT_RESTRICT restrict
 #endif
 
-#ifdef __cplusplus
+#ifdef __cplusplus  // NOLINT
 extern "C" {
 #endif
-
-#include "heqat/common/types.h"
 
 #include <openssl/bn.h>
 #include <errno.h>
 
 #include <qae_mem.h>
+
+#include "heqat/common/types.h"
 
 #ifndef BYTE_ALIGNMENT_8
 #define BYTE_ALIGNMENT_8 (8)
@@ -41,7 +41,7 @@ extern "C" {
 #define HE_QAT_PRINT_DBG(args...)   \
     do {                            \
         printf("%s(): ", __func__); \
-        printf(args);               \
+        printf("%s", args);         \
         fflush(stdout);             \
     } while (0)
 #else
@@ -52,7 +52,7 @@ extern "C" {
 #ifndef HE_QAT_PRINT
 #define HE_QAT_PRINT(args...) \
     do {                      \
-        printf(args);         \
+        printf("%s", args);   \
     } while (0)
 #endif
 
@@ -60,7 +60,7 @@ extern "C" {
 #define HE_QAT_PRINT_ERR(args...)   \
     do {                            \
         printf("%s(): ", __func__); \
-        printf(args);               \
+        printf("%s", args);         \
     } while (0)
 #endif
 
@@ -96,7 +96,8 @@ static __inline HE_QAT_STATUS HE_QAT_memAllocContig(void** ppMemAddr,
     return HE_QAT_STATUS_SUCCESS;
 }
 #define HE_QAT_MEM_ALLOC_CONTIG(ppMemAddr, sizeBytes, alignment) \
-    HE_QAT_memAllocContig((void*)(ppMemAddr), (sizeBytes), (alignment), 0)
+    HE_QAT_memAllocContig((void*)(ppMemAddr), (sizeBytes), (alignment), \ // NOLINT [readability/casting]
+                          0)
 
 /// @brief
 ///      This function and associated macro frees the memory at the given
@@ -106,59 +107,69 @@ static __inline HE_QAT_STATUS HE_QAT_memAllocContig(void** ppMemAddr,
 /// @param[out] ppMemAddr    address of pointer where mem address is stored.
 ///                          If pointer is NULL, the function will exit silently
 static __inline void HE_QAT_memFreeContig(void** ppMemAddr) {
-    if (NULL != *ppMemAddr) {
-        qaeMemFreeNUMA(ppMemAddr);
-        *ppMemAddr = NULL;
-    }
-}
-#define HE_QAT_MEM_FREE_CONTIG(pMemAddr) HE_QAT_memFreeContig((void*)&pMemAddr)
+                              if (NULL != *ppMemAddr) {
+                                  qaeMemFreeNUMA(ppMemAddr);
+                                  *ppMemAddr = NULL;
+                              }
+                          }
+#define HE_QAT_MEM_FREE_CONTIG(pMemAddr) \
+    HE_QAT_memFreeContig((void*)&pMemAddr)  // NOLINT [readability/casting]
 
-/// @brief Sleep for time unit.
-/// @param[in] time Unsigned integer representing amount of time.
-/// @param[in] unit Time unit of the amount of time passed in the first
-/// parameter. Unit values can be HE_QAT_NANOSEC (nano seconds), HE_QAT_MICROSEC
-/// (micro seconds), HE_QAT_MILLISEC (milli seconds), or HE_QAT_SEC (seconds).
-static __inline HE_QAT_STATUS HE_QAT_sleep(unsigned int time,
-                                           HE_QAT_TIME_UNIT unit) {
-    int ret = 0;
-    struct timespec resTime, remTime;
+                          /// @brief Sleep for time unit.
+                          /// @param[in] time Unsigned integer representing
+                          /// amount of time.
+                          /// @param[in] unit Time unit of the amount of time
+                          /// passed in the first parameter. Unit values can be
+                          /// HE_QAT_NANOSEC (nano seconds), HE_QAT_MICROSEC
+                          /// (micro seconds), HE_QAT_MILLISEC (milli seconds),
+                          /// or HE_QAT_SEC (seconds).
+                          static __inline HE_QAT_STATUS HE_QAT_sleep(
+                              unsigned int time, HE_QAT_TIME_UNIT unit) {
+                              int ret = 0;
+                              struct timespec resTime, remTime;
 
-    resTime.tv_sec = time / unit;
-    resTime.tv_nsec = (time % unit) * (HE_QAT_NANOSEC / unit);
+                              resTime.tv_sec = time / unit;
+                              resTime.tv_nsec =
+                                  (time % unit) * (HE_QAT_NANOSEC / unit);
 
-    do {
-        ret = nanosleep(&resTime, &remTime);
-        resTime = remTime;
-    } while ((0 != ret) && (EINTR == errno));
+                              do {
+                                  ret = nanosleep(&resTime, &remTime);
+                                  resTime = remTime;
+                              } while ((0 != ret) && (EINTR == errno));
 
-    if (0 != ret) {
-        HE_QAT_PRINT_ERR("nano sleep failed with code %d\n", ret);
-        return HE_QAT_STATUS_FAIL;
-    } else {
-        return HE_QAT_STATUS_SUCCESS;
-    }
-}
+                              if (0 != ret) {
+                                  HE_QAT_PRINT_ERR(
+                                      "nano sleep failed with code %d\n", ret);
+                                  return HE_QAT_STATUS_FAIL;
+                              } else {
+                                  return HE_QAT_STATUS_SUCCESS;
+                              }
+                          }
 #define HE_QAT_SLEEP(time, timeUnit) HE_QAT_sleep((time), (timeUnit))
 
-/// @brief
-///      This function returns the physical address for a given virtual address.
-///      In case of error 0 is returned.
-/// @param[in] virtAddr     Virtual address
-/// @retval CpaPhysicalAddr Physical address or 0 in case of error
-static __inline CpaPhysicalAddr HE_QAT_virtToPhys(void* virtAddr) {
-    return (CpaPhysicalAddr)qaeVirtToPhysNUMA(virtAddr);
-}
+                          /// @brief
+                          ///      This function returns the physical address
+                          ///      for a given virtual address. In case of error
+                          ///      0 is returned.
+                          /// @param[in] virtAddr     Virtual address
+                          /// @retval CpaPhysicalAddr Physical address or 0 in
+                          /// case of error
+                          static __inline CpaPhysicalAddr HE_QAT_virtToPhys(
+                              void* virtAddr) {
+                              return (CpaPhysicalAddr)qaeVirtToPhysNUMA(
+                                  virtAddr);
+                          }
 
-BIGNUM* generateTestBNData(int nbits);
+                          BIGNUM* generateTestBNData(int nbits);
 
-unsigned char* paddingZeros(BIGNUM* bn, int nbits);
+                          unsigned char* paddingZeros(BIGNUM* bn, int nbits);
 
-void showHexBN(BIGNUM* bn, int nbits);
+                          void showHexBN(BIGNUM* bn, int nbits);
 
-void showHexBin(unsigned char* bin, int len);
+                          void showHexBin(unsigned char* bin, int len);
 
 #ifdef __cplusplus
-}  // extern "C" {
+                          }  // extern "C" {
 #endif
 
-#endif  // HE_QAT_UTILS_H_
+#endif  // MODULE_HEQAT_HEQAT_INCLUDE_HEQAT_MISC_UTILS_H_
