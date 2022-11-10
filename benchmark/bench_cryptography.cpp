@@ -15,7 +15,8 @@
       ->Args({256})                 \
       ->Args({512})                 \
       ->Args({1024})                \
-      ->Args({2048})
+      ->Args({2048})                \
+      ->Args({2100})
 
 constexpr bool Enable_DJN = true;
 
@@ -93,6 +94,7 @@ static void BM_Encrypt(benchmark::State& state) {
   delete pub_key;
   delete priv_key;
 }
+
 BENCHMARK(BM_Encrypt)
     ->Unit(benchmark::kMicrosecond)
     ->ADD_SAMPLE_VECTOR_SIZE_ARGS;

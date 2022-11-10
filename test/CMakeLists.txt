@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Unit tests
-set(IPCL_UNITTEST_SRC main.cpp
-test_cryptography.cpp
-test_ops.cpp)
+set(IPCL_UNITTEST_SRC
+  main.cpp
+  test_cryptography.cpp
+  test_ops.cpp
+)
 
 add_executable(unittest_ipcl ${IPCL_UNITTEST_SRC})
 target_include_directories(unittest_ipcl PRIVATE

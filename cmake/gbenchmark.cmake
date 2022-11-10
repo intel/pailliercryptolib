@@ -2,10 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(ExternalProject)
-include(GNUInstallDirs)
 
 set(GBENCHMARK_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gbenchmark)
-
 set(GBENCHMARK_SRC_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark/)
 set(GBENCHMARK_BUILD_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark-build/)
 set(GBENCHMARK_REPO_URL https://github.com/google/benchmark.git)
@@ -24,6 +22,7 @@ ExternalProject_Add(
              -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
              -DBENCHMARK_ENABLE_TESTING=OFF
              -DCMAKE_BUILD_TYPE=Release
+             -DCMAKE_INSTALL_LIBDIR=lib
   BUILD_BYPRODUCTS ${GBENCHMARK_PATHS}
   # Skip updates
   UPDATE_COMMAND ""
@@ -33,7 +32,7 @@ ExternalProject_Add(
 add_library(libgbenchmark INTERFACE)
 add_dependencies(libgbenchmark ext_gbenchmark)
 
-target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libbenchmark.a)
+target_link_libraries(libgbenchmark INTERFACE ${GBENCHMARK_PREFIX}/lib/libbenchmark.a)
 
 target_include_directories(libgbenchmark SYSTEM
                                     INTERFACE ${GBENCHMARK_PREFIX}/include)

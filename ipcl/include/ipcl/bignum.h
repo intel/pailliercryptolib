@@ -14,8 +14,10 @@
  * limitations under the License.
  *******************************************************************************/
 
-#ifndef _BIGNUM_H_
-#define _BIGNUM_H_
+//#ifndef _BIGNUM_H_
+//#define _BIGNUM_H_
+#if !defined _BIGNUMBER_H_
+#define _BIGNUMBER_H_
 
 #include <ippcp.h>
 
@@ -119,6 +121,11 @@ class BigNumber {
   void num2vec(std::vector<Ipp32u>& v) const;  // convert to 32-bit word vector
   friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
   void num2char(std::vector<Ipp8u>& dest) const;
+
+  // Support QAT data format
+  static bool fromBin(BigNumber& bn, const unsigned char* data, int len);
+  static bool toBin(unsigned char* data, int len, const BigNumber& bn);
+  static bool toBin(unsigned char** data, int* len, const BigNumber& bn);
 
  protected:
   bool create(const Ipp32u* pData, int length,

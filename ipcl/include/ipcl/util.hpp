@@ -4,9 +4,9 @@
 #ifndef IPCL_INCLUDE_IPCL_UTIL_HPP_
 #define IPCL_INCLUDE_IPCL_UTIL_HPP_
 
-#ifdef IPCL_RUNTIME_MOD_EXP
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 #include <cpu_features/cpuinfo_x86.h>
-#endif  // IPCL_RUNTIME_MOD_EXP
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 #include <cstdlib>
 #include <exception>
@@ -71,13 +71,21 @@ class OMPUtilities {
 
 #endif  // IPCL_USE_OMP
 
-#ifdef IPCL_RUNTIME_MOD_EXP
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 static const bool disable_avx512ifma =
     (std::getenv("IPCL_DISABLE_AVX512IFMA") != nullptr);
+static const bool prefer_rdrand =
+    (std::getenv("IPCL_PREFER_RDRAND") != nullptr);
+static const bool prefer_ipp_prng =
+    (std::getenv("IPCL_PREFER_IPP_PRNG") != nullptr);
 static const cpu_features::X86Features features =
     cpu_features::GetX86Info().features;
 static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
-#endif  // IPCL_RUNTIME_MOD_EXP
+static const bool has_rdseed =
+    features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
+static const bool has_rdrand = features.rdrnd && prefer_rdrand;
+
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 }  // namespace ipcl
 

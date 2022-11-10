@@ -43,8 +43,7 @@ PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
       m_lambda(lcm(m_pminusone, m_qminusone)),
       // TODO(bwang30): check if ippsModInv_BN does the same thing with
       // mpz_invert
-      m_x(m_n.InverseMul((ipcl::ippModExp(m_g, m_lambda, m_nsquare) - 1) /
-                         m_n)),
+      m_x(m_n.InverseMul((modExp(m_g, m_lambda, m_nsquare) - 1) / m_n)),
       m_bits(m_pubkey->getBits()),
       m_dwords(m_pubkey->getDwords()),
       m_enable_crt(true) {
@@ -63,6 +62,14 @@ PlainText PrivateKey::decrypt(const CipherText& ct) const {
   std::vector<BigNumber> pt_bn(ct_size);
   std::vector<BigNumber> ct_bn = ct.getTexts();
 
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (ct_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_DECRYPT;
+    setHybridRatio(qat_ratio, false);
+  }
+
   if (m_enable_crt)
     decryptCRT(pt_bn, ct_bn);
   else
@@ -77,7 +84,7 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
 
   std::vector<BigNumber> pow_lambda(v_size, m_lambda);
   std::vector<BigNumber> modulo(v_size, m_nsquare);
-  std::vector<BigNumber> res = ipcl::ippModExp(ciphertext, pow_lambda, modulo);
+  std::vector<BigNumber> res = modExp(ciphertext, pow_lambda, modulo);
 
 #ifdef IPCL_USE_OMP
   int omp_remaining_threads = OMPUtilities::MaxThreads;
@@ -112,8 +119,8 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
   }
 
   // Based on the fact a^b mod n = (a mod n)^b mod n
-  std::vector<BigNumber> resp = ipcl::ippModExp(basep, pm1, psq);
-  std::vector<BigNumber> resq = ipcl::ippModExp(baseq, qm1, qsq);
+  std::vector<BigNumber> resp = modExp(basep, pm1, psq);
+  std::vector<BigNumber> resq = modExp(baseq, qm1, qsq);
 
 #ifdef IPCL_USE_OMP
   omp_remaining_threads = OMPUtilities::MaxThreads;
@@ -143,7 +150,7 @@ BigNumber PrivateKey::computeHfun(const BigNumber& a,
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber xm = a - 1;
   BigNumber base = m_g % b;
-  BigNumber pm = ipcl::ippModExp(base, xm, b);
+  BigNumber pm = modExp(base, xm, b);
   BigNumber lcrt = computeLfun(pm, a);
   return a.InverseMul(lcrt);
 }

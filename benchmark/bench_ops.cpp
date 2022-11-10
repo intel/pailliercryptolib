@@ -3,7 +3,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include <iostream>
 #include <vector>
 
 #include "ipcl/ipcl.hpp"
@@ -16,7 +15,8 @@
       ->Args({256})                 \
       ->Args({512})                 \
       ->Args({1024})                \
-      ->Args({2048})
+      ->Args({2048})                \
+      ->Args({2100})
 
 constexpr bool Enable_DJN = true;
 
