@@ -41,7 +41,7 @@ extern "C" {
 #define HE_QAT_PRINT_DBG(args...)   \
     do {                            \
         printf("%s(): ", __func__); \
-        printf("%s", args);         \
+        printf(args);               \
         fflush(stdout);             \
     } while (0)
 #else
@@ -52,7 +52,7 @@ extern "C" {
 #ifndef HE_QAT_PRINT
 #define HE_QAT_PRINT(args...) \
     do {                      \
-        printf("%s", args);   \
+        printf(args);         \
     } while (0)
 #endif
 
@@ -60,7 +60,7 @@ extern "C" {
 #define HE_QAT_PRINT_ERR(args...)   \
     do {                            \
         printf("%s(): ", __func__); \
-        printf("%s", args);         \
+        printf(args);               \
     } while (0)
 #endif
 

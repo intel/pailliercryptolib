@@ -415,7 +415,7 @@ HE_QAT_STATUS HE_QAT_bnModExp_MT(unsigned int _buffer_id, unsigned char* r,
 HE_QAT_STATUS acquire_bnModExp_buffer(unsigned int* _buffer_id) {
     if (NULL == _buffer_id) return HE_QAT_STATUS_INVALID_PARAM;
 
-    HE_QAT_PRINT_DBG("acquire_bnModExp_buffer #%u\n", _buffer_id);
+    HE_QAT_PRINT_DBG("acquire_bnModExp_buffer #%ls\n", _buffer_id);
 
     pthread_mutex_lock(&outstanding.mutex);
 

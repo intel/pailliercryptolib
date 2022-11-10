@@ -720,7 +720,7 @@ void* start_perform_op(void* _inst_config) {
                 // Global tracking of number of requests
                 request_count += 1;
 
-                HE_QAT_PRINT_DBG("retry_count = %d\n", retry_count);
+                HE_QAT_PRINT_DBG("request_count = %lu\n", request_count);
 #ifdef HE_QAT_SYNC_MODE
                 // Wait until the callback function has been called
                 if (!COMPLETION_WAIT(&request->callback, TIMEOUT_MS)) {
