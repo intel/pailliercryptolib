@@ -1,0 +1,125 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ddb61db..302ca95 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -54,6 +54,7 @@ endif()
+ project(${PROJECT_NAME}
+         VERSION ${PROJECT_VERSION}
+         LANGUAGES C CXX)
++include(GNUInstallDirs)
+ 
+ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+   message(STATUS "CMAKE_BUILD_TYPE is unset, defaulting to Release")
+diff --git a/sources/cmake/linux/GNU8.2.0.cmake b/sources/cmake/linux/GNU8.2.0.cmake
+index 9c848d5..30ad189 100644
+--- a/sources/cmake/linux/GNU8.2.0.cmake
++++ b/sources/cmake/linux/GNU8.2.0.cmake
+@@ -96,7 +96,7 @@ if(${ARCH} MATCHES "ia32")
+ endif(${ARCH} MATCHES "ia32")
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warnings=errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Wno-stringop-overflow -Werror")
+ 
+ set(w7_opt "${w7_opt} -march=pentium4 -msse2")
+ set(s8_opt "${s8_opt} -march=core2 -mssse3")
+diff --git a/sources/ippcp/CMakeLists.txt b/sources/ippcp/CMakeLists.txt
+index dd5ef41..b60357e 100644
+--- a/sources/ippcp/CMakeLists.txt
++++ b/sources/ippcp/CMakeLists.txt
+@@ -378,7 +378,7 @@ foreach(opt ${PLATFORM_LIST})
+     install(TARGETS ${IPPCP_DYN_ITER}
+             LIBRARY DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+             RUNTIME DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+-            PUBLIC_HEADER DESTINATION "include")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+     list(APPEND IPPCP_LIB_DYNAMIC ${IPPCP_DYN_ITER})
+   endif(DYNAMIC_LIB AND NOT MERGED_BLD)
+ 
+@@ -407,7 +407,7 @@ foreach(opt ${PLATFORM_LIST})
+     set_target_properties(${IPPCP_ST_ITER} PROPERTIES PUBLIC_HEADER "${IPPCP_PUBLIC_HEADERS}")
+     install(TARGETS ${IPPCP_ST_ITER}
+             ARCHIVE DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+-            PUBLIC_HEADER DESTINATION "include")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+   endif()
+ 
+   list(APPEND IPPCP_LIB_STATIC ${IPPCP_ST_ITER})
+@@ -482,7 +482,7 @@ if(MERGED_BLD)
+ 
+   install(TARGETS ${IPPCP_LIB_MERGED}
+           ARCHIVE DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+-          PUBLIC_HEADER DESTINATION "include"
++          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+           PRIVATE_HEADER DESTINATION "tools/${ARCH}/staticlib")
+ 
+   set_source_files_properties(${DISPATCHER_C_SOURCES} pcpver.rc PROPERTIES INCLUDE_DIRECTORIES "${C_INCLUDE_DIRECTORIES}")
+@@ -521,7 +521,7 @@ if(MERGED_BLD)
+     install(TARGETS ${IPPCP_LIB_PCS}
+             LIBRARY DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+             RUNTIME DESTINATION "lib/${ARCH}/$<$<BOOL:${NONPIC_LIB}>:nonpic>"
+-            PUBLIC_HEADER DESTINATION "include"
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+             PRIVATE_HEADER DESTINATION "tools/${ARCH}/staticlib")
+ 
+     if(WIN32)
+diff --git a/sources/ippcp/crypto_mb/src/CMakeLists.txt b/sources/ippcp/crypto_mb/src/CMakeLists.txt
+index f75f448..2f43255 100644
+--- a/sources/ippcp/crypto_mb/src/CMakeLists.txt
++++ b/sources/ippcp/crypto_mb/src/CMakeLists.txt
+@@ -117,12 +117,12 @@ if (MB_STANDALONE) # standalone crypto_mb's cmake run
+     install(TARGETS ${MB_DYN_LIB_TARGET}
+             LIBRARY DESTINATION "lib"
+             RUNTIME DESTINATION "lib"
+-            PUBLIC_HEADER DESTINATION "include/crypto_mb")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
+ elseif (DYNAMIC_LIB) # build from ippcp's cmake
+     install(TARGETS ${MB_DYN_LIB_TARGET}
+             LIBRARY DESTINATION "lib/intel64"
+             RUNTIME DESTINATION "lib/intel64"
+-            PUBLIC_HEADER DESTINATION "include/crypto_mb")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
+ endif()
+ 
+ # Static library
+@@ -147,9 +147,9 @@ endif()
+ if(MB_STANDALONE)
+     install(TARGETS ${MB_STATIC_LIB_TARGET}
+             ARCHIVE DESTINATION "lib"
+-            PUBLIC_HEADER DESTINATION "include/crypto_mb")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
+ else()
+     install(TARGETS ${MB_STATIC_LIB_TARGET}
+             ARCHIVE DESTINATION "lib/intel64"
+-            PUBLIC_HEADER DESTINATION "include/crypto_mb")
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/crypto_mb)
+ endif()
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
+index b95f703..1be6ca7 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/GNU.cmake
+@@ -46,7 +46,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fcf-protection=full")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 
+diff --git a/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake b/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
+index 39862aa..35d49c1 100644
+--- a/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
++++ b/sources/ippcp/crypto_mb/src/cmake/linux/Intel.cmake
+@@ -40,7 +40,7 @@ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -fcf-protection=full")
+ # Enables important warning and error messages relevant to security during compilation
+ set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wall")
+ # Warnings=errors
+-set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Werror")
++set(CMAKE_C_FLAGS_SECURITY "${CMAKE_C_FLAGS_SECURITY} -Wno-stringop-overflow -Werror")
+ 
+ # Linker flags
+ 

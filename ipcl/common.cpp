@@ -10,6 +10,14 @@
 namespace ipcl {
 
 IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+  if (has_rdseed)
+    return ippsTRNGenRDSEED(rand, bits, ctx);
+  else if (has_rdrand)
+    return ippsPRNGenRDRAND(rand, bits, ctx);
+  else
+    return ippsPRNGen(rand, bits, ctx);
+#else
 #ifdef IPCL_RNG_INSTR_RDSEED
   return ippsTRNGenRDSEED(rand, bits, ctx);
 #elif defined(IPCL_RNG_INSTR_RDRAND)
@@ -17,9 +25,18 @@ IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
 #else
   return ippsPRNGen(rand, bits, ctx);
 #endif
+#endif  // IPCL_RUNTIME_IPP_RNG
 }
 
 IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+  if (has_rdseed)
+    return ippsTRNGenRDSEED_BN(rand, bits, ctx);
+  else if (has_rdrand)
+    return ippsPRNGenRDRAND_BN(rand, bits, ctx);
+  else
+    return ippsPRNGen_BN(rand, bits, ctx);
+#else
 #ifdef IPCL_RNG_INSTR_RDSEED
   return ippsTRNGenRDSEED_BN(rand, bits, ctx);
 #elif defined(IPCL_RNG_INSTR_RDRAND)
@@ -27,6 +44,7 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
 #else
   return ippsPRNGen_BN(rand, bits, ctx);
 #endif
+#endif  // IPCL_RUNTIME_IPP_RNG
 }
 
 BigNumber getRandomBN(int bits) {

@@ -48,7 +48,7 @@ void PublicKey::enableDJN() {
   BigNumber rmod_sq = rmod * rmod;
   BigNumber rmod_neg = rmod_sq * -1;
   BigNumber h = rmod_neg % m_n;
-  m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
+  m_hs = modExp(h, m_n, m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
@@ -66,7 +66,7 @@ std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
       r_ = getRandomBN(m_randbits);
     }
   }
-  return ipcl::ippModExp(base, r, sq);
+  return modExp(base, r, sq);
 }
 
 std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
@@ -82,7 +82,7 @@ std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
       r[i] = r[i] % (m_n - 1) + 1;
     }
   }
-  return ipcl::ippModExp(r, pown, sq);
+  return modExp(r, pown, sq);
 }
 
 void PublicKey::applyObfuscator(std::vector<BigNumber>& ciphertext) const {
@@ -120,6 +120,14 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   std::size_t pt_size = pt.getSize();
   ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt empty PlainText");
   std::vector<BigNumber> ct_bn_v(pt_size);
+
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
+    setHybridRatio(qat_ratio, false);
+  }
 
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
   return CipherText(this, ct_bn_v);

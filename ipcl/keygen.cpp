@@ -17,7 +17,7 @@ BigNumber getPrimeBN(int max_bits) {
   ippsPrimeInit(max_bits, reinterpret_cast<IppsPrimeState*>(prime_ctx.data()));
 
 #if defined(IPCL_RNG_INSTR_RDSEED) || defined(IPCL_RNG_INSTR_RDRAND)
-  bool rand_param = NULL;
+  Ipp8u* rand_param = NULL;
 #else
   auto buff = std::vector<Ipp8u>(prime_size);
   auto rand_param = buff.data();

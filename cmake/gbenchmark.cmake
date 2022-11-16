@@ -4,7 +4,6 @@
 include(ExternalProject)
 
 set(GBENCHMARK_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_gbenchmark)
-
 set(GBENCHMARK_SRC_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark/)
 set(GBENCHMARK_BUILD_DIR ${GBENCHMARK_PREFIX}/src/ext_gbenchmark-build/)
 set(GBENCHMARK_REPO_URL https://github.com/google/benchmark.git)
@@ -22,8 +21,8 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=${GBENCHMARK_PREFIX}
              -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
              -DBENCHMARK_ENABLE_TESTING=OFF
-             -DCMAKE_INSTALL_LIBDIR=lib
              -DCMAKE_BUILD_TYPE=Release
+             -DCMAKE_INSTALL_LIBDIR=lib
   BUILD_BYPRODUCTS ${GBENCHMARK_PATHS}
   # Skip updates
   UPDATE_COMMAND ""

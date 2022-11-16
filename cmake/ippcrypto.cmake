@@ -6,6 +6,7 @@ message(STATUS "Configuring ipp-crypto")
 
 set(IPPCRYPTO_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_ipp-crypto)
 set(IPPCRYPTO_DESTDIR ${IPPCRYPTO_PREFIX}/ippcrypto_install)
+set(IPPCRYPTO_DEST_INCLUDE_DIR include/ippcrypto)
 set(IPPCRYPTO_GIT_REPO_URL https://github.com/intel/ipp-crypto.git)
 set(IPPCRYPTO_GIT_LABEL ippcp_2021.6)
 set(IPPCRYPTO_SRC_DIR ${IPPCRYPTO_PREFIX}/src/ext_ipp-crypto/)
@@ -32,45 +33,63 @@ ExternalProject_Add(
              -DCMAKE_ASM_NASM_COMPILER=nasm
              -DCMAKE_BUILD_TYPE=Release
              -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-             -DCMAKE_INSTALL_LIBDIR=lib
+             -DCMAKE_INSTALL_INCLUDEDIR=${IPPCRYPTO_DEST_INCLUDE_DIR}
   UPDATE_COMMAND ""
+  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/patch/ippcrypto_patch.patch
   INSTALL_COMMAND make DESTDIR=${IPPCRYPTO_DESTDIR} install
 )
 
 set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
 set(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib/${IPPCRYPTO_ARCH})
 if(IPCL_SHARED)
-  add_library(libippcrypto INTERFACE)
-  add_dependencies(libippcrypto ext_ipp-crypto)
+  add_library(IPPCP INTERFACE)
+  add_library(IPPCP::ippcp ALIAS IPPCP)
+
+  add_dependencies(IPPCP ext_ipp-crypto)
 
   ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
 
-  target_link_libraries(libippcrypto INTERFACE
-  ${IPPCRYPTO_LIB_DIR}/libippcp.so
-  ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so)
-  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
+  target_include_directories(IPPCP SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
+
+  # if ipcl python build
+  if(IPCL_INTERNAL_PYTHON_BUILD)
+    target_link_libraries(IPPCP INTERFACE
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libippcp.so
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto/libcrypto_mb.so
+    )
+
+    add_custom_command(TARGET ext_ipp-crypto
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${IPPCRYPTO_LIB_DIR} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ippcrypto
+    )
+  else()
+    target_link_libraries(IPPCP INTERFACE
+      ${IPPCRYPTO_LIB_DIR}/libippcp.so
+      ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so
+    )
+  endif()
 
   install(
     DIRECTORY ${IPPCRYPTO_LIB_DIR}/
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto"
+    DESTINATION "${IPCL_INSTALL_LIBDIR}/ippcrypto"
     USE_SOURCE_PERMISSIONS
   )
 else()
 
-  add_library(libippcrypto::ippcp STATIC IMPORTED GLOBAL)
-  add_library(libippcrypto::crypto_mb STATIC IMPORTED GLOBAL)
+  add_library(IPPCP::ippcp STATIC IMPORTED GLOBAL)
+  add_library(IPPCP::crypto_mb STATIC IMPORTED GLOBAL)
 
-  add_dependencies(libippcrypto::ippcp ext_ipp-crypto)
-  add_dependencies(libippcrypto::crypto_mb ext_ipp-crypto)
+  add_dependencies(IPPCP::ippcp ext_ipp-crypto)
+  add_dependencies(IPPCP::crypto_mb ext_ipp-crypto)
 
   find_package(OpenSSL REQUIRED)
 
-  set_target_properties(libippcrypto::ippcp PROPERTIES
+  set_target_properties(IPPCP::ippcp PROPERTIES
             IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libippcp.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )
 
-  set_target_properties(libippcrypto::crypto_mb PROPERTIES
+  set_target_properties(IPPCP::crypto_mb PROPERTIES
             IMPORTED_LOCATION ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.a
             INCLUDE_DIRECTORIES ${IPPCRYPTO_INC_DIR}
   )

@@ -7,7 +7,9 @@ repos:
       rev: v4.0.1
       hooks:
         - id: trailing-whitespace
+          exclude: cmake/patch/ippcrypto_patch.patch
         - id: end-of-file-fixer
+          exclude: cmake/patch/ippcrypto_patch.patch
         - id: check-merge-conflict
         - id: mixed-line-ending
         - id: check-byte-order-marker
@@ -42,11 +44,20 @@ repos:
           name: cpplint
           entry: cpplint
           language: system
-          files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
-          exclude: ipcl/bignum.cpp|ipcl/include/ipcl/bignum.h|example/test.cpp
+          files: \.(cxx|cpp|hpp|hxx)$
+          exclude: ipcl/bignum.cpp|module/heqat/heqat/misc/bignum.cpp
           args:
             - --recursive
             - --filter=-runtime/references,-whitespace/comments,-whitespace/indent
+        - id: cpplint-c
+          name: cpplint-c
+          entry: cpplint
+          language: system
+          files: \.(c|cc|h)$
+          exclude: ipcl/include/ipcl/bignum.h|module/heqat/heqat/include/heqat/misc/bignum.h
+          args:
+            - --recursive
+            - --filter=-runtime/references,-whitespace/comments,-whitespace/indent,-readability/casting,-runtime/int,-runtime/printf
         - id: shellcheck
           name: shellcheck
           entry: shellcheck
