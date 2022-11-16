@@ -8,7 +8,7 @@
 
 #include "ipcl/plaintext.hpp"
 #include "ipcl/pub_key.hpp"
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 

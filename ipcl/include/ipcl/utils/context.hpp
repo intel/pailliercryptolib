@@ -3,8 +3,8 @@
 
 #pragma once
 
-#ifndef IPCL_INCLUDE_IPCL_CONTEXT_HPP_
-#define IPCL_INCLUDE_IPCL_CONTEXT_HPP_
+#ifndef IPCL_INCLUDE_IPCL_UTILS_CONTEXT_HPP_
+#define IPCL_INCLUDE_IPCL_UTILS_CONTEXT_HPP_
 
 #include <string>
 
@@ -44,4 +44,4 @@ bool isQATRunning(void);
 bool isQATActive(void);
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_CONTEXT_HPP_
+#endif  // IPCL_INCLUDE_IPCL_UTILS_CONTEXT_HPP_

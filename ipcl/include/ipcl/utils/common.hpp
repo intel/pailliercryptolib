@@ -1,8 +1,8 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_COMMON_HPP_
-#define IPCL_INCLUDE_IPCL_COMMON_HPP_
+#ifndef IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
+#define IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
 
 #include "ipcl/bignum.h"
 
@@ -46,4 +46,4 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx);
 BigNumber getRandomBN(int bits);
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_COMMON_HPP_
+#endif  // IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_

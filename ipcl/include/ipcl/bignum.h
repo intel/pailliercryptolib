@@ -19,12 +19,13 @@
 #if !defined _BIGNUMBER_H_
 #define _BIGNUMBER_H_
 
-#include <ippcp.h>
-
 #include <ostream>
 #include <vector>
 
-class BigNumber {
+#include "ipcl/utils/serialize.hpp"
+#include "ippcp.h"
+
+class BigNumber : public ipcl::serialize::serializerBase {
  public:
   BigNumber(Ipp32u value = 0);
   BigNumber(Ipp32s value);
@@ -128,6 +129,24 @@ class BigNumber {
   static bool toBin(unsigned char** data, int* len, const BigNumber& bn);
 
  protected:
+  friend class cereal::access;
+  template <class Archive>
+  void save(Archive& ar, const Ipp32u version) const {
+    std::vector<Ipp32u> vec;
+    num2vec(vec);
+    ar(cereal::make_nvp("BigNumber", vec));
+  }
+
+  template <class Archive>
+  void load(Archive& ar, const Ipp32u version) {
+    std::vector<Ipp32u> vec;
+    ar(cereal::make_nvp("BigNumber", vec));
+    create(vec.data(), vec.size(), IppsBigNumPOS);
+  }
+
+  std::string serializedName() const { return "BigNumber"; }
+  static Ipp32u serializedVersion() { return 1; }
+
   bool create(const Ipp32u* pData, int length,
               IppsBigNumSGN sgn = IppsBigNumPOS);
   IppsBigNumState* m_pBN;

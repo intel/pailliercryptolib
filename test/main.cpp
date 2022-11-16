@@ -4,7 +4,7 @@
 #include <random>
 
 #include "gtest/gtest.h"
-#include "ipcl/context.hpp"
+#include "ipcl/ipcl.hpp"
 
 int main(int argc, char** argv) {
 #ifdef IPCL_USE_QAT

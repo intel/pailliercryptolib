@@ -3,7 +3,7 @@
 
 include(ExternalProject)
 
-message(STATUS "configuring cpu_features")
+message(STATUS "Configuring cpu_features")
 set(CPUFEATURES_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_cpufeatures)
 set(CPUFEATURES_DESTDIR ${CPUFEATURES_PREFIX}/cpufeatures_install)
 set(CPUFEATURES_GIT_REPO_URL https://github.com/google/cpu_features.git)

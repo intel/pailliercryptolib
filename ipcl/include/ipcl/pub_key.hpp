@@ -116,6 +116,34 @@ class PublicKey {
   const void* addr = static_cast<const void*>(this);
 
  private:
+  friend class cereal::access;
+  template <class Archive>
+  void save(Archive& ar, const Ipp32u version) const {
+    ar(::cereal::make_nvp("n", m_n));
+    ar(::cereal::make_nvp("bits", m_bits));
+    ar(::cereal::make_nvp("enable_DJN", m_enable_DJN));
+    ar(::cereal::make_nvp("hs", m_hs));
+    ar(::cereal::make_nvp("randbits", m_randbits));
+  }
+
+  template <class Archive>
+  void load(Archive& ar, const Ipp32u version) {
+    BigNumber n, hs;
+    bool enable_DJN;
+    int bits, randbits;
+
+    ar(::cereal::make_nvp("n", m_n));
+    ar(::cereal::make_nvp("bits", bits));
+    ar(::cereal::make_nvp("enable_DJN", enable_DJN));
+    ar(::cereal::make_nvp("hs", m_hs));
+    ar(::cereal::make_nvp("randbits", randbits));
+
+    if (enable_DJN)
+      create(n, bits, hs, randbits);
+    else
+      create(n, bits);
+  }
+
   BigNumber m_n;
   BigNumber m_g;
   BigNumber m_nsquare;
@@ -127,6 +155,9 @@ class PublicKey {
   bool m_enable_DJN;
   std::vector<BigNumber> m_r;
   bool m_testv;
+
+  void create(const BigNumber& n, int bits, bool enableDJN_ = false);
+  void create(const BigNumber& n, int bits, const BigNumber& hs, int randbits);
 
   /**
    * Big number vector multi buffer encryption

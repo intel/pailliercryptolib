@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/context.hpp"
+#include "ipcl/utils/context.hpp"
 
 #include <map>
 #include <string>

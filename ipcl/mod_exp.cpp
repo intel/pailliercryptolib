@@ -3,19 +3,19 @@
 
 #include "ipcl/mod_exp.hpp"
 
-#include <crypto_mb/exp.h>
-
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <thread>  //NOLINT
+
+#include "crypto_mb/exp.h"
 
 #ifdef IPCL_USE_QAT
 #include <heqat/bnops.h>
 #include <heqat/common.h>
 #endif
 
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 

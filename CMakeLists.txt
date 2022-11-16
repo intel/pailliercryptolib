@@ -192,6 +192,7 @@ find_package(OpenSSL REQUIRED)
 
 # External dependencies
 include(cmake/ippcrypto.cmake)
+include(cmake/cereal.cmake)
 
 if(IPCL_DETECT_CPU_RUNTIME)
   include(cmake/cpufeatures.cmake)

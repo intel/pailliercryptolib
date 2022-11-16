@@ -3,12 +3,11 @@
 
 #include "ipcl/pri_key.hpp"
 
-#include <crypto_mb/exp.h>
-
 #include <cstring>
 
+#include "crypto_mb/exp.h"
 #include "ipcl/mod_exp.hpp"
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 /**
