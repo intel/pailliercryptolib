@@ -151,7 +151,6 @@ class PublicKey {
   int m_bits;
   int m_randbits;
   int m_dwords;
-  unsigned int m_init_seed;
   bool m_enable_DJN;
   std::vector<BigNumber> m_r;
   bool m_testv;

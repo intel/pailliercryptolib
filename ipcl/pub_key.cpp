@@ -15,20 +15,12 @@
 
 namespace ipcl {
 
-static inline auto randomUniformUnsignedInt() {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-  return dist(rng);
-}
-
 PublicKey::PublicKey(const BigNumber& n, int bits, bool enableDJN_)
     : m_n(n),
       m_g(n + 1),
       m_nsquare(n * n),
       m_bits(bits),
       m_dwords(BITSIZE_DWORD(bits * 2)),
-      m_init_seed(randomUniformUnsignedInt()),
       m_enable_DJN(false),
       m_testv(false),
       m_hs(0),

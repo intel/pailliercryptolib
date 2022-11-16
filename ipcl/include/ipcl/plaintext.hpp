@@ -58,7 +58,19 @@ class PlainText : public BaseText {
    * User define implicit type conversion
    * Convert 1st element to uint32_t vector.
    */
-  operator std::vector<uint32_t>();
+  operator std::vector<uint32_t>() const;
+
+  /**
+   * User define implicit type conversion
+   * Convert 1st element to type BigNumber.
+   */
+  operator BigNumber() const;
+
+  /**
+   * User define implicit type conversion
+   * Convert all element to type BigNumber.
+   */
+  operator std::vector<BigNumber>() const;
 
   /**
    * PT + CT
@@ -69,18 +81,6 @@ class PlainText : public BaseText {
    * PT * CT
    */
   CipherText operator*(const CipherText& other) const;
-
-  /**
-   * User define implicit type conversion
-   * Convert 1st element to type BigNumber.
-   */
-  operator BigNumber();
-
-  /**
-   * User define implicit type conversion
-   * Convert all element to type BigNumber.
-   */
-  operator std::vector<BigNumber>();
 
   /**
    * Rotate PlainText
