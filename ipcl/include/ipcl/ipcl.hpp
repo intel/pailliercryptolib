@@ -4,9 +4,10 @@
 #ifndef IPCL_INCLUDE_IPCL_IPCL_HPP_
 #define IPCL_INCLUDE_IPCL_IPCL_HPP_
 
-#include "ipcl/context.hpp"
 #include "ipcl/mod_exp.hpp"
 #include "ipcl/pri_key.hpp"
+#include "ipcl/utils/context.hpp"
+#include "ipcl/utils/serialize.hpp"
 
 namespace ipcl {
 

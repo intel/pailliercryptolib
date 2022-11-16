@@ -3,16 +3,15 @@
 
 #include "ipcl/pub_key.hpp"
 
-#include <crypto_mb/exp.h>
-
 #include <algorithm>
 #include <climits>
 #include <cstring>
 #include <random>
 
+#include "crypto_mb/exp.h"
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/mod_exp.hpp"
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 
@@ -31,7 +30,9 @@ PublicKey::PublicKey(const BigNumber& n, int bits, bool enableDJN_)
       m_dwords(BITSIZE_DWORD(bits * 2)),
       m_init_seed(randomUniformUnsignedInt()),
       m_enable_DJN(false),
-      m_testv(false) {
+      m_testv(false),
+      m_hs(0),
+      m_randbits(0) {
   if (enableDJN_) this->enableDJN();  // sets m_enable_DJN
 }
 
@@ -140,4 +141,29 @@ void PublicKey::setDJN(const BigNumber& hs, int randbit) {
   m_randbits = randbit;
   m_enable_DJN = true;
 }
+
+void PublicKey::create(const BigNumber& n, int bits, bool enableDJN_) {
+  m_n = n;
+  m_g = n + 1;
+  m_nsquare = n * n;
+  m_bits = bits;
+  m_dwords = BITSIZE_DWORD(bits * 2);
+  m_enable_DJN = enableDJN_;
+  if (enableDJN_) {
+    this->enableDJN();
+  } else {
+    m_hs = BigNumber::Zero();
+    m_randbits = 0;
+  }
+  m_testv = false;
+  std::cout << "create complete" << std::endl;
+}
+
+void PublicKey::create(const BigNumber& n, int bits, const BigNumber& hs,
+                       int randbits) {
+  create(n, bits, false);  // set DJN to false and manually set
+  m_hs = hs;
+  m_randbits = randbits;
+}
+
 }  // namespace ipcl

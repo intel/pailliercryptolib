@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 #ifdef IPCL_USE_OMP
 #include <numa.h>

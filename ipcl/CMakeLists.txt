@@ -6,15 +6,13 @@ set(IPCL_SRCS pri_key.cpp
               keygen.cpp
               bignum.cpp
               mod_exp.cpp
-              context.cpp
               base_text.cpp
               plaintext.cpp
               ciphertext.cpp
-              util.cpp
-              common.cpp
+              utils/context.cpp
+              utils/util.cpp
+              utils/common.cpp
 )
-
-set(IPCL_PUBLIC_HEADER ${IPCL_INC_DIR}/ipcl/ipcl.hpp)
 
 if(IPCL_SHARED)
 	add_library(ipcl SHARED ${IPCL_SRCS})
@@ -24,7 +22,6 @@ endif()
 
 add_library(IPCL::ipcl ALIAS ipcl)
 
-set_target_properties(ipcl PROPERTIES PUBLIC_HEADER ${IPCL_PUBLIC_HEADER})
 set_target_properties(ipcl PROPERTIES
     BUILD_WITH_INSTALL_RPATH FALSE
     LINK_FLAGS "-Wl,-rpath,'$ORIGIN' -Wl,-rpath,'$ORIGIN'/ippcrypto -Wl,-rpath,'$ORIGIN'/cpufeatures")
@@ -37,6 +34,40 @@ target_include_directories(ipcl
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
 )
 
+install(DIRECTORY ${IPCL_INC_DIR}/
+	DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
+	FILES_MATCHING
+	PATTERN "*.hpp"
+	PATTERN "*.h"
+)
+
+# CEREAL (third party dep): include and install definition
+target_include_directories(ipcl
+    PUBLIC $<BUILD_INTERFACE:${CEREAL_INC_DIR}>
+	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
+)
+
+install(DIRECTORY ${CEREAL_INC_DIR}/
+    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+)
+
+# IPP-Crypto (third party dep): include and install definition
+target_include_directories(ipcl
+    PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}/ippcrypto>
+    PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/ippcrypto>
+)
+
+install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
+    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+)
+
+# CPU_FEATURES (third party dep): include and install definition
 if(IPCL_DETECT_IFMA_RUNTIME)
 	target_include_directories(ipcl
 		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -47,27 +78,12 @@ if(IPCL_DETECT_IFMA_RUNTIME)
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
 		FILES_MATCHING
 		PATTERN "*.hpp"
-		PATTERN "*.h")
+		PATTERN "*.h"
+	)
 
 endif()
 
-install(DIRECTORY ${IPCL_INC_DIR}/
-        DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
-        FILES_MATCHING
-        PATTERN "*.hpp"
-        PATTERN "*.h")
 
-# include and install definition of IPP-Crypto
-target_include_directories(ipcl
-	PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}/ippcrypto>
-	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/ippcrypto>
-)
-
-install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
-        DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
-        FILES_MATCHING
-        PATTERN "*.hpp"
-        PATTERN "*.h")
 
 # include and install definition of cpu_features
 if(IPCL_DETECT_CPU_RUNTIME)
@@ -83,6 +99,7 @@ if(IPCL_DETECT_CPU_RUNTIME)
 
 endif()
 
+# include and install definition of he_qat
 if(IPCL_ENABLE_QAT)
     ipcl_define_icp_variables(icp_inc_dir)
     target_include_directories(ipcl
@@ -160,7 +177,6 @@ configure_package_config_file(
 install(
     TARGETS ipcl
     EXPORT IPCLTargets
-    PUBLIC_HEADER DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
     ARCHIVE DESTINATION ${IPCL_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${IPCL_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${IPCL_INSTALL_LIBDIR}

@@ -1,8 +1,8 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_UTIL_HPP_
-#define IPCL_INCLUDE_IPCL_UTIL_HPP_
+#ifndef IPCL_INCLUDE_IPCL_UTILS_UTIL_HPP_
+#define IPCL_INCLUDE_IPCL_UTILS_UTIL_HPP_
 
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 #include <cpu_features/cpuinfo_x86.h>
@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "ipcl/common.hpp"
+#include "ipcl/utils/common.hpp"
 
 namespace ipcl {
 
@@ -89,4 +89,4 @@ static const bool has_rdrand = features.rdrnd && prefer_rdrand;
 
 }  // namespace ipcl
 
-#endif  // IPCL_INCLUDE_IPCL_UTIL_HPP_
+#endif  // IPCL_INCLUDE_IPCL_UTILS_UTIL_HPP_

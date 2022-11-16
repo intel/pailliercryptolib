@@ -1,11 +1,10 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ipcl/common.hpp"
+#include "ipcl/utils/common.hpp"
 
-#include <crypto_mb/exp.h>
-
-#include "ipcl/util.hpp"
+#include "crypto_mb/exp.h"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 
