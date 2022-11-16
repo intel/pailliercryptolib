@@ -57,7 +57,7 @@ repos:
           exclude: ipcl/include/ipcl/bignum.h|module/heqat/heqat/include/heqat/misc/bignum.h
           args:
             - --recursive
-            - --filter=-runtime/references,-whitespace/comments,-whitespace/indent,-readability/casting,-runtime/int
+            - --filter=-runtime/references,-whitespace/comments,-whitespace/indent,-readability/casting,-runtime/int,-runtime/printf
         - id: shellcheck
           name: shellcheck
           entry: shellcheck
