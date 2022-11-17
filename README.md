@@ -62,18 +62,15 @@ nasm >= 2.15
 OpenSSL >= 1.1.0
 ```
 
-On Ubuntu 22.04, ```OpenSSL``` and ```nasm``` can be installed with:
+```OpenSSL``` can be installed with:
 ```bash
-sudo apt update
-sudo apt install nasm
+# Ubuntu
 sudo apt install libssl-dev
+# Fedora (RHEL 8, Centos)
+sudo dnf install openssl-devel
 ```
-For Ubuntu 20.04 or lower, RHEL and CentOS, please refer to the [Netwide Assembler webpage](https://nasm.us/) for installation details.
 
-For RHEL and CentOS, the required libraries can be installed via:
-```
-sudo yum install openssl-devel
-```
+In order to install ```nasm```, please refer to the [Netwide Assembler webpage](https://nasm.us/) for download and installation details.
 
 ### Instructions
 The library can be built using the following commands:
