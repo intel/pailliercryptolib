@@ -60,20 +60,19 @@ The following libraries and tools are also required,
 ```
 nasm >= 2.15
 OpenSSL >= 1.1.0
-numa >= 2.0.12
 ```
 
-On Ubuntu, ```OpenSSL``` and ```numa``` can be installed with:
+On Ubuntu 22.04, ```OpenSSL``` and ```nasm``` can be installed with:
 ```bash
 sudo apt update
-sudo apt install nasm # for Ubuntu 20.04 or higher
-sudo apt install libssl-dev libnuma-dev
+sudo apt install nasm
+sudo apt install libssl-dev
 ```
-For Ubuntu 18.04, RHEL and CentOS, please refer to the [Netwide Assembler webpage](https://nasm.us/) for installation details.
+For Ubuntu 20.04 or lower, RHEL and CentOS, please refer to the [Netwide Assembler webpage](https://nasm.us/) for installation details.
 
 For RHEL and CentOS, the required libraries can be installed via:
 ```
-sudo yum install numactl-devel openssl-devel
+sudo yum install openssl-devel
 ```
 
 ### Instructions
