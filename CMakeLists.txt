@@ -102,9 +102,10 @@ endif()
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
-    if(IPCL_THREAD_COUNT)
-	    add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
-    endif()
+  ipcl_get_core_thread_count(IPCL_CORE_COUNT IPCL_THREAD_COUNT ON)
+  if(IPCL_THREAD_COUNT)
+    add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
+  endif()
 endif()
 
 if(IPCL_DETECT_CPU_RUNTIME)

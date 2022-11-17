@@ -118,3 +118,26 @@ function(ipcl_define_icp_variables OutVariable)
                   ${ICP_API_DIR}/include/lac
                   PARENT_SCOPE)
 endfunction()
+
+function(ipcl_get_core_thread_count cores threads verbose)
+  include(ProcessorCount)
+
+  # Get number threads
+  ProcessorCount(N)
+  set(${threads} ${N} PARENT_SCOPE)
+
+  # parse smt active
+  execute_process(COMMAND cat /sys/devices/system/cpu/smt/active OUTPUT_VARIABLE IS_HYPERTHREADING)
+  if("${IS_HYPERTHREADING}" STREQUAL "1")
+    math(EXPR n_cores "${N} / 2" )
+    if(verbose)
+      message(STATUS "# of physical cores: ${n_cores}")
+    endif()
+    set(${cores} ${n_cores} PARENT_SCOPE)
+  else()
+    if(verbose)
+      message(STATUS "# of physical cores: ${N}")
+    endif()
+    set(${cores} ${N} PARENT_SCOPE)
+  endif()
+endfunction()
