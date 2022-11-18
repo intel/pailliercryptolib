@@ -75,11 +75,12 @@ class OMPUtilities {
   }
 
  private:
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
   static const linuxCPUInfo cpuinfo;
+  static const linuxCPUInfo getLinuxCPUInfo() { return GetLinuxCPUInfo(); }
+#endif
   static const int nodes;
   static const int cpus;
-
-  static const linuxCPUInfo getLinuxCPUInfo() { return GetLinuxCPUInfo(); }
 
   static int getNodes() {
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
