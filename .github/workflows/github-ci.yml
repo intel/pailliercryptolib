@@ -24,7 +24,8 @@ on:
 ###################
 env:
   IPCL_VER: 2.0.0
-  IPCL_DIR: ${GITHUB_WORKSPACE}/ipcl_install
+  IPCL_DIR: >
+      -DIPCL_DIR=${GITHUB_WORKSPACE}/ipcl_install
   IPCL_HINT_DIR: >
       -DIPCL_HINT_DIR=${GITHUB_WORKSPACE}/ipcl_install/lib/cmake/ipcl-${IPCL_VER}
 
