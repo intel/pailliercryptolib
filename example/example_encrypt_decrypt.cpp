@@ -12,6 +12,11 @@
 #include "ipcl/ipcl.hpp"
 
 int main() {
+  std::cout << std::endl;
+  std::cout << "======================================" << std::endl;
+  std::cout << "Example: Encrypt and Decrypt with IPCL" << std::endl;
+  std::cout << "======================================" << std::endl;
+
   ipcl::initializeContext("QAT");
 
   const uint32_t num_total = 20;

@@ -19,6 +19,11 @@ typedef std::chrono::high_resolution_clock::time_point tVar;
   std::chrono::duration_cast<std::chrono::milliseconds>(tNow() - t).count()
 
 int main() {
+  std::cout << std::endl;
+  std::cout << "===================================" << std::endl;
+  std::cout << "Example: Hybrid Mode usage with QAT" << std::endl;
+  std::cout << "===================================" << std::endl;
+
   ipcl::initializeContext("QAT");
   tVar t;
   double elapsed(0.);
