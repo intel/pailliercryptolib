@@ -24,8 +24,7 @@ on:
 ###################
 env:
   IPCL_VER: 2.0.0
-  IPCL_DIR: >
-      -DIPCL_DIR=${GITHUB_WORKSPACE}/ipcl_install
+  IPCL_DIR: ${GITHUB_WORKSPACE}/ipcl_install
   IPCL_HINT_DIR: >
       -DIPCL_HINT_DIR=${GITHUB_WORKSPACE}/ipcl_install/lib/cmake/ipcl-${IPCL_VER}
 
@@ -107,7 +106,7 @@ jobs:
       - name: Build and run examples
         run: |
           cd $GITHUB_WORKSPACE/example
-          cmake -S . -B build ${{ env.IPCL_DIR }}
+          cmake -S . -B build ${{ env.IPCL_HINT_DIR }}
           cmake --build build
           cmake --build build --target run_all_examples
 
