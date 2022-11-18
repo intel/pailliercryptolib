@@ -115,7 +115,7 @@ function(ipcl_define_icp_variables OutVariable)
                   PARENT_SCOPE)
 endfunction()
 
-function(ipcl_get_core_thread_count cores threads sockets)
+function(ipcl_get_core_thread_count cores threads nodes)
   include(ProcessorCount)
 
   # Get number threads
@@ -136,9 +136,9 @@ function(ipcl_get_core_thread_count cores threads sockets)
   message(STATUS "# of physical cores:        ${n_cores}")
 
   # check number of nodes
-  execute_process(COMMAND lscpu COMMAND grep Socket OUTPUT_VARIABLE output_sockets OUTPUT_STRIP_TRAILING_WHITESPACE)
-  string(REGEX MATCHALL "([^\ ]+\ |[^\ ]+$)" output_sockets_list "${output_sockets}")
-  list(GET output_sockets_list -1 n_sockets)
-  message(STATUS "# of sockets:               ${n_sockets}")
-  set(${sockets} ${n_sockets} PARENT_SCOPE)
+  execute_process(COMMAND lscpu COMMAND grep Socket OUTPUT_VARIABLE output_nodes OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCHALL "([^\ ]+\ |[^\ ]+$)" output_nodes_list "${output_nodes}")
+  list(GET output_nodes_list -1 n_nodes)
+  message(STATUS "# of nodes:                 ${n_nodes}")
+  set(${nodes} ${n_nodes} PARENT_SCOPE)
 endfunction()

@@ -102,7 +102,7 @@ endif()
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
-  ipcl_get_core_thread_count(num_cores num_threads num_sockets)
+  ipcl_get_core_thread_count(num_cores num_threads num_nodes)
   if(IPCL_THREAD_COUNT)
     # if thread_count is invalid, set to maximum threads
     if(IPCL_THREAD_COUNT GREATER num_threads)
@@ -117,8 +117,8 @@ if(IPCL_DETECT_CPU_RUNTIME)
   add_compile_definitions(IPCL_RUNTIME_DETECT_CPU_FEATURES)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};$ORIGIN/cpufeatures")
 else()
-  # set cpu socket count parsed from lscpu precompile
-  add_compile_definitions(IPCL_NUM_NODES=${num_sockets})
+  # set cpu node count parsed from lscpu precompile
+  add_compile_definitions(IPCL_NUM_NODES=${num_nodes})
 
   # check whether cpu support avx512ifma instructions
   ipcl_detect_lscpu_flag("avx512ifma")
