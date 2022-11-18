@@ -84,13 +84,12 @@ class OMPUtilities {
 
   static int getNodes() {
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
-    return cpuinfo.n_sockets;
+    return cpuinfo.n_nodes;
 #else
-    return IPCL_NUM_SOCKETS;
+    return IPCL_NUM_NODES;
 #endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
   }
   static int getMaxThreads() {
-    std::cout << "getNodes..." << cpuinfo.n_sockets << std::endl;
 #ifdef IPCL_NUM_THREADS
     return IPCL_NUM_THREADS;
 #else

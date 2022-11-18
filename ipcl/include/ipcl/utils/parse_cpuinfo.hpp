@@ -34,7 +34,7 @@ static inline void trim(std::string& s) {
 typedef struct {
   int n_processors = 0;
   int n_cores = 0;
-  int n_sockets = 0;
+  int n_nodes = 0;
 } linuxCPUInfo;
 
 static void parseCPUInfo(linuxCPUInfo& info) {
@@ -55,11 +55,11 @@ static void parseCPUInfo(linuxCPUInfo& info) {
         else if (key == "core id")
           info.n_cores = std::max(info.n_cores, std::stoi(val));
         else if (key == "physical id")
-          info.n_sockets = std::max(info.n_sockets, std::stoi(val));
+          info.n_nodes = std::max(info.n_nodes, std::stoi(val));
       }
     }
-    info.n_sockets++;
-    info.n_cores = (info.n_cores + 1) * info.n_sockets;
+    info.n_nodes++;
+    info.n_cores = (info.n_cores + 1) * info.n_nodes;
   } catch (const std::ifstream::failure& e) {
     std::ostringstream log;
     log << "\nFile: " << __FILE__ << "\nLine: " << __LINE__ << "\nError: "
