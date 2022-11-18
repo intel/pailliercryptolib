@@ -98,4 +98,5 @@ int main() {
   delete key.pub_key;
   delete key.priv_key;
   ipcl::terminateContext();
+  std::cout << "Complete!" << std::endl << std::endl;
 }
