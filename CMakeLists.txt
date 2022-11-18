@@ -102,9 +102,14 @@ endif()
 
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
-    if(IPCL_THREAD_COUNT)
-	    add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
+  ipcl_get_core_thread_count(num_cores num_threads num_nodes)
+  if(IPCL_THREAD_COUNT)
+    # if thread_count is invalid, set to maximum threads
+    if(IPCL_THREAD_COUNT GREATER num_threads)
+      set(IPCL_THREAD_COUNT ${num_threads})
     endif()
+    add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
+  endif()
 endif()
 
 if(IPCL_DETECT_CPU_RUNTIME)
@@ -112,22 +117,22 @@ if(IPCL_DETECT_CPU_RUNTIME)
   add_compile_definitions(IPCL_RUNTIME_DETECT_CPU_FEATURES)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};$ORIGIN/cpufeatures")
 else()
+  # set cpu node count parsed from lscpu precompile
+  add_compile_definitions(IPCL_NUM_NODES=${num_nodes})
+
   # check whether cpu support avx512ifma instructions
-  ipcl_detect_lscpu_flag("avx512ifma" FALSE)
+  ipcl_detect_lscpu_flag("avx512ifma")
   if(IPCL_FOUND_avx512ifma)
     add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
-    message(STATUS "Support AVX512IFMA instruction: True")
   endif()
 
   # check whether cpu support rdseed/rdrand instructions
-  ipcl_detect_lscpu_flag("rdseed" FALSE)
+  ipcl_detect_lscpu_flag("rdseed")
   if(IPCL_FOUND_rdseed)
-    message(STATUS "Support RDSEED instruction: True")
     add_compile_definitions(IPCL_RNG_INSTR_RDSEED)
   else()
-    ipcl_detect_lscpu_flag("rdrand" FALSE)
+    ipcl_detect_lscpu_flag("rdrand")
     if(IPCL_FOUND_rdrand)
-      message(STATUS "Support RDRAND instruction: True")
       add_compile_definitions(IPCL_RNG_INSTR_RDRAND)
     else()
       message(WARNING

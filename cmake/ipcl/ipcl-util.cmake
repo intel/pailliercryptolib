@@ -31,19 +31,15 @@ function(ipcl_create_archive target dependency)
 endfunction()
 
 
-function(ipcl_detect_lscpu_flag flag verbose)
+function(ipcl_detect_lscpu_flag flag)
   # Detect IFMA by parsing lscpu
   set(LSCPU_FLAG ${flag})
   execute_process(COMMAND lscpu COMMAND grep ${LSCPU_FLAG} OUTPUT_VARIABLE LSCPU_FLAG)
   if("${LSCPU_FLAG}" STREQUAL "")
-    if(verbose)
-      message(STATUS "Support ${flag}: False")
-    endif()
+    message(STATUS "Support ${flag}: False")
     set(IPCL_FOUND_${flag} FALSE PARENT_SCOPE)
   else()
-    if(verbose)
-      message(STATUS "Support ${flag}: True")
-    endif()
+    message(STATUS "Support ${flag}: True")
     set(IPCL_FOUND_${flag} TRUE PARENT_SCOPE)
   endif()
 endfunction()
@@ -117,4 +113,32 @@ function(ipcl_define_icp_variables OutVariable)
                   ${ICP_API_DIR}/include/dc
                   ${ICP_API_DIR}/include/lac
                   PARENT_SCOPE)
+endfunction()
+
+function(ipcl_get_core_thread_count cores threads nodes)
+  include(ProcessorCount)
+
+  # Get number threads
+  ProcessorCount(n_threads)
+  set(${threads} ${n_threads} PARENT_SCOPE)
+  message(STATUS "# of threads:               ${n_threads}")
+
+  # check hyperthreading
+  execute_process(COMMAND cat /sys/devices/system/cpu/smt/active OUTPUT_VARIABLE IS_HYPERTHREADING OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if("${IS_HYPERTHREADING}" STREQUAL "1")
+    math(EXPR n_cores "${n_threads} / 2" )
+    set(${cores} ${n_cores} PARENT_SCOPE)
+  else()
+    set(n_cores ${n_threads})
+  endif()
+
+  set(${cores} ${n_cores} PARENT_SCOPE)
+  message(STATUS "# of physical cores:        ${n_cores}")
+
+  # check number of nodes
+  execute_process(COMMAND lscpu COMMAND grep Socket OUTPUT_VARIABLE output_nodes OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCHALL "([^\ ]+\ |[^\ ]+$)" output_nodes_list "${output_nodes}")
+  list(GET output_nodes_list -1 n_nodes)
+  message(STATUS "# of nodes:                 ${n_nodes}")
+  set(${nodes} ${n_nodes} PARENT_SCOPE)
 endfunction()

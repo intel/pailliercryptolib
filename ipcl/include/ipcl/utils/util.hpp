@@ -6,6 +6,8 @@
 
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 #include <cpu_features/cpuinfo_x86.h>
+
+#include "ipcl/utils/parse_cpuinfo.hpp"
 #endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 #include <cstdlib>
@@ -41,6 +43,22 @@ inline void vec_size_check(const std::vector<T>& v, const char* file,
 
 #define VEC_SIZE_CHECK(v) vec_size_check(v, __FILE__, __LINE__)
 
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+static const bool disable_avx512ifma =
+    (std::getenv("IPCL_DISABLE_AVX512IFMA") != nullptr);
+static const bool prefer_rdrand =
+    (std::getenv("IPCL_PREFER_RDRAND") != nullptr);
+static const bool prefer_ipp_prng =
+    (std::getenv("IPCL_PREFER_IPP_PRNG") != nullptr);
+static const cpu_features::X86Features features =
+    cpu_features::GetX86Info().features;
+static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
+static const bool has_rdseed =
+    features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
+static const bool has_rdrand = features.rdrnd && prefer_rdrand;
+
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
+
 #ifdef IPCL_USE_OMP
 class OMPUtilities {
  public:
@@ -57,9 +75,20 @@ class OMPUtilities {
   }
 
  private:
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+  static const linuxCPUInfo cpuinfo;
+  static const linuxCPUInfo getLinuxCPUInfo() { return GetLinuxCPUInfo(); }
+#endif
   static const int nodes;
   static const int cpus;
 
+  static int getNodes() {
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+    return cpuinfo.n_nodes;
+#else
+    return IPCL_NUM_NODES;
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
+  }
   static int getMaxThreads() {
 #ifdef IPCL_NUM_THREADS
     return IPCL_NUM_THREADS;
@@ -70,22 +99,6 @@ class OMPUtilities {
 };
 
 #endif  // IPCL_USE_OMP
-
-#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
-static const bool disable_avx512ifma =
-    (std::getenv("IPCL_DISABLE_AVX512IFMA") != nullptr);
-static const bool prefer_rdrand =
-    (std::getenv("IPCL_PREFER_RDRAND") != nullptr);
-static const bool prefer_ipp_prng =
-    (std::getenv("IPCL_PREFER_IPP_PRNG") != nullptr);
-static const cpu_features::X86Features features =
-    cpu_features::GetX86Info().features;
-static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
-static const bool has_rdseed =
-    features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
-static const bool has_rdrand = features.rdrnd && prefer_rdrand;
-
-#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 }  // namespace ipcl
 

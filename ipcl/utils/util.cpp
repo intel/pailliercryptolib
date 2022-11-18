@@ -3,17 +3,17 @@
 
 #include "ipcl/utils/util.hpp"
 
-#ifdef IPCL_USE_OMP
-#include <numa.h>
-#endif  // IPCL_USE_OMP
+#include <thread>  // NOLINT [build/c++11]
 
 namespace ipcl {
 
 #ifdef IPCL_USE_OMP
-const int OMPUtilities::nodes = numa_num_configured_nodes();
-const int OMPUtilities::cpus = numa_num_configured_cpus();
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+const linuxCPUInfo OMPUtilities::cpuinfo = OMPUtilities::getLinuxCPUInfo();
+#endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
+const int OMPUtilities::cpus = std::thread::hardware_concurrency();
+const int OMPUtilities::nodes = OMPUtilities::getNodes();
 const int OMPUtilities::MaxThreads = OMPUtilities::getMaxThreads();
-
 #endif  // IPCL_USE_OMP
 
 }  // namespace ipcl

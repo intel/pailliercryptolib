@@ -12,6 +12,7 @@ set(IPCL_SRCS pri_key.cpp
               utils/context.cpp
               utils/util.cpp
               utils/common.cpp
+              utils/parse_cpuinfo.cpp
 )
 
 if(IPCL_SHARED)
@@ -114,7 +115,7 @@ endif()
 
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
-target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads -lnuma)
+target_link_libraries(ipcl PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 
 if(IPCL_ENABLE_OMP)
   find_package(OpenMP REQUIRED)
