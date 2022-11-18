@@ -9,19 +9,25 @@ on:
     branches:
       - main
       - development
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - ipcl_v"[0-9]+.[0-9]+.[0-9]+"
   push:
     branches:
       - main
       - development
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - ipcl_v"[0-9]+.[0-9]+.[0-9]+"
 
   # Manually run this workflow on any specified branch.
   workflow_dispatch:
 
-##############
-# IceLake CI #
-##############
+###################
+# Define env vars #
+###################
+env:
+  IPCL_VER: 2.0.0
+  IPCL_DIR: ${GITHUB_WORKSPACE}/install
+  IPCL_HINT_DIR: >
+      -DIPCL_HINT_DIR=${GITHUB_WORKSPACE}/install/lib/cmake/ipcl-${IPCL_VER}
+
 jobs:
   format:
     name: Format check
@@ -40,8 +46,6 @@ jobs:
     name: Build, test and run kernels - shared
     needs: [format]
     runs-on: [self-hosted, linux, x64, icx]
-    # Use environment protection (require review)
-    environment: intel_workflow
     defaults:
       run:
         shell: bash
