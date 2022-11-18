@@ -12,6 +12,7 @@ set(IPCL_SRCS pri_key.cpp
               utils/context.cpp
               utils/util.cpp
               utils/common.cpp
+              utils/parse_cpuinfo.cpp
 )
 
 if(IPCL_SHARED)

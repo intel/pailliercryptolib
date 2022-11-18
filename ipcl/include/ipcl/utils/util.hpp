@@ -6,6 +6,8 @@
 
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 #include <cpu_features/cpuinfo_x86.h>
+
+#include "ipcl/utils/parse_cpuinfo.hpp"
 #endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 #include <cstdlib>
@@ -57,7 +59,17 @@ class OMPUtilities {
   }
 
  private:
+  static const int nodes;
+  static const int cpus;
+
   static int getMaxThreads() { return IPCL_NUM_THREADS; }
+  static int getNodes() {
+#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
+    return n_sockets;
+#else
+    return IPCL_NUM_SOCKETS;
+#endif
+  }
 };
 
 #endif  // IPCL_USE_OMP
@@ -76,6 +88,9 @@ static const bool has_rdseed =
     features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
 static const bool has_rdrand = features.rdrnd && prefer_rdrand;
 
+static const linuxCPUInfo cpuinfo = GetLinuxCPUInfo();
+static const int n_sockets = cpuinfo.n_sockets;
+static const int n_processors = cpuinfo.n_processors;
 #endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 }  // namespace ipcl

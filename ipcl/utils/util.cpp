@@ -7,6 +7,8 @@ namespace ipcl {
 
 #ifdef IPCL_USE_OMP
 const int OMPUtilities::MaxThreads = OMPUtilities::getMaxThreads();
+const int OMPUtilities::nodes = OMPUtilities::getNodes();
+const int OMPUtilities::cpus = OMPUtilities::getCPUs();
 #endif  // IPCL_USE_OMP
 
 }  // namespace ipcl
