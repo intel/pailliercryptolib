@@ -110,7 +110,7 @@ jobs:
           cmake --build build --target run_all_examples
 
       - name: Archive benchmark results
-        uses: actions/upload-artifactory@v2
+        uses: actions/upload-artifact@v2
         with:
           name: bench_ipcl_${{ github.sha }}.csv
           path: ${{ github.workspace }}/${{ github.workflow }}_${{ github.sha }}
