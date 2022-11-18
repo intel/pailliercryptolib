@@ -88,7 +88,7 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type}} \
             -DIPCL_DETECT_CPU_RUNTIME=${{ matrix.detect_cpu_runtime }} \
             -DIPCL_ENABLE_QAT=${{ matrix.enable_qat }} \
-            -DCMAKE_INSTALL_PREFIX= ./ipcl_install
+            -DCMAKE_INSTALL_PREFIX=./ipcl_install
           cmake --build build -j$(nproc)
           cmake --build build --target install
 
