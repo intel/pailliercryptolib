@@ -62,13 +62,19 @@ class OMPUtilities {
   static const int nodes;
   static const int cpus;
 
-  static int getMaxThreads() { return IPCL_NUM_THREADS; }
   static int getNodes() {
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
     return n_sockets;
 #else
     return IPCL_NUM_SOCKETS;
 #endif
+  }
+  static int getMaxThreads() {
+#ifdef IPCL_NUM_THREADS
+    return IPCL_NUM_THREADS;
+#else
+    return cpus / nodes;
+#endif  // IPCL_NUM_THREADS
   }
 };
 

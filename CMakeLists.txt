@@ -103,16 +103,13 @@ endif()
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
   ipcl_get_core_thread_count(num_cores num_threads num_sockets)
+  add_compile_definitions(IPCL_NUM_NODES=${num_sockets})
   if(IPCL_THREAD_COUNT)
+    # if thread_count is invalid, set to maximum threads
     if(IPCL_THREAD_COUNT GREATER num_threads)
       set(IPCL_THREAD_COUNT ${num_threads})
     endif()
     add_compile_definitions(IPCL_NUM_THREADS=${IPCL_THREAD_COUNT})
-  else()
-    # if thread_count not explicitly set, use all available physical cores
-    # (no hyperthreading)
-    set(IPCL_THREAD_COUNT ${num_cores})
-    add_compile_definitions(IPCL_NUM_THREADS=${num_cores})
   endif()
 endif()
 
