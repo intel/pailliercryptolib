@@ -8,11 +8,10 @@
 namespace ipcl {
 
 #ifdef IPCL_USE_OMP
+const linuxCPUInfo OMPUtilities::cpuinfo = OMPUtilities::getLinuxCPUInfo();
 const int OMPUtilities::cpus = std::thread::hardware_concurrency();
-const int OMPUtilities::nodes = IPCL_NUM_NODES;
-const int OMPUtilities::MaxThreads = OMPUtilities::getMaxThreads();
 const int OMPUtilities::nodes = OMPUtilities::getNodes();
-const int OMPUtilities::cpus = OMPUtilities::getCPUs();
+const int OMPUtilities::MaxThreads = OMPUtilities::getMaxThreads();
 #endif  // IPCL_USE_OMP
 
 }  // namespace ipcl
