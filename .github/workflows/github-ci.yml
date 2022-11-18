@@ -69,7 +69,7 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.13
         with:
           cmake-version: '3.16.x'
-      - name: Build the library
+      - name: Validate environment
         run: |
           set -x
           export CC=clang-10
@@ -84,7 +84,8 @@ jobs:
           cmake --version
           pwd
 
-          # Build library
+      - name: Build library
+        run: |
           # QAT unavailable in ICX - to be added
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type}} \
             -DIPCL_DETECT_CPU_RUNTIME=${{ matrix.detect_cpu_runtime }} \
