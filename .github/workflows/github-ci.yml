@@ -9,12 +9,12 @@ on:
     branches:
       - main
       - development
-      - ipcl_v"[0-9]+.[0-9]+.[0-9]+"
+      - "ipcl_v[0-9]+.[0-9]+.[0-9]+"
   push:
     branches:
       - main
       - development
-      - ipcl_v"[0-9]+.[0-9]+.[0-9]+"
+      - "ipcl_v[0-9]+.[0-9]+.[0-9]+"
 
   # Manually run this workflow on any specified branch.
   workflow_dispatch:
