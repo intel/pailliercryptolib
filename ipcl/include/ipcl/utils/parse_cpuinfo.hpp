@@ -32,9 +32,9 @@ static inline void trim(std::string& s) {
 }
 
 typedef struct {
-  int n_processors = 0;
-  int n_cores = 0;
-  int n_nodes = 0;
+  int n_processors;
+  int n_cores;
+  int n_nodes;
 } linuxCPUInfo;
 
 static void parseCPUInfo(linuxCPUInfo& info) {
