@@ -8,6 +8,7 @@ project(IPCL VERSION 1.1.4 LANGUAGES C CXX)
 include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
+include(GNUInstallDirs)
 
 if(CMAKE_BUILD_TYPE)
   set(RELEASE_TYPES
@@ -34,16 +35,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
-set(CMAKE_INSTALL_RPATH "\$ORIGIN")
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/opt/intel/ipcl")
+endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
-
-if(NOT CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
-include(GNUInstallDirs)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/ippcrypto")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
@@ -54,6 +53,7 @@ option(IPCL_ENABLE_OMP "Enable OpenMP testing/benchmarking" ON)
 option(IPCL_THREAD_COUNT "The max number of threads used by OpenMP(If the value is OFF/0, it is determined at runtime)" OFF)
 option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
+option(IPCL_DETECT_IFMA_RUNTIME "Detect AVX512/IFMA instructions during runtime" OFF)
 option(IPCL_DEBUG_DISABLE_AVX512IFMA "(Debugging) Disable usage of AVX512IFMA instructions" OFF)
 if(IPCL_ENABLE_OMP)
 	add_compile_definitions(IPCL_USE_OMP)
@@ -74,6 +74,8 @@ message(STATUS "CMAKE_BUILD_TYPE:           ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_C_COMPILER:           ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_CXX_COMPILER:         ${CMAKE_CXX_COMPILER}")
 message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "CMAKE_INSTALL_LIBDIR:       ${CMAKE_INSTALL_FULL_LIBDIR}")
+message(STATUS "CMAKE_INSTALL_INCLUDEDIR:   ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "IPCL_TEST:                  ${IPCL_TEST}")
 message(STATUS "IPCL_BENCHMARK:             ${IPCL_BENCHMARK}")
 message(STATUS "IPCL_ENABLE_OMP:            ${IPCL_ENABLE_OMP}")
@@ -84,6 +86,7 @@ else()
 endif()
 message(STATUS "IPCL_DOCS:                  ${IPCL_DOCS}")
 message(STATUS "IPCL_SHARED:                ${IPCL_SHARED}")
+message(STATUS "IPCL_DETECT_IFMA_RUNTIME:   ${IPCL_DETECT_IFMA_RUNTIME}")
 
 set(IPCL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(IPCL_SRC_DIR ${IPCL_ROOT_DIR}/ipcl)
@@ -101,17 +104,22 @@ set(IPCL_FORWARD_CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
-# check whether cpu support avx512 flag
-if(IPCL_DEBUG_DISABLE_AVX512IFMA)
-  message(STATUS "Support AVX512IFMA: False")
+if(IPCL_DETECT_IFMA_RUNTIME)
+  add_compile_definitions(IPCL_RUNTIME_MOD_EXP)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cpufeatures")
 else()
-  set(CPU_AVX512_FLAG "avx512ifma")
-  execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
-  if("${CPU_ENABLE_AVX512}" STREQUAL "")
+  # check whether cpu support avx512 flag
+  if(IPCL_DEBUG_DISABLE_AVX512IFMA)
     message(STATUS "Support AVX512IFMA: False")
   else()
-    message(STATUS "Support AVX512IFMA: True")
-    add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+    set(CPU_AVX512_FLAG "avx512ifma")
+    execute_process(COMMAND lscpu COMMAND grep ${CPU_AVX512_FLAG}  OUTPUT_VARIABLE CPU_ENABLE_AVX512)
+    if("${CPU_ENABLE_AVX512}" STREQUAL "")
+      message(STATUS "Support AVX512IFMA: False")
+    else()
+      message(STATUS "Support AVX512IFMA: True")
+      add_compile_definitions(IPCL_CRYPTO_MB_MOD_EXP)
+    endif()
   endif()
 endif()
 
@@ -133,7 +141,7 @@ else()
 endif()
 
 # find package for OpenSSL and Threads
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+# set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 
@@ -145,6 +153,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
 include(ipcl-util)
 
 include(cmake/ippcrypto.cmake)
+if(IPCL_DETECT_IFMA_RUNTIME)
+  include(cmake/cpufeatures.cmake)
+endif()
 
 if(IPCL_TEST)
   include(cmake/gtest.cmake)
@@ -152,6 +163,8 @@ endif()
 if(IPCL_BENCHMARK)
   include(cmake/gbenchmark.cmake)
 endif()
+
+
 
 add_subdirectory(ipcl)
 

@@ -160,6 +160,61 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   std::size_t v_size = base.size();
   std::vector<BigNumber> res(v_size);
 
+#ifdef IPCL_RUNTIME_MOD_EXP
+
+  // If there is only 1 big number, we don't need to use MBModExp
+  if (v_size == 1) {
+    res[0] = ippSBModExp(base[0], exp[0], mod[0]);
+    return res;
+  }
+
+  if (has_avx512ifma) {
+    std::size_t remainder = v_size % IPCL_CRYPTO_MB_SIZE;
+    std::size_t num_chunk =
+        (v_size + IPCL_CRYPTO_MB_SIZE - 1) / IPCL_CRYPTO_MB_SIZE;
+#ifdef IPCL_USE_OMP
+    int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, num_chunk))
+#endif  // IPCL_USE_OMP
+    for (std::size_t i = 0; i < num_chunk; i++) {
+      std::size_t chunk_size = IPCL_CRYPTO_MB_SIZE;
+      if ((i == (num_chunk - 1)) && (remainder > 0)) chunk_size = remainder;
+
+      std::size_t chunk_offset = i * IPCL_CRYPTO_MB_SIZE;
+
+      auto base_start = base.begin() + chunk_offset;
+      auto base_end = base_start + chunk_size;
+
+      auto exp_start = exp.begin() + chunk_offset;
+      auto exp_end = exp_start + chunk_size;
+
+      auto mod_start = mod.begin() + chunk_offset;
+      auto mod_end = mod_start + chunk_size;
+
+      auto base_chunk = std::vector<BigNumber>(base_start, base_end);
+      auto exp_chunk = std::vector<BigNumber>(exp_start, exp_end);
+      auto mod_chunk = std::vector<BigNumber>(mod_start, mod_end);
+
+      auto tmp = ippMBModExp(base_chunk, exp_chunk, mod_chunk);
+      std::copy(tmp.begin(), tmp.end(), res.begin() + chunk_offset);
+    }
+
+    return res;
+
+  } else {
+#ifdef IPCL_USE_OMP
+    int omp_remaining_threads = OMPUtilities::MaxThreads;
+#pragma omp parallel for num_threads( \
+    OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
+#endif  // IPCL_USE_OMP
+    for (int i = 0; i < v_size; i++)
+      res[i] = ippSBModExp(base[i], exp[i], mod[i]);
+    return res;
+  }
+
+#else
+
 #ifdef IPCL_CRYPTO_MB_MOD_EXP
 
   // If there is only 1 big number, we don't need to use MBModExp
@@ -214,6 +269,8 @@ std::vector<BigNumber> ippModExp(const std::vector<BigNumber>& base,
   return res;
 
 #endif  // IPCL_CRYPTO_MB_MOD_EXP
+
+#endif  // IPCL_RUNTIME_MOD_EXP
 }
 
 BigNumber ippModExp(const BigNumber& base, const BigNumber& exp,

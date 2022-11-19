@@ -4,6 +4,11 @@
 #ifndef IPCL_INCLUDE_IPCL_UTIL_HPP_
 #define IPCL_INCLUDE_IPCL_UTIL_HPP_
 
+#ifdef IPCL_RUNTIME_MOD_EXP
+#include <cpu_features/cpuinfo_x86.h>
+#endif  // IPCL_RUNTIME_MOD_EXP
+
+#include <cstdlib>
 #include <exception>
 #include <sstream>
 #include <string>
@@ -65,6 +70,14 @@ class OMPUtilities {
 };
 
 #endif  // IPCL_USE_OMP
+
+#ifdef IPCL_RUNTIME_MOD_EXP
+static const bool disable_avx512ifma =
+    (std::getenv("IPCL_DISABLE_AVX512IFMA") != nullptr);
+static const cpu_features::X86Features features =
+    cpu_features::GetX86Info().features;
+static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
+#endif  // IPCL_RUNTIME_MOD_EXP
 
 }  // namespace ipcl
 
