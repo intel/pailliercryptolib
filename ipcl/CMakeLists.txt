@@ -43,6 +43,7 @@ install(DIRECTORY ${IPCL_INC_DIR}/
 )
 
 # CEREAL (third party dep): include and install definition
+add_dependencies(ipcl ext_cereal)
 target_include_directories(ipcl
     PUBLIC $<BUILD_INTERFACE:${CEREAL_INC_DIR}>
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
