@@ -123,7 +123,7 @@ if(IPCL_ENABLE_OMP)
 endif()
 
 if(IPCL_SHARED)
-	target_link_libraries(ipcl PRIVATE IPPCP::ippcp)
+	target_link_libraries(ipcl PRIVATE IPPCP::ippcp IPPCP::crypto_mb)
 	if(IPCL_DETECT_CPU_RUNTIME)
         target_link_libraries(ipcl PRIVATE libcpu_features)
 	endif()
