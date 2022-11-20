@@ -57,12 +57,12 @@ install(DIRECTORY ${CEREAL_INC_DIR}/
 
 # IPP-Crypto (third party dep): include and install definition
 target_include_directories(ipcl
-    PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}/ippcrypto>
+    PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}>
     PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/ippcrypto>
 )
 
 install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
-    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
+    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}/ippcrypto
     FILES_MATCHING
     PATTERN "*.hpp"
     PATTERN "*.h"
