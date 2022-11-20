@@ -68,24 +68,6 @@ install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
     PATTERN "*.h"
 )
 
-# CPU_FEATURES (third party dep): include and install definition
-if(IPCL_DETECT_IFMA_RUNTIME)
-	target_include_directories(ipcl
-		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-		PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
-		PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-	)
-	install(DIRECTORY ${CPUFEATURES_INC_DIR}/
-		DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-		FILES_MATCHING
-		PATTERN "*.hpp"
-		PATTERN "*.h"
-	)
-
-endif()
-
-
-
 # include and install definition of cpu_features
 if(IPCL_DETECT_CPU_RUNTIME)
 	target_include_directories(ipcl
@@ -96,8 +78,8 @@ if(IPCL_DETECT_CPU_RUNTIME)
 		DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
 		FILES_MATCHING
 		PATTERN "*.hpp"
-		PATTERN "*.h")
-
+		PATTERN "*.h"
+    )
 endif()
 
 # include and install definition of he_qat
