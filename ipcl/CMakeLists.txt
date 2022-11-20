@@ -43,6 +43,7 @@ install(DIRECTORY ${IPCL_INC_DIR}/
 )
 
 # CEREAL (third party dep): include and install definition
+add_dependencies(ipcl ext_cereal)
 target_include_directories(ipcl
     PUBLIC $<BUILD_INTERFACE:${CEREAL_INC_DIR}>
 	PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl>
@@ -57,34 +58,16 @@ install(DIRECTORY ${CEREAL_INC_DIR}/
 
 # IPP-Crypto (third party dep): include and install definition
 target_include_directories(ipcl
-    PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}/ippcrypto>
+    PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}>
     PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/ippcrypto>
 )
 
 install(DIRECTORY ${IPPCRYPTO_INC_DIR}/
-    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
+    DESTINATION ${IPCL_INSTALL_INCLUDEDIR}/ippcrypto
     FILES_MATCHING
     PATTERN "*.hpp"
     PATTERN "*.h"
 )
-
-# CPU_FEATURES (third party dep): include and install definition
-if(IPCL_DETECT_IFMA_RUNTIME)
-	target_include_directories(ipcl
-		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-		PUBLIC $<BUILD_INTERFACE:${CPUFEATURES_INC_DIR}>
-		PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-	)
-	install(DIRECTORY ${CPUFEATURES_INC_DIR}/
-		DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-		FILES_MATCHING
-		PATTERN "*.hpp"
-		PATTERN "*.h"
-	)
-
-endif()
-
-
 
 # include and install definition of cpu_features
 if(IPCL_DETECT_CPU_RUNTIME)
@@ -96,8 +79,8 @@ if(IPCL_DETECT_CPU_RUNTIME)
 		DESTINATION ${IPCL_INSTALL_INCLUDEDIR}
 		FILES_MATCHING
 		PATTERN "*.hpp"
-		PATTERN "*.h")
-
+		PATTERN "*.h"
+    )
 endif()
 
 # include and install definition of he_qat
@@ -123,7 +106,7 @@ if(IPCL_ENABLE_OMP)
 endif()
 
 if(IPCL_SHARED)
-	target_link_libraries(ipcl PRIVATE IPPCP::ippcp)
+	target_link_libraries(ipcl PRIVATE IPPCP::ippcp IPPCP::crypto_mb)
 	if(IPCL_DETECT_CPU_RUNTIME)
         target_link_libraries(ipcl PRIVATE libcpu_features)
 	endif()

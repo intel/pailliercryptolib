@@ -70,6 +70,7 @@ option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 option(IPCL_DETECT_CPU_RUNTIME "Detect CPU supported instructions during runtime" OFF)
 option(IPCL_INTERNAL_PYTHON_BUILD "Additional steps for IPCL_Python build" OFF)
+option(IPCL_IPPCRYPTO_PATH "Use pre-installed IPP-Crypto library" OFF)
 
 # Used only for ipcl_python IPCL_INTERNAL_PYTHON_BUILD - additional check if invalid parameters
 if(IPCL_INTERNAL_PYTHON_BUILD)
@@ -205,7 +206,7 @@ endif()
 
 if(IPCL_ENABLE_QAT)
   # preset values for including HE_QAT
-  set(HE_QAT_MISC OFF) # revisit later on
+  set(HE_QAT_MISC OFF)
   set(HE_QAT_DOCS ${IPCL_DOCS})
   set(HE_QAT_SHARED ${IPCL_SHARED})
   set(HE_QAT_TEST OFF)
