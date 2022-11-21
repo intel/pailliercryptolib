@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-ipcl::linuxCPUInfo ipcl::GetLinuxCPUInfo(void) {
+ipcl::linuxCPUInfo ipcl::getLinuxCPUInfoImpl(void) {
   ipcl::linuxCPUInfo info;
   ipcl::parseCPUInfo(info);
   return info;
