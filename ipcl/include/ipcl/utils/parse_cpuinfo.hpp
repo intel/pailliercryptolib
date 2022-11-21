@@ -40,6 +40,9 @@ typedef struct {
 static void parseCPUInfo(linuxCPUInfo& info) {
   std::ifstream cpuinfo;
   cpuinfo.exceptions(std::ifstream::badbit);
+  info.n_cores = 0;
+  info.n_processors = 0;
+  info.n_nodes = 0;
 
   try {
     cpuinfo.open("/proc/cpuinfo", std::ios::in);
@@ -67,7 +70,7 @@ static void parseCPUInfo(linuxCPUInfo& info) {
     throw std::runtime_error(log.str());
   }
 }
-linuxCPUInfo GetLinuxCPUInfo(void);
+linuxCPUInfo getLinuxCPUInfoImpl(void);
 
 }  // namespace ipcl
 
