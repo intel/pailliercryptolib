@@ -4,23 +4,23 @@
 include(ExternalProject)
 message(STATUS "Configuring ipp-crypto")
 
-if(IPCL_IPPCRYPTO_PATH)
+set(IPPCRYPTO_VERSION 11.4)
+set(IPPCRYPTO_GIT_LABEL ippcp_2021.6) #ippcp version 11.4
+
+if(CMAKE_PREFIX_PATH)
   if(IPCL_SHARED)
     set(IPPCP_SHARED ON)
   else()
     set(IPPCP_SHARED OFF)
   endif()
-
-  # ippcp version 11.4 - inline with ippcp_2021.6
-  find_package(ippcp 11.4 HINTS ${IPCL_IPPCRYPTO_PATH}/lib/cmake/ippcp)
+  find_package(ippcp ${IPPCRYPTO_VERSION})
 endif()
 
 if(ippcp_FOUND)
-  message(STATUS "IPP-Crypto Found - using pre-installed IPP-Crypto library")
+  message(STATUS "IPP-Crypto ${IPPCRYPTO_VERSION} found at ${ippcp_DIR}")
   get_target_property(IPPCRYPTO_INC_DIR IPPCP::ippcp INTERFACE_INCLUDE_DIRECTORIES)
   get_target_property(IPPCRYPTO_IMPORTED_LOCATION IPPCP::ippcp IMPORTED_LOCATION)
   get_filename_component(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_IMPORTED_LOCATION} DIRECTORY)
-
   install(
     DIRECTORY ${IPPCRYPTO_LIB_DIR}/
     DESTINATION "${IPCL_INSTALL_LIBDIR}/ippcrypto"
@@ -28,13 +28,12 @@ if(ippcp_FOUND)
   )
 
 else()
-  message(STATUS "IPP-Crypto NOT Found - building from source")
+  message(STATUS "IPP-Crypto NOT found - building from source")
 
   set(IPPCRYPTO_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_ipp-crypto)
   set(IPPCRYPTO_DESTDIR ${IPPCRYPTO_PREFIX}/ippcrypto_install)
   set(IPPCRYPTO_DEST_INCLUDE_DIR include/ippcrypto)
   set(IPPCRYPTO_GIT_REPO_URL https://github.com/intel/ipp-crypto.git)
-  set(IPPCRYPTO_GIT_LABEL ippcp_2021.6) #ippcp version 11.4
   set(IPPCRYPTO_SRC_DIR ${IPPCRYPTO_PREFIX}/src/ext_ipp-crypto/)
 
   set(IPPCRYPTO_CXX_FLAGS "${IPCL_FORWARD_CMAKE_ARGS} -DNONPIC_LIB:BOOL=off -DMERGED_BLD:BOOL=on")
