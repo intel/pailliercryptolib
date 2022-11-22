@@ -46,10 +46,7 @@ endif()
 if(CMAKE_PREFIX_PATH)
   message(STATUS "---- CMAKE_PREFIX_PATH is defined as ${CMAKE_PREFIX_PATH}")
 else()
-  set(CMAKE_PREFIX_PATH
-    $ENV{HOME}/intel
-    /opt/intel/ipp-crypto
-  )
+  set(CMAKE_PREFIX_PATH $ENV{HOME}/intel /opt/intel)
 endif()
 
 
