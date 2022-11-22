@@ -15,6 +15,14 @@
 #include <heqat/common.h>
 #endif
 
+#ifdef IPCL_USE_OMP
+#include <omp.h>
+#endif
+
+#include <atomic>
+#include <condition_variable>  // NOLINT
+#include <mutex>               // NOLINT
+
 #include "ipcl/utils/util.hpp"
 
 namespace ipcl {
@@ -64,6 +72,124 @@ bool isHybridOptimal() {
 }
 
 #ifdef IPCL_USE_QAT
+
+// []Multi thread] Multiple input QAT ModExp interface to offload computation to
+// QAT
+static std::vector<BigNumber> heQatBnModExp_MT(
+    const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
+    const std::vector<BigNumber>& modulus, unsigned int batch_size) {
+  int nbits = modulus.front().BitSize();
+  int length = BITSIZE_WORD(nbits) * 4;
+  nbits = 8 * length;
+
+  // Check if QAT Exec Env supports requested batch size
+  unsigned int worksize = base.size();
+
+  int thread_id = omp_get_thread_num();
+  unsigned int buffer_id = thread_id;
+
+  HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+
+  // TODO(fdiasmor): Try replace calloc by alloca to see impact on performance.
+  unsigned char* bn_base_data_[batch_size];
+  unsigned char* bn_exponent_data_[batch_size];
+  unsigned char* bn_modulus_data_[batch_size];
+  unsigned char* bn_remainder_data_[batch_size];
+
+  // Pre-allocate memory used to batch input data
+  for (int i = 0; i < batch_size; i++) {
+    bn_base_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+    bn_exponent_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+
+    bn_modulus_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+    bn_remainder_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+
+    ERROR_CHECK(
+        bn_base_data_[i] != nullptr && bn_exponent_data_[i] != nullptr &&
+            bn_modulus_data_[i] != nullptr && bn_remainder_data_[i] != nullptr,
+        "qatMultiBuffExp: alloc memory for error");
+  }  // End preparing input containers
+
+  // Container to hold total number of outputs to be returned
+  std::vector<BigNumber> remainder(worksize, 0);
+
+  // Secure one of the distributed outstanding buffers
+  status = acquire_bnModExp_buffer(&buffer_id);
+  if (HE_QAT_STATUS_SUCCESS != status) {
+    printf("Error: acquire_bnModExp_buffer()\n");
+    exit(1);
+  }
+
+  for (unsigned int i = 0; i < worksize; i++) {
+    memset(bn_base_data_[i], 0, length);
+    memset(bn_exponent_data_[i], 0, length);
+    memset(bn_modulus_data_[i], 0, length);
+    memset(bn_remainder_data_[i], 0, length);
+  }
+
+  for (unsigned int i = 0; i < worksize; i++) {
+    bool ret = false;
+    ret = BigNumber::toBin(bn_base_data_[i], length, base[i]);
+    if (!ret) {
+      printf("bn_base_data_: failed at bigNumberToBin()\n");
+      exit(1);
+    }
+    ret = BigNumber::toBin(bn_exponent_data_[i], length, exponent[i]);
+    if (!ret) {
+      printf("bn_exponent_data_: failed at bigNumberToBin()\n");
+      exit(1);
+    }
+
+    ret = BigNumber::toBin(bn_modulus_data_[i], length, modulus[i]);
+    if (!ret) {
+      printf("bn_modulus_data_: failed at bigNumberToBin()\n");
+      exit(1);
+    }
+  }
+
+  for (unsigned int i = 0; i < worksize; i++) {
+    // Assumes all inputs and the output have the same length
+    status =
+        HE_QAT_bnModExp_MT(buffer_id, bn_remainder_data_[i], bn_base_data_[i],
+                           bn_exponent_data_[i], bn_modulus_data_[i], nbits);
+
+    if (HE_QAT_STATUS_SUCCESS != status) {
+      HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+    }
+  }
+
+  release_bnModExp_buffer(buffer_id, worksize);
+
+  for (unsigned int i = 0; i < worksize; i++) {
+    unsigned char* bn_remainder_ = bn_remainder_data_[i];
+    bool ret = BigNumber::fromBin(remainder[i], bn_remainder_, length);
+    if (!ret) {
+      printf("residue bn_remainder_data_: failed at BigNumber::fromBin()\n");
+      exit(1);
+    }
+  }
+
+  for (unsigned int i = 0; i < batch_size; i++) {
+    free(bn_base_data_[i]);
+    bn_base_data_[i] = NULL;
+    free(bn_exponent_data_[i]);
+    bn_exponent_data_[i] = NULL;
+    free(bn_modulus_data_[i]);
+    bn_modulus_data_[i] = NULL;
+  }
+
+  for (unsigned int i = 0; i < batch_size; i++) {
+    free(bn_remainder_data_[i]);
+    bn_remainder_data_[i] = NULL;
+  }
+
+  return remainder;
+}
+
 // Multiple input QAT ModExp interface to offload computation to QAT
 static std::vector<BigNumber> heQatBnModExp(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
@@ -465,7 +591,9 @@ std::vector<BigNumber> qatModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& exp,
                                  const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
-  return heQatBnModExp(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
+  std::size_t v_size = base.size();
+  // return heQatBnModExp_MT(base, exp, mod, v_size);
+  return heQatBnModExp(base, exp, mod, v_size);
 #else
   ERROR_CHECK(false, "qatModExp: Need to turn on IPCL_ENABLE_QAT");
 #endif  // IPCL_USE_QAT
@@ -562,51 +690,117 @@ std::vector<BigNumber> modExp(const std::vector<BigNumber>& base,
 #if !defined(IPCL_USE_OMP)
   return qatModExp(base, exp, mod);
 #else
-  ERROR_CHECK(g_hybrid_params.ratio >= 0.0 && g_hybrid_params.ratio <= 1.0,
-              "modExp: hybrid modexp qat ratio is incorrect");
+  // hybrid mode
   std::size_t v_size = base.size();
-  std::size_t hybrid_qat_size =
-      static_cast<std::size_t>(g_hybrid_params.ratio * v_size);
+  std::vector<BigNumber> res(v_size);
+  // std::atomic<bool> done(false);
+  bool done = false;
+  std::size_t ipp_batch_size = OMPUtilities::MaxThreads * 8;
+  std::size_t qat_batch_size = 128;
 
-  if (hybrid_qat_size == v_size) {
-    // use QAT only
-    return qatModExp(base, exp, mod);
-  } else if (hybrid_qat_size == 0) {
-    // use IPP only
-    return ippModExp(base, exp, mod);
-  } else {
-    // use QAT & IPP together
-    std::vector<BigNumber> res(v_size);
+  std::vector<BigNumber> ipp_base, ipp_exp, ipp_mod, qat_base, qat_exp, qat_mod;
+  int offset = 0;
+  int ipp_start = 0;
+  int qat_start = 0;
 
-    auto qat_base_start = base.begin();
-    auto qat_base_end = qat_base_start + hybrid_qat_size;
+  std::mutex mu;
+  std::condition_variable cv;
+  // sub thread for qatModExp
+  std::thread qat_thread([&] {
+    while (!done) {
+      std::unique_lock<std::mutex> lock(mu);
+      cv.wait(lock, [&]() { return !qat_mod.empty() || done; });
+      lock.unlock();
 
-    auto qat_exp_start = exp.begin();
-    auto qat_exp_end = qat_exp_start + hybrid_qat_size;
+      if (!qat_mod.empty()) {
+        auto qat_res = qatModExp(qat_base, qat_exp, qat_mod);
+        std::copy(qat_res.begin(), qat_res.end(), res.begin() + qat_start);
 
-    auto qat_mod_start = mod.begin();
-    auto qat_mod_end = qat_mod_start + hybrid_qat_size;
+        qat_base.clear();
+        qat_exp.clear();
+        qat_mod.clear();
+      }
+      cv.notify_all();
+    }
+  });
 
-    auto qat_base = std::vector<BigNumber>(qat_base_start, qat_base_end);
-    auto qat_exp = std::vector<BigNumber>(qat_exp_start, qat_exp_end);
-    auto qat_mod = std::vector<BigNumber>(qat_mod_start, qat_mod_end);
+  // sub thread for ippModExp
+  std::thread ipp_thread([&] {
+    while (!done) {
+      std::unique_lock<std::mutex> lock(mu);
+      cv.wait(lock, [&]() { return !ipp_mod.empty() || done; });
+      lock.unlock();
 
-    auto ipp_base = std::vector<BigNumber>(qat_base_end, base.end());
-    auto ipp_exp = std::vector<BigNumber>(qat_exp_end, exp.end());
-    auto ipp_mod = std::vector<BigNumber>(qat_mod_end, mod.end());
+      if (!ipp_mod.empty()) {
+        auto ipp_res = ippModExp(ipp_base, ipp_exp, ipp_mod);
+        std::copy(ipp_res.begin(), ipp_res.end(), res.begin() + ipp_start);
 
-    std::vector<BigNumber> qat_res, ipp_res;
-    std::thread qat_thread([&] {
-      qat_res = qatModExp(qat_base, qat_exp, qat_mod);
-      std::copy(qat_res.begin(), qat_res.end(), res.begin());
-    });
+        ipp_base.clear();
+        ipp_exp.clear();
+        ipp_mod.clear();
+      }
+      cv.notify_all();
+    }
+  });
 
-    ipp_res = ippModExp(ipp_base, ipp_exp, ipp_mod);
-    std::copy(ipp_res.begin(), ipp_res.end(), res.begin() + hybrid_qat_size);
+  // input data producer
+  while (offset < v_size) {
+    // If ipp & qat thread are busy
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&]() { return ipp_mod.empty() || qat_mod.empty(); });
+    lock.unlock();
 
-    qat_thread.join();
-    return res;
-  }
+    // If qat thread is waiting for input data
+    // copy data into qat buffer
+    if (qat_mod.empty()) {
+      std::unique_lock<std::mutex> lock(mu);
+      qat_start = offset;
+      offset += qat_batch_size;
+
+      int qat_end = qat_start + qat_batch_size;
+      if ((qat_start + qat_batch_size) >= (v_size)) qat_end = v_size;
+
+      qat_base = std::vector<BigNumber>(base.begin() + qat_start,
+                                        base.begin() + qat_end);
+      qat_exp = std::vector<BigNumber>(exp.begin() + qat_start,
+                                       exp.begin() + qat_end);
+      qat_mod = std::vector<BigNumber>(mod.begin() + qat_start,
+                                       mod.begin() + qat_end);
+
+      lock.unlock();
+      cv.notify_all();
+    }  // qat empty
+
+    if (offset >= v_size) break;
+
+    // If ipp thread is waiting for input data,
+    // copy data into ipp buffer
+    if (ipp_mod.empty()) {
+      std::unique_lock<std::mutex> lock(mu);
+      ipp_start = offset;
+      offset += ipp_batch_size;
+
+      int ipp_end = ipp_start + ipp_batch_size;
+      if ((ipp_start + ipp_batch_size) >= (v_size)) ipp_end = v_size;
+
+      ipp_base = std::vector<BigNumber>(base.begin() + ipp_start,
+                                        base.begin() + ipp_end);
+      ipp_exp = std::vector<BigNumber>(exp.begin() + ipp_start,
+                                       exp.begin() + ipp_end);
+      ipp_mod = std::vector<BigNumber>(mod.begin() + ipp_start,
+                                       mod.begin() + ipp_end);
+
+      lock.unlock();
+      cv.notify_all();
+    }  // ipp empty
+  }    // while
+
+  done = true;
+  cv.notify_all();
+
+  qat_thread.join();
+  ipp_thread.join();
+  return res;
 #endif  // IPCL_USE_OMP
 #else
   return ippModExp(base, exp, mod);

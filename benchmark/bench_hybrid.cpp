@@ -7,9 +7,9 @@
 
 #include "ipcl/ipcl.hpp"
 
-#define BENCH_HYBRID_DETAIL 1
+#define BENCH_HYBRID_DETAIL 0
 
-#define INPUT_BN_NUM_MAX 256
+#define INPUT_BN_NUM_MAX 2048
 #define INPUT_BN_NUM_MIN 16
 #define INPUT_BN_NUM_GROWTH_RATE 2
 
@@ -78,10 +78,10 @@ static void customArgs(benchmark::internal::Benchmark* b) {
 }
 
 static void BM_Hybrid_ModExp(benchmark::State& state) {
-  ipcl::setHybridOff();
+  // ipcl::setHybridOff();
 
   int64_t dsize = state.range(0);
-  float qat_ratio = state.range(1) * 0.01;  // scale it back
+  // float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -104,12 +104,13 @@ static void BM_Hybrid_ModExp(benchmark::State& state) {
 
   ipcl::CipherText ct = pub_key->encrypt(pt);
   std::vector<BigNumber> res(dsize);
-
-#if BENCH_HYBRID_DETAIL
-  ipcl::setHybridRatio(qat_ratio);
-#else
-  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
-#endif
+  /*
+  #if BENCH_HYBRID_DETAIL
+    ipcl::setHybridRatio(qat_ratio);
+  #else
+    ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  #endif
+  */
 
   for (auto _ : state) res = ipcl::modExp(ct.getTexts(), pow, m);  // decryptRAW
 
@@ -121,10 +122,10 @@ BENCHMARK(BM_Hybrid_ModExp)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_Encrypt(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_ModExp)
-  ipcl::setHybridOff();
+  // ipcl::setHybridOff();
 
   int64_t dsize = state.range(0);
-  float qat_ratio = state.range(1) * 0.01;  // scale it back
+  // float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -141,12 +142,13 @@ static void BM_Hybrid_Encrypt(benchmark::State& state) {
   ipcl::PlainText pt(exp_bn_v);
   ipcl::CipherText ct;
 
-#if BENCH_HYBRID_DETAIL
-  ipcl::setHybridRatio(qat_ratio);
-#else
-  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
-#endif
-
+  /*
+  #if BENCH_HYBRID_DETAIL
+    ipcl::setHybridRatio(qat_ratio);
+  #else
+    ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  #endif
+  */
   for (auto _ : state) ct = pub_key->encrypt(pt);
 
   delete pub_key;
@@ -157,10 +159,10 @@ BENCHMARK(BM_Hybrid_Encrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_Decrypt(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_Encrypt)
-  ipcl::setHybridOff();
+  // ipcl::setHybridOff();
 
   int64_t dsize = state.range(0);
-  float qat_ratio = state.range(1) * 0.01;  // scale it back
+  // float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -177,12 +179,13 @@ static void BM_Hybrid_Decrypt(benchmark::State& state) {
 
   ipcl::PlainText pt(exp_bn_v), dt;
   ipcl::CipherText ct = pub_key->encrypt(pt);
-
-#if BENCH_HYBRID_DETAIL
-  ipcl::setHybridRatio(qat_ratio);
-#else
-  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
-#endif
+  /*
+  #if BENCH_HYBRID_DETAIL
+    ipcl::setHybridRatio(qat_ratio);
+  #else
+    ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  #endif
+  */
 
   for (auto _ : state) dt = priv_key->decrypt(ct);
 
@@ -194,10 +197,10 @@ BENCHMARK(BM_Hybrid_Decrypt)->Unit(benchmark::kMicrosecond)->Apply(customArgs);
 static void BM_Hybrid_MulCTPT(benchmark::State& state) {
   // need to reset, otherwise will be affected by the previous benchmark
   // (i.e. BM_Hybrid_Decrypt)
-  ipcl::setHybridOff();
+  // ipcl::setHybridOff();
 
   int64_t dsize = state.range(0);
-  float qat_ratio = state.range(1) * 0.01;  // scale it back
+  // float qat_ratio = state.range(1) * 0.01;  // scale it back
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
@@ -219,12 +222,13 @@ static void BM_Hybrid_MulCTPT(benchmark::State& state) {
 
   ipcl::CipherText ct1 = pub_key->encrypt(pt1);
   ipcl::CipherText product;
-
-#if BENCH_HYBRID_DETAIL
-  ipcl::setHybridRatio(qat_ratio);
-#else
-  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
-#endif
+  /*
+  #if BENCH_HYBRID_DETAIL
+    ipcl::setHybridRatio(qat_ratio);
+  #else
+    ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  #endif
+  */
 
   for (auto _ : state) product = ct1 * pt2;
 
