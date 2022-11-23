@@ -15,7 +15,7 @@ TEST(CryptoTest, CryptoTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
+  ipcl::KeyPair keys = ipcl::generateKeypair(2048, true);
 
   std::vector<uint32_t> exp_value(num_values);
   ipcl::PlainText pt;
@@ -34,16 +34,13 @@ TEST(CryptoTest, CryptoTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct = key.pub_key->encrypt(pt);
-  dt = key.priv_key->decrypt(ct);
+  ct = keys.pk.encrypt(pt);
+  dt = keys.sk.decrypt(ct);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt.getElementVec(i);
     EXPECT_EQ(v[0], exp_value[i]);
   }
-
-  delete key.pub_key;
-  delete key.priv_key;
 }
 
 TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
@@ -65,10 +62,10 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   BigNumber n = p * q;
   int n_length = n.BitSize();
 
-  ipcl::PublicKey* public_key = new ipcl::PublicKey(n, n_length);
-  ipcl::PrivateKey* private_key = new ipcl::PrivateKey(public_key, p, q);
+  ipcl::PublicKey pk(n, n_length);
+  ipcl::PrivateKey sk(&pk, p, q);
 
-  ipcl::keyPair key = {public_key, private_key};
+  ipcl::KeyPair keys = {pk, sk};
 
   std::vector<BigNumber> pt_bn_v(num_values);
   std::vector<BigNumber> ir_bn_v(num_values);
@@ -157,13 +154,13 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
 
   ipcl::setHybridOff();
 
-  key.pub_key->setRandom(ir_bn_v);
+  keys.pk.setRandom(ir_bn_v);
 
   pt = ipcl::PlainText(pt_bn_v);
-  ct = key.pub_key->encrypt(pt);
+  ct = keys.pk.encrypt(pt);
 
   ipcl::PlainText dt;
-  dt = key.priv_key->decrypt(ct);
+  dt = keys.sk.decrypt(ct);
   for (int i = 0; i < num_values; i++) {
     EXPECT_EQ(dt.getElement(i), pt_bn_v[i]);
   }
@@ -174,8 +171,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   c2.num2hex(str2);
   EXPECT_EQ(str2, ct.getElementHex(1));
 
-  ipcl::CipherText a(key.pub_key, ct.getElement(0));
-  ipcl::CipherText b(key.pub_key, ct.getElement(1));
+  ipcl::CipherText a(&(keys.pk), ct.getElement(0));
+  ipcl::CipherText b(&(keys.pk), ct.getElement(1));
   ipcl::CipherText sum = a + b;
 
   std::string str3;
@@ -185,10 +182,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   std::string str4;
   ipcl::PlainText dt_sum;
 
-  dt_sum = key.priv_key->decrypt(sum);
+  dt_sum = keys.sk.decrypt(sum);
   m1m2.num2hex(str4);
   EXPECT_EQ(str4, dt_sum.getElementHex(0));
-
-  delete key.pub_key;
-  delete key.priv_key;
 }
