@@ -10,12 +10,12 @@ namespace ipcl {
 
 /**
  * Paillier key structure contains a public key and private key
- * pub_key: paillier public key
- * priv_key: paillier private key
+ * pk: paillier public key
+ * sk: paillier private key
  */
-struct keyPair {
-  PublicKey* pub_key;
-  PrivateKey* priv_key;
+struct KeyPair {
+  PublicKey pk;
+  PrivateKey sk;
 };
 
 /**
@@ -31,7 +31,7 @@ BigNumber getPrimeBN(int maxBitSize);
  * @param[in] enable_DJN Enable DJN (default=true)
  * @return The function return the public and private key pair
  */
-keyPair generateKeypair(int64_t n_length, bool enable_DJN = true);
+KeyPair generateKeypair(int64_t n_length, bool enable_DJN = true);
 
 }  // namespace ipcl
 #endif  // IPCL_INCLUDE_IPCL_KEYGEN_HPP_
