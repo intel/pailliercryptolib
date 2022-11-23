@@ -21,7 +21,7 @@ int main() {
 
   const uint32_t num_total = 20;
 
-  ipcl::keyPair key = ipcl::generateKeypair(2048, true);
+  ipcl::KeyPair keys = ipcl::generateKeypair(2048, true);
 
   std::vector<uint32_t> exp_value(num_total);
 
@@ -37,8 +37,8 @@ int main() {
 
   ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
 
-  ipcl::CipherText ct = key.pub_key->encrypt(pt);
-  ipcl::PlainText dt = key.priv_key->decrypt(ct);
+  ipcl::CipherText ct = keys.pk.encrypt(pt);
+  ipcl::PlainText dt = keys.sk.decrypt(ct);
 
   ipcl::setHybridOff();
 
@@ -54,8 +54,6 @@ int main() {
   std::cout << "Test pt == dec(enc(pt)) -- " << (verify ? "pass" : "fail")
             << std::endl;
 
-  delete key.pub_key;
-  delete key.priv_key;
   ipcl::terminateContext();
   std::cout << "Complete!" << std::endl << std::endl;
 }
