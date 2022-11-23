@@ -4,6 +4,8 @@
 #ifndef IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
 #define IPCL_INCLUDE_IPCL_PRI_KEY_HPP_
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "ipcl/ciphertext.hpp"
@@ -13,6 +15,9 @@ namespace ipcl {
 
 class PrivateKey {
  public:
+  PrivateKey() = default;
+  ~PrivateKey() = default;
+
   /**
    * PrivateKey constructor
    * @param[in] public_key paillier public key
@@ -40,27 +45,17 @@ class PrivateKey {
   /**
    * Get N of public key in paillier scheme
    */
-  BigNumber getN() const { return m_n; }
+  std::shared_ptr<BigNumber> getN() const { return m_n; }
 
   /**
    * Get p of private key in paillier scheme
    */
-  BigNumber getP() const { return m_p; }
+  std::shared_ptr<BigNumber> getP() const { return m_p; }
 
   /**
    * Get q of private key in paillier scheme
    */
-  BigNumber getQ() const { return m_q; }
-
-  /**
-   * Get bits of key
-   */
-  int getBits() const { return m_bits; }
-
-  /**
-   * Get public key
-   */
-  const PublicKey* getPubKey() const { return m_pubkey; }
+  std::shared_ptr<BigNumber> getQ() const { return m_q; }
 
   /**
    * @brief Support function for ISO/IEC 18033-6 compliance check
@@ -69,13 +64,21 @@ class PrivateKey {
    */
   BigNumber getLambda() const { return m_lambda; }
 
+  /**
+   * Check whether priv key is initialized
+   */
+  bool isInitialized() { return m_isInitialized; }
+
  private:
-  const PublicKey* m_pubkey;
-  BigNumber m_n;
-  BigNumber m_nsquare;
-  BigNumber m_g;
-  BigNumber m_p;
-  BigNumber m_q;
+  bool m_isInitialized = false;
+  bool m_enable_crt = false;
+
+  std::shared_ptr<BigNumber> m_n;
+  std::shared_ptr<BigNumber> m_nsquare;
+  std::shared_ptr<BigNumber> m_g;
+  std::shared_ptr<BigNumber> m_p;
+  std::shared_ptr<BigNumber> m_q;
+
   BigNumber m_pminusone;
   BigNumber m_qminusone;
   BigNumber m_psquare;
@@ -85,9 +88,6 @@ class PrivateKey {
   BigNumber m_hq;
   BigNumber m_lambda;
   BigNumber m_x;
-  int m_bits;
-  int m_dwords;
-  bool m_enable_crt;
 
   /**
    * Compute L function in paillier scheme

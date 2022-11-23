@@ -38,7 +38,7 @@ CipherText CipherText::operator+(const CipherText& other) const {
   std::size_t b_size = other.getSize();
   ERROR_CHECK(this->m_size == b_size || b_size == 1,
               "CT + CT error: Size mismatch!");
-  ERROR_CHECK(m_pubkey->getN() == other.m_pubkey->getN(),
+  ERROR_CHECK(*(m_pubkey->getN()) == *(other.m_pubkey->getN()),
               "CT + CT error: 2 different public keys detected!");
 
   const auto& a = *this;
@@ -136,19 +136,21 @@ CipherText CipherText::rotate(int shift) const {
 
 BigNumber CipherText::raw_add(const BigNumber& a, const BigNumber& b) const {
   // Hold a copy of nsquare for multi-threaded
-  const BigNumber& sq = m_pubkey->getNSQ();
+  // The BigNumber % operator is not thread safe
+  // const BigNumber& sq = *(m_pubkey->getNSQ());
+  const BigNumber sq = *(m_pubkey->getNSQ());
   return a * b % sq;
 }
 
 BigNumber CipherText::raw_mul(const BigNumber& a, const BigNumber& b) const {
-  const BigNumber& sq = m_pubkey->getNSQ();
+  const BigNumber& sq = *(m_pubkey->getNSQ());
   return modExp(a, b, sq);
 }
 
 std::vector<BigNumber> CipherText::raw_mul(
     const std::vector<BigNumber>& a, const std::vector<BigNumber>& b) const {
   std::size_t v_size = a.size();
-  std::vector<BigNumber> sq(v_size, m_pubkey->getNSQ());
+  std::vector<BigNumber> sq(v_size, *(m_pubkey->getNSQ()));
 
   // If hybrid OPTIMAL mode is used, use a special ratio
   if (isHybridOptimal()) {
