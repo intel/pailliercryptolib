@@ -4,6 +4,7 @@
 #ifndef IPCL_INCLUDE_IPCL_CIPHERTEXT_HPP_
 #define IPCL_INCLUDE_IPCL_CIPHERTEXT_HPP_
 
+#include <memory>
 #include <vector>
 
 #include "ipcl/plaintext.hpp"
@@ -20,10 +21,10 @@ class CipherText : public BaseText {
   /**
    * CipherText constructors
    */
-  CipherText(const PublicKey* pub_key, const uint32_t& n);
-  CipherText(const PublicKey* pub_key, const std::vector<uint32_t>& n_v);
-  CipherText(const PublicKey* pub_key, const BigNumber& bn);
-  CipherText(const PublicKey* pub_key, const std::vector<BigNumber>& bn_vec);
+  CipherText(const PublicKey& pk, const uint32_t& n);
+  CipherText(const PublicKey& pk, const std::vector<uint32_t>& n_v);
+  CipherText(const PublicKey& pk, const BigNumber& bn);
+  CipherText(const PublicKey& pk, const std::vector<BigNumber>& bn_vec);
 
   /**
    * CipherText copy constructor
@@ -49,7 +50,7 @@ class CipherText : public BaseText {
   /**
    * Get public key
    */
-  const PublicKey* getPubKey() const;
+  std::shared_ptr<PublicKey> getPubKey() const;
 
   /**
    * Rotate CipherText
@@ -63,7 +64,7 @@ class CipherText : public BaseText {
   std::vector<BigNumber> raw_mul(const std::vector<BigNumber>& a,
                                  const std::vector<BigNumber>& b) const;
 
-  const PublicKey* m_pubkey;  ///< Public key used to encrypt big number
+  std::shared_ptr<PublicKey> m_pk;  ///< Public key used to encrypt big number
 };
 
 }  // namespace ipcl

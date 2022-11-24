@@ -22,11 +22,11 @@ static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
   return p * q / gcd;
 }
 
-PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
+PrivateKey::PrivateKey(const PublicKey& pk, const BigNumber& p,
                        const BigNumber& q)
-    : m_n(public_key->getN()),
-      m_nsquare(public_key->getNSQ()),
-      m_g(public_key->getG()),
+    : m_n(pk.getN()),
+      m_nsquare(pk.getNSQ()),
+      m_g(pk.getG()),
       m_enable_crt(true),
       m_p((q < p) ? std::make_shared<BigNumber>(q)
                   : std::make_shared<BigNumber>(p)),

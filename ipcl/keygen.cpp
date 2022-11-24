@@ -105,7 +105,7 @@ KeyPair generateKeypair(int64_t n_length, bool enable_DJN) {
     getNormalBN(n_length, p, q, n, ref_dist);
 
   PublicKey pk(n, n_length, enable_DJN);
-  PrivateKey sk(&pk, p, q);
+  PrivateKey sk(pk, p, q);
 
   return KeyPair{pk, sk};
 }

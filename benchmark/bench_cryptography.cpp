@@ -76,7 +76,7 @@ static void BM_Encrypt(benchmark::State& state) {
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
   ipcl::PublicKey pk(n, n_length, Enable_DJN);
-  ipcl::PrivateKey sk(&pk, P_BN, Q_BN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
   pk.setRandom(r_bn_v);
@@ -101,7 +101,7 @@ static void BM_Decrypt(benchmark::State& state) {
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
   ipcl::PublicKey pk(n, n_length, Enable_DJN);
-  ipcl::PrivateKey sk(&pk, P_BN, Q_BN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
   pk.setRandom(r_bn_v);

@@ -63,7 +63,7 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   int n_length = n.BitSize();
 
   ipcl::PublicKey pk(n, n_length);
-  ipcl::PrivateKey sk(&pk, p, q);
+  ipcl::PrivateKey sk(pk, p, q);
 
   ipcl::KeyPair keys = {pk, sk};
 
@@ -171,8 +171,8 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   c2.num2hex(str2);
   EXPECT_EQ(str2, ct.getElementHex(1));
 
-  ipcl::CipherText a(&(keys.pk), ct.getElement(0));
-  ipcl::CipherText b(&(keys.pk), ct.getElement(1));
+  ipcl::CipherText a(keys.pk, ct.getElement(0));
+  ipcl::CipherText b(keys.pk, ct.getElement(1));
   ipcl::CipherText sum = a + b;
 
   std::string str3;

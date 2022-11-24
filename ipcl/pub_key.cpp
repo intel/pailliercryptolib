@@ -126,7 +126,7 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   }
 
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
-  return CipherText(this, ct_bn_v);
+  return CipherText(*this, ct_bn_v);
 }
 
 void PublicKey::setDJN(const BigNumber& hs, int randbit) {

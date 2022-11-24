@@ -17,12 +17,12 @@ void CtPlusCt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
-    ipcl::CipherText b(&(keys.pk), ct2.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText b(keys.pk, ct2.getElement(i));
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), sum_bn_v);
+  res = ipcl::CipherText(keys.pk, sum_bn_v);
 }
 
 void CtPlusCtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -36,12 +36,12 @@ void CtPlusPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), sum_bn_v);
+  res = ipcl::CipherText(keys.pk, sum_bn_v);
 }
 
 void CtPlusPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -55,12 +55,12 @@ void CtMultiplyPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
   std::vector<BigNumber> product_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText product = a * b;
     product_bn_v[i] = product.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), product_bn_v);
+  res = ipcl::CipherText(keys.pk, product_bn_v);
 }
 
 void CtMultiplyPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -74,15 +74,15 @@ void AddSub(ipcl::CipherText& res, const ipcl::CipherText& ct1,
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
-    ipcl::CipherText b(&(keys.pk), ct2.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText b(keys.pk, ct2.getElement(i));
     ipcl::PlainText m1(2);
 
     a = a + b * m1;
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), sum_bn_v);
+  res = ipcl::CipherText(keys.pk, sum_bn_v);
 }
 
 void PtPlusCt(ipcl::CipherText& res, const ipcl::PlainText& pt2,
@@ -91,12 +91,12 @@ void PtPlusCt(ipcl::CipherText& res, const ipcl::PlainText& pt2,
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText sum = b + a;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), sum_bn_v);
+  res = ipcl::CipherText(keys.pk, sum_bn_v);
 }
 
 void PtPlusCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
@@ -110,12 +110,12 @@ void PtMultiplyCt(ipcl::CipherText& res, const ipcl::PlainText& pt2,
   std::vector<BigNumber> product_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(&(keys.pk), ct1.getElement(i));
+    ipcl::CipherText a(keys.pk, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText product = b * a;
     product_bn_v[i] = product.getElement(0);
   }
-  res = ipcl::CipherText(&(keys.pk), product_bn_v);
+  res = ipcl::CipherText(keys.pk, product_bn_v);
 }
 
 void PtMultiplyCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
