@@ -43,6 +43,11 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/intel/ipcl")
 endif()
 
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH $ENV{HOME}/intel /opt/intel)
+endif()
+
+
 set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
 set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
 set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/${CMAKE_INSTALL_LIBDIR};$ORIGIN/ippcrypto")
@@ -70,7 +75,6 @@ option(IPCL_DOCS "Enable document building" OFF)
 option(IPCL_SHARED "Build shared library" ON)
 option(IPCL_DETECT_CPU_RUNTIME "Detect CPU supported instructions during runtime" OFF)
 option(IPCL_INTERNAL_PYTHON_BUILD "Additional steps for IPCL_Python build" OFF)
-option(IPCL_IPPCRYPTO_PATH "Use pre-installed IPP-Crypto library" OFF)
 
 # Used only for ipcl_python IPCL_INTERNAL_PYTHON_BUILD - additional check if invalid parameters
 if(IPCL_INTERNAL_PYTHON_BUILD)
@@ -148,6 +152,7 @@ message(STATUS "CMAKE_BUILD_TYPE:           ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_C_COMPILER:           ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_CXX_COMPILER:         ${CMAKE_CXX_COMPILER}")
 message(STATUS "CMAKE_INSTALL_PREFIX:       ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "CMAKE_PREFIX_PATH:          ${CMAKE_PREFIX_PATH}")
 message(STATUS "IPCL_TEST:                  ${IPCL_TEST}")
 message(STATUS "IPCL_BENCHMARK:             ${IPCL_BENCHMARK}")
 message(STATUS "IPCL_ENABLE_OMP:            ${IPCL_ENABLE_OMP}")
