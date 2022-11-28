@@ -12,17 +12,17 @@ constexpr int SELF_DEF_NUM_VALUES = 14;
 constexpr float SELF_DEF_HYBRID_QAT_RATIO = 0.5;
 
 void CtPlusCt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
-              const ipcl::CipherText& ct2, const ipcl::KeyPair keys) {
+              const ipcl::CipherText& ct2, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
-    ipcl::CipherText b(keys.pk, ct2.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::CipherText b(key.pub_key, ct2.getElement(i));
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, sum_bn_v);
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
 void CtPlusCtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -31,17 +31,17 @@ void CtPlusCtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
 }
 
 void CtPlusPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
-              const ipcl::PlainText& pt2, const ipcl::KeyPair keys) {
+              const ipcl::PlainText& pt2, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, sum_bn_v);
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
 void CtPlusPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -50,17 +50,17 @@ void CtPlusPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
 }
 
 void CtMultiplyPt(ipcl::CipherText& res, const ipcl::CipherText& ct1,
-                  const ipcl::PlainText& pt2, const ipcl::KeyPair keys) {
+                  const ipcl::PlainText& pt2, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> product_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText product = a * b;
     product_bn_v[i] = product.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, product_bn_v);
+  res = ipcl::CipherText(key.pub_key, product_bn_v);
 }
 
 void CtMultiplyPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
@@ -69,34 +69,34 @@ void CtMultiplyPtArray(ipcl::CipherText& res, const ipcl::CipherText& ct1,
 }
 
 void AddSub(ipcl::CipherText& res, const ipcl::CipherText& ct1,
-            const ipcl::CipherText& ct2, const ipcl::KeyPair keys) {
+            const ipcl::CipherText& ct2, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
-    ipcl::CipherText b(keys.pk, ct2.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
+    ipcl::CipherText b(key.pub_key, ct2.getElement(i));
     ipcl::PlainText m1(2);
 
     a = a + b * m1;
     ipcl::CipherText sum = a + b;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, sum_bn_v);
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
 void PtPlusCt(ipcl::CipherText& res, const ipcl::PlainText& pt2,
-              const ipcl::CipherText& ct1, const ipcl::KeyPair keys) {
+              const ipcl::CipherText& ct1, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> sum_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText sum = b + a;
     sum_bn_v[i] = sum.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, sum_bn_v);
+  res = ipcl::CipherText(key.pub_key, sum_bn_v);
 }
 
 void PtPlusCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
@@ -105,17 +105,17 @@ void PtPlusCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
 }
 
 void PtMultiplyCt(ipcl::CipherText& res, const ipcl::PlainText& pt2,
-                  const ipcl::CipherText& ct1, const ipcl::KeyPair keys) {
+                  const ipcl::CipherText& ct1, const ipcl::KeyPair key) {
   int size = ct1.getSize();
   std::vector<BigNumber> product_bn_v(size);
 
   for (int i = 0; i < size; i++) {
-    ipcl::CipherText a(keys.pk, ct1.getElement(i));
+    ipcl::CipherText a(key.pub_key, ct1.getElement(i));
     ipcl::PlainText b(pt2.getElement(i));
     ipcl::CipherText product = b * a;
     product_bn_v[i] = product.getElement(0);
   }
-  res = ipcl::CipherText(keys.pk, product_bn_v);
+  res = ipcl::CipherText(key.pub_key, product_bn_v);
 }
 
 void PtMultiplyCtArray(ipcl::CipherText& res, const ipcl::PlainText& pt2,
@@ -127,7 +127,7 @@ TEST(OperationTest, CtPlusCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -146,12 +146,12 @@ TEST(OperationTest, CtPlusCtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
-  ct2 = keys.pk.encrypt(pt2);
+  ct1 = key.pub_key.encrypt(pt1);
+  ct2 = key.pub_key.encrypt(pt2);
 
-  CtPlusCt(ct_sum, ct1, ct2, keys);
+  CtPlusCt(ct_sum, ct1, ct2, key);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -168,7 +168,7 @@ TEST(OperationTest, CtPlusCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -187,12 +187,12 @@ TEST(OperationTest, CtPlusCtArrayTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
-  ct2 = keys.pk.encrypt(pt2);
+  ct1 = key.pub_key.encrypt(pt1);
+  ct2 = key.pub_key.encrypt(pt2);
 
   CtPlusCtArray(ct_sum, ct1, ct2);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -209,7 +209,7 @@ TEST(OperationTest, CtPlusPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -228,11 +228,11 @@ TEST(OperationTest, CtPlusPtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
-  CtPlusPt(ct_sum, ct1, pt2, keys);
+  CtPlusPt(ct_sum, ct1, pt2, key);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -249,7 +249,7 @@ TEST(OperationTest, CtPlusPtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -268,11 +268,11 @@ TEST(OperationTest, CtPlusPtArrayTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
   CtPlusPtArray(ct_sum, ct1, pt2);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -289,7 +289,7 @@ TEST(OperationTest, CtMultiplyPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_product;
@@ -308,11 +308,11 @@ TEST(OperationTest, CtMultiplyPtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
-  CtMultiplyPt(ct_product, ct1, pt2, keys);
+  CtMultiplyPt(ct_product, ct1, pt2, key);
 
-  dt_product = keys.sk.decrypt(ct_product);
+  dt_product = key.priv_key.decrypt(ct_product);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_product.getElementVec(i);
@@ -329,7 +329,7 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_product;
@@ -349,11 +349,11 @@ TEST(OperationTest, CtMultiplyZeroPtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
-  CtMultiplyPt(ct_product, ct1, pt2, keys);
+  CtMultiplyPt(ct_product, ct1, pt2, key);
 
-  dt_product = keys.sk.decrypt(ct_product);
+  dt_product = key.priv_key.decrypt(ct_product);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_product.getElementVec(i);
@@ -370,7 +370,7 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_product;
@@ -389,11 +389,11 @@ TEST(OperationTest, CtMultiplyPtArrayTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
   CtMultiplyPtArray(ct_product, ct1, pt2);
 
-  dt_product = keys.sk.decrypt(ct_product);
+  dt_product = key.priv_key.decrypt(ct_product);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_product.getElementVec(i);
@@ -410,7 +410,7 @@ TEST(OperationTest, AddSubTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -429,12 +429,12 @@ TEST(OperationTest, AddSubTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
-  ct2 = keys.pk.encrypt(pt2);
+  ct1 = key.pub_key.encrypt(pt1);
+  ct2 = key.pub_key.encrypt(pt2);
 
-  AddSub(ct_sum, ct1, ct2, keys);
+  AddSub(ct_sum, ct1, ct2, key);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -451,7 +451,7 @@ TEST(OperationTest, PtPlusCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -470,11 +470,11 @@ TEST(OperationTest, PtPlusCtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
-  PtPlusCt(ct_sum, pt2, ct1, keys);
+  PtPlusCt(ct_sum, pt2, ct1, key);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -491,7 +491,7 @@ TEST(OperationTest, PtPlusCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_sum;
@@ -510,11 +510,11 @@ TEST(OperationTest, PtPlusCtArrayTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
   PtPlusCtArray(ct_sum, pt2, ct1);
 
-  dt_sum = keys.sk.decrypt(ct_sum);
+  dt_sum = key.priv_key.decrypt(ct_sum);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_sum.getElementVec(i);
@@ -531,7 +531,7 @@ TEST(OperationTest, PtMultiplyCtTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_product;
@@ -550,11 +550,11 @@ TEST(OperationTest, PtMultiplyCtTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
-  PtMultiplyCt(ct_product, pt2, ct1, keys);
+  PtMultiplyCt(ct_product, pt2, ct1, key);
 
-  dt_product = keys.sk.decrypt(ct_product);
+  dt_product = key.priv_key.decrypt(ct_product);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_product.getElementVec(i);
@@ -571,7 +571,7 @@ TEST(OperationTest, PtMultiplyCtArrayTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048);
 
   std::vector<uint32_t> exp_value1(num_values), exp_value2(num_values);
   ipcl::PlainText pt1, pt2, dt_product;
@@ -590,11 +590,11 @@ TEST(OperationTest, PtMultiplyCtArrayTest) {
 
   ipcl::setHybridRatio(qat_ratio);
 
-  ct1 = keys.pk.encrypt(pt1);
+  ct1 = key.pub_key.encrypt(pt1);
 
   PtMultiplyCtArray(ct_product, pt2, ct1);
 
-  dt_product = keys.sk.decrypt(ct_product);
+  dt_product = key.priv_key.decrypt(ct_product);
 
   for (int i = 0; i < num_values; i++) {
     std::vector<uint32_t> v = dt_product.getElementVec(i);

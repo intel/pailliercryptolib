@@ -17,8 +17,8 @@ namespace ipcl {
  * sk: paillier private key
  */
 struct KeyPair {
-  PublicKey pk;
-  PrivateKey sk;
+  PublicKey pub_key;
+  PrivateKey priv_key;
 };
 
 /**

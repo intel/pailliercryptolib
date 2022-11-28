@@ -30,7 +30,7 @@ int main() {
 
   const uint32_t num_total = 64;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048, true);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048, true);
 
   std::vector<BigNumber> exp_value(num_total);
 
@@ -56,12 +56,12 @@ int main() {
   // Encrypt/Decrypt - IPP-Crypto only mode
   ipcl::setHybridMode(ipcl::HybridMode::IPP);
   tStart(t);
-  ipcl::CipherText ct = keys.pk.encrypt(pt);
+  ipcl::CipherText ct = key.pub_key.encrypt(pt);
   elapsed = tEnd(t);
   std::cout << " Encrypt - HybridMode::IPP     = " << elapsed << "ms"
             << std::endl;
   tStart(t);
-  ipcl::PlainText dt = keys.sk.decrypt(ct);
+  ipcl::PlainText dt = key.priv_key.decrypt(ct);
   elapsed = tEnd(t);
   std::cout << " Decrypt - HybridMode::IPP     = " << elapsed << "ms"
             << std::endl
@@ -70,12 +70,12 @@ int main() {
   // Encrypt/Decrypt - QAT only mode
   ipcl::setHybridMode(ipcl::HybridMode::QAT);
   tStart(t);
-  ct = keys.pk.encrypt(pt);
+  ct = key.pub_key.encrypt(pt);
   elapsed = tEnd(t);
   std::cout << " Encrypt - HybridMode::QAT     = " << elapsed << "ms"
             << std::endl;
   tStart(t);
-  dt = keys.sk.decrypt(ct);
+  dt = key.priv_key.decrypt(ct);
   elapsed = tEnd(t);
   std::cout << " Decrypt - HybridMode::QAT     = " << elapsed << "ms"
             << std::endl
@@ -84,12 +84,12 @@ int main() {
   // Encrypt/Decrypt - OPTIMAL mode
   ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
   tStart(t);
-  ct = keys.pk.encrypt(pt);
+  ct = key.pub_key.encrypt(pt);
   elapsed = tEnd(t);
   std::cout << " Encrypt - HybridMode::OPTIMAL = " << elapsed << "ms"
             << std::endl;
   tStart(t);
-  dt = keys.sk.decrypt(ct);
+  dt = key.priv_key.decrypt(ct);
   elapsed = tEnd(t);
   std::cout << " Decrypt - HybridMode::OPTIMAL = " << elapsed << "ms"
             << std::endl

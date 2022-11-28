@@ -25,7 +25,7 @@
 #include "ipcl/utils/serialize.hpp"
 #include "ippcp.h"
 
-class BigNumber : public ipcl::serialize::serializerBase {
+class BigNumber : public ipcl::serializer::serializerBase {
  public:
   BigNumber(Ipp32u value = 0);
   BigNumber(Ipp32s value);

@@ -21,7 +21,7 @@ int main() {
 
   const uint32_t num_total = 20;
 
-  ipcl::KeyPair keys = ipcl::generateKeypair(2048, true);
+  ipcl::KeyPair key = ipcl::generateKeypair(2048, true);
 
   std::vector<uint32_t> x(num_total);
   std::vector<uint32_t> y(num_total);
@@ -41,13 +41,13 @@ int main() {
 
   ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
 
-  ipcl::CipherText ct_x = keys.pk.encrypt(pt_x);
-  ipcl::CipherText ct_y = keys.sk.encrypt(pt_y);
+  ipcl::CipherText ct_x = key.pub_key.encrypt(pt_x);
+  ipcl::CipherText ct_y = key.priv_key.encrypt(pt_y);
 
   // Perform enc(x) + enc(y)
   std::cout << "--- IPCL CipherText + CipherText ---" << std::endl;
   ipcl::CipherText ct_add_ctx_cty = ct_x + ct_y;
-  ipcl::PlainText dt_add_ctx_cty = keys.sk.decrypt(ct_add_ctx_cty);
+  ipcl::PlainText dt_add_ctx_cty = key.priv_key.decrypt(ct_add_ctx_cty);
 
   // verify result
   bool verify = true;
@@ -65,7 +65,7 @@ int main() {
   // Perform enc(x) + y
   std::cout << "--- IPCL CipherText + PlainText ---" << std::endl;
   ipcl::CipherText ct_add_ctx_pty = ct_x + pt_y;
-  ipcl::PlainText dt_add_ctx_pty = keys.sk.decrypt(ct_add_ctx_pty);
+  ipcl::PlainText dt_add_ctx_pty = key.priv_key.decrypt(ct_add_ctx_pty);
 
   // verify result
   verify = true;
@@ -83,7 +83,7 @@ int main() {
   // Perform enc(x) * y
   std::cout << "--- IPCL CipherText * PlainText ---" << std::endl;
   ipcl::CipherText ct_mul_ctx_pty = ct_x * pt_y;
-  ipcl::PlainText dt_mul_ctx_pty = keys.sk.decrypt(ct_mul_ctx_pty);
+  ipcl::PlainText dt_mul_ctx_pty = key.priv_key.decrypt(ct_mul_ctx_pty);
 
   // verify result
   verify = true;
