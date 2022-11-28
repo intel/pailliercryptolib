@@ -124,6 +124,9 @@ class PublicKey {
    */
   bool isInitialized() { return m_isInitialized; }
 
+  void create(const BigNumber& n, int bits, bool enableDJN_ = false);
+  void create(const BigNumber& n, int bits, const BigNumber& hs, int randbits);
+
   const void* addr = static_cast<const void*>(this);
 
  private:
@@ -166,9 +169,6 @@ class PublicKey {
   bool m_enable_DJN;
   std::vector<BigNumber> m_r;
   bool m_testv;
-
-  void create(const BigNumber& n, int bits, bool enableDJN_ = false);
-  void create(const BigNumber& n, int bits, const BigNumber& hs, int randbits);
 
   /**
    * Big number vector multi buffer encryption
