@@ -47,13 +47,6 @@ if(NOT CMAKE_PREFIX_PATH)
   set(CMAKE_PREFIX_PATH $ENV{HOME}/intel /opt/intel)
 endif()
 
-
-set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
-set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations -Wno-error=deprecated-copy")
-set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/${CMAKE_INSTALL_LIBDIR};$ORIGIN/ippcrypto")
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
-
 # Compiler version check - icx/icpx-2021.3.0 is supported
 if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 2021.3.0)
@@ -63,6 +56,20 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     " for more information.")
   endif()
 endif()
+
+set(CMAKE_C_FLAGS "-O2 -Wno-error=deprecated-declarations")
+set(CMAKE_CXX_FLAGS "-O2 -fpermissive -Wno-error=deprecated-declarations")
+
+# Add -Wno-error=deprecated-copy if GNU>=9.1
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.1.0)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=deprecated-copy")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy")
+  endif()
+endif()
+
+set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/${CMAKE_INSTALL_LIBDIR};$ORIGIN/ippcrypto")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR})
 
 #---------------------------------------------------
 option(IPCL_TEST "Enable testing" ON)
