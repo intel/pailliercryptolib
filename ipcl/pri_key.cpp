@@ -48,6 +48,32 @@ PrivateKey::PrivateKey(const PublicKey& pk, const BigNumber& p,
   m_isInitialized = true;
 }
 
+PrivateKey::PrivateKey(const BigNumber& n, const BigNumber& p,
+                       const BigNumber& q)
+    : m_n(std::make_shared<BigNumber>(n)),
+      m_nsquare(std::make_shared<BigNumber>((*m_n) * (*m_n))),
+      m_g(std::make_shared<BigNumber>((*m_n) + 1)),
+      m_enable_crt(true),
+      m_p((q < p) ? std::make_shared<BigNumber>(q)
+                  : std::make_shared<BigNumber>(p)),
+      m_q((q < p) ? std::make_shared<BigNumber>(p)
+                  : std::make_shared<BigNumber>(q)),
+      m_pminusone(*m_p - 1),
+      m_qminusone(*m_q - 1),
+      m_psquare((*m_p) * (*m_p)),
+      m_qsquare((*m_q) * (*m_q)),
+      m_pinverse((*m_q).InverseMul(*m_p)),
+      m_hp(computeHfun(*m_p, m_psquare)),
+      m_hq(computeHfun(*m_q, m_qsquare)),
+      m_lambda(lcm(m_pminusone, m_qminusone)),
+      m_x((*m_n).InverseMul((modExp(*m_g, m_lambda, *m_nsquare) - 1) /
+                            (*m_n))) {
+  ERROR_CHECK((*m_p) * (*m_q) == *m_n,
+              "PrivateKey ctor: Public key does not match p * q.");
+  ERROR_CHECK(*m_p != *m_q, "PrivateKey ctor: p and q are same");
+  m_isInitialized = true;
+}
+
 PlainText PrivateKey::decrypt(const CipherText& ct) const {
   ERROR_CHECK(m_isInitialized, "decrypt: Private key is NOT initialized.");
   ERROR_CHECK(*(ct.getPubKey()->getN()) == *(this->getN()),

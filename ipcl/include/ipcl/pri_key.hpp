@@ -27,6 +27,14 @@ class PrivateKey {
   PrivateKey(const PublicKey& pk, const BigNumber& p, const BigNumber& q);
 
   /**
+   * PrivateKey constructor
+   * @param[in] pk paillier public key
+   * @param[in] p p of private key in paillier scheme
+   * @param[in] q q of private key in paillier scheme
+   */
+  PrivateKey(const BigNumber& n, const BigNumber& p, const BigNumber& q);
+
+  /**
    * Enable Chinese Remainder Theorem
    * @param[in] crt Apply Chinese Remainder Theorem
    */
