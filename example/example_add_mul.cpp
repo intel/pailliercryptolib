@@ -42,7 +42,7 @@ int main() {
   ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
 
   ipcl::CipherText ct_x = key.pub_key.encrypt(pt_x);
-  ipcl::CipherText ct_y = key.priv_key.encrypt(pt_y);
+  ipcl::CipherText ct_y = key.pub_key.encrypt(pt_y);
 
   // Perform enc(x) + enc(y)
   std::cout << "--- IPCL CipherText + CipherText ---" << std::endl;
