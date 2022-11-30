@@ -16,15 +16,20 @@
 
 namespace ipcl {
 
-namespace serialize {
+class PublicKey;
+class PrivateKey;
+class CipherText;
+
+namespace serializer {
+
 template <typename T>
-void serialize(const T& obj, std::ostream& ss) {
+void serialize(std::ostream& ss, const T& obj) {
   cereal::PortableBinaryOutputArchive archive(ss);
   archive(obj);
 }
 
 template <typename T>
-void deserialize(T& obj, std::istream& ss) {
+void deserialize(std::istream& ss, T& obj) {
   cereal::PortableBinaryInputArchive archive(ss);
   archive(obj);
 }
@@ -33,7 +38,7 @@ template <typename T>
 bool serializeToFile(const std::string& fn, const T& obj) {
   std::ofstream ofs(fn, std::ios::out | std::ios::binary);
   if (ofs.is_open()) {
-    serialize::serialize(obj, ofs);
+    serializer::serialize(obj, ofs);
     ofs.close();
     return true;
   }
@@ -41,10 +46,10 @@ bool serializeToFile(const std::string& fn, const T& obj) {
 }
 
 template <typename T>
-bool deserializeFromFile(const std::string& fn, const T& obj) {
+bool deserializeFromFile(const std::string& fn, T& obj) {
   std::ifstream ifs(fn, std::ios::in | std::ios::binary);
   if (ifs.is_open()) {
-    serialize::deserialize(obj, ifs);
+    serializer::deserialize(obj, ifs);
     ifs.close();
     return true;
   }
@@ -57,7 +62,7 @@ class serializerBase {
   virtual std::string serializedName() const = 0;
 };
 
-};  // namespace serialize
+};  // namespace serializer
 
 }  // namespace ipcl
 

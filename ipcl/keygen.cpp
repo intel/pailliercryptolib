@@ -83,7 +83,7 @@ static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q, BigNumber& n,
            isClosePrimeBN(p, q, ref_dist));  // gcd(p-1,q-1)=2
 }
 
-keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
+KeyPair generateKeypair(int64_t n_length, bool enable_DJN) {
   /*
   https://www.intel.com/content/www/us/en/develop/documentation/ipp-crypto-reference/top/multi-buffer-cryptography-functions/modular-exponentiation/mbx-exp-1024-2048-3072-4096-mb8.html
   modulus size = n * n (keySize * keySize )
@@ -104,10 +104,10 @@ keyPair generateKeypair(int64_t n_length, bool enable_DJN) {
   else
     getNormalBN(n_length, p, q, n, ref_dist);
 
-  PublicKey* public_key = new PublicKey(n, n_length, enable_DJN);
-  PrivateKey* private_key = new PrivateKey(public_key, p, q);
+  PublicKey pk(n, n_length, enable_DJN);
+  PrivateKey sk(pk, p, q);
 
-  return keyPair{public_key, private_key};
+  return KeyPair{pk, sk};
 }
 
 }  // namespace ipcl

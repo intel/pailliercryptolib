@@ -65,7 +65,7 @@ const BigNumber HS_BN =
 static void BM_KeyGen(benchmark::State& state) {
   int64_t n_length = state.range(0);
   for (auto _ : state) {
-    ipcl::keyPair key = ipcl::generateKeypair(n_length, Enable_DJN);
+    ipcl::KeyPair key = ipcl::generateKeypair(n_length, Enable_DJN);
   }
 }
 BENCHMARK(BM_KeyGen)->Unit(benchmark::kMicrosecond)->ADD_SAMPLE_KEY_LENGTH_ARGS;
@@ -75,12 +75,12 @@ static void BM_Encrypt(benchmark::State& state) {
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
-  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
-  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+  ipcl::PublicKey pk(n, n_length, Enable_DJN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
-  pub_key->setRandom(r_bn_v);
-  pub_key->setHS(HS_BN);
+  pk.setRandom(r_bn_v);
+  pk.setHS(HS_BN);
 
   std::vector<BigNumber> exp_bn_v(dsize);
   for (size_t i = 0; i < dsize; i++)
@@ -89,10 +89,7 @@ static void BM_Encrypt(benchmark::State& state) {
   ipcl::PlainText pt(exp_bn_v);
 
   ipcl::CipherText ct;
-  for (auto _ : state) ct = pub_key->encrypt(pt);
-
-  delete pub_key;
-  delete priv_key;
+  for (auto _ : state) ct = pk.encrypt(pt);
 }
 BENCHMARK(BM_Encrypt)
     ->Unit(benchmark::kMicrosecond)
@@ -103,23 +100,20 @@ static void BM_Decrypt(benchmark::State& state) {
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
-  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
-  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+  ipcl::PublicKey pk(n, n_length, Enable_DJN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
-  pub_key->setRandom(r_bn_v);
-  pub_key->setHS(HS_BN);
+  pk.setRandom(r_bn_v);
+  pk.setHS(HS_BN);
 
   std::vector<BigNumber> exp_bn_v(dsize);
   for (size_t i = 0; i < dsize; i++)
     exp_bn_v[i] = P_BN - BigNumber((unsigned int)(i * 1024));
 
   ipcl::PlainText pt(exp_bn_v), dt;
-  ipcl::CipherText ct = pub_key->encrypt(pt);
-  for (auto _ : state) dt = priv_key->decrypt(ct);
-
-  delete pub_key;
-  delete priv_key;
+  ipcl::CipherText ct = pk.encrypt(pt);
+  for (auto _ : state) dt = sk.decrypt(ct);
 }
 
 BENCHMARK(BM_Decrypt)

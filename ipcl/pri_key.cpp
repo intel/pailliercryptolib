@@ -22,37 +22,61 @@ static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
   return p * q / gcd;
 }
 
-PrivateKey::PrivateKey(const PublicKey* public_key, const BigNumber& p,
+PrivateKey::PrivateKey(const PublicKey& pk, const BigNumber& p,
                        const BigNumber& q)
-    : m_pubkey(public_key),
-      m_n(m_pubkey->getN()),
-      m_nsquare(m_pubkey->getNSQ()),
-      m_g(m_pubkey->getG()),
-      m_p((q < p) ? q : p),
-      m_q((q < p) ? p : q),
-      m_pminusone(m_p - 1),
-      m_qminusone(m_q - 1),
-      m_psquare(m_p * m_p),
-      m_qsquare(m_q * m_q),
-      m_pinverse(m_q.InverseMul(m_p)),
-      m_hp(computeHfun(m_p, m_psquare)),
-      m_hq(computeHfun(m_q, m_qsquare)),
-      // lcm(P-1,Q-1) = (P-1)*(Q-1)/gcd(P-1,Q-1), gcd in ipp-crypto is
-      // ippsGcd_BN
+    : m_n(pk.getN()),
+      m_nsquare(pk.getNSQ()),
+      m_g(pk.getG()),
+      m_enable_crt(true),
+      m_p((q < p) ? std::make_shared<BigNumber>(q)
+                  : std::make_shared<BigNumber>(p)),
+      m_q((q < p) ? std::make_shared<BigNumber>(p)
+                  : std::make_shared<BigNumber>(q)),
+      m_pminusone(*m_p - 1),
+      m_qminusone(*m_q - 1),
+      m_psquare((*m_p) * (*m_p)),
+      m_qsquare((*m_q) * (*m_q)),
+      m_pinverse((*m_q).InverseMul(*m_p)),
+      m_hp(computeHfun(*m_p, m_psquare)),
+      m_hq(computeHfun(*m_q, m_qsquare)),
       m_lambda(lcm(m_pminusone, m_qminusone)),
-      // TODO(bwang30): check if ippsModInv_BN does the same thing with
-      // mpz_invert
-      m_x(m_n.InverseMul((modExp(m_g, m_lambda, m_nsquare) - 1) / m_n)),
-      m_bits(m_pubkey->getBits()),
-      m_dwords(m_pubkey->getDwords()),
-      m_enable_crt(true) {
-  ERROR_CHECK(p * q == m_n,
+      m_x((*m_n).InverseMul((modExp(*m_g, m_lambda, *m_nsquare) - 1) /
+                            (*m_n))) {
+  ERROR_CHECK((*m_p) * (*m_q) == *m_n,
               "PrivateKey ctor: Public key does not match p * q.");
-  ERROR_CHECK(p != q, "PrivateKey ctor: p and q are same");
+  ERROR_CHECK(*m_p != *m_q, "PrivateKey ctor: p and q are same");
+  m_isInitialized = true;
+}
+
+PrivateKey::PrivateKey(const BigNumber& n, const BigNumber& p,
+                       const BigNumber& q)
+    : m_n(std::make_shared<BigNumber>(n)),
+      m_nsquare(std::make_shared<BigNumber>((*m_n) * (*m_n))),
+      m_g(std::make_shared<BigNumber>((*m_n) + 1)),
+      m_enable_crt(true),
+      m_p((q < p) ? std::make_shared<BigNumber>(q)
+                  : std::make_shared<BigNumber>(p)),
+      m_q((q < p) ? std::make_shared<BigNumber>(p)
+                  : std::make_shared<BigNumber>(q)),
+      m_pminusone(*m_p - 1),
+      m_qminusone(*m_q - 1),
+      m_psquare((*m_p) * (*m_p)),
+      m_qsquare((*m_q) * (*m_q)),
+      m_pinverse((*m_q).InverseMul(*m_p)),
+      m_hp(computeHfun(*m_p, m_psquare)),
+      m_hq(computeHfun(*m_q, m_qsquare)),
+      m_lambda(lcm(m_pminusone, m_qminusone)),
+      m_x((*m_n).InverseMul((modExp(*m_g, m_lambda, *m_nsquare) - 1) /
+                            (*m_n))) {
+  ERROR_CHECK((*m_p) * (*m_q) == *m_n,
+              "PrivateKey ctor: Public key does not match p * q.");
+  ERROR_CHECK(*m_p != *m_q, "PrivateKey ctor: p and q are same");
+  m_isInitialized = true;
 }
 
 PlainText PrivateKey::decrypt(const CipherText& ct) const {
-  ERROR_CHECK(ct.getPubKey()->getN() == m_pubkey->getN(),
+  ERROR_CHECK(m_isInitialized, "decrypt: Private key is NOT initialized.");
+  ERROR_CHECK(*(ct.getPubKey()->getN()) == *(this->getN()),
               "decrypt: The value of N in public key mismatch.");
 
   std::size_t ct_size = ct.getSize();
@@ -82,7 +106,7 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
   std::size_t v_size = plaintext.size();
 
   std::vector<BigNumber> pow_lambda(v_size, m_lambda);
-  std::vector<BigNumber> modulo(v_size, m_nsquare);
+  std::vector<BigNumber> modulo(v_size, *m_nsquare);
   std::vector<BigNumber> res = modExp(ciphertext, pow_lambda, modulo);
 
 #ifdef IPCL_USE_OMP
@@ -91,7 +115,7 @@ void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
     OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
-    BigNumber nn = m_n;
+    BigNumber nn = *m_n;
     BigNumber xx = m_x;
     BigNumber m = ((res[i] - 1) / nn) * xx;
     plaintext[i] = m % nn;
@@ -127,16 +151,16 @@ void PrivateKey::decryptCRT(std::vector<BigNumber>& plaintext,
     OMPUtilities::assignOMPThreads(omp_remaining_threads, v_size))
 #endif  // IPCL_USE_OMP
   for (int i = 0; i < v_size; i++) {
-    BigNumber dp = computeLfun(resp[i], m_p) * m_hp % m_p;
-    BigNumber dq = computeLfun(resq[i], m_q) * m_hq % m_q;
+    BigNumber dp = computeLfun(resp[i], *m_p) * m_hp % (*m_p);
+    BigNumber dq = computeLfun(resq[i], *m_q) * m_hq % (*m_q);
     plaintext[i] = computeCRT(dp, dq);
   }
 }
 
 BigNumber PrivateKey::computeCRT(const BigNumber& mp,
                                  const BigNumber& mq) const {
-  BigNumber u = (mq - mp) * m_pinverse % m_q;
-  return mp + (u * m_p);
+  BigNumber u = (mq - mp) * m_pinverse % (*m_q);
+  return mp + (u * (*m_p));
 }
 
 BigNumber PrivateKey::computeLfun(const BigNumber& a,
@@ -148,7 +172,7 @@ BigNumber PrivateKey::computeHfun(const BigNumber& a,
                                   const BigNumber& b) const {
   // Based on the fact a^b mod n = (a mod n)^b mod n
   BigNumber xm = a - 1;
-  BigNumber base = m_g % b;
+  BigNumber base = *m_g % b;
   BigNumber pm = modExp(base, xm, b);
   BigNumber lcrt = computeLfun(pm, a);
   return a.InverseMul(lcrt);

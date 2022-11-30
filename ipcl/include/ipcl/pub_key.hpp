@@ -4,6 +4,8 @@
 #ifndef IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
 #define IPCL_INCLUDE_IPCL_PUB_KEY_HPP_
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "ipcl/bignum.h"
@@ -15,6 +17,9 @@ class CipherText;
 
 class PublicKey {
  public:
+  PublicKey() = default;
+  ~PublicKey() = default;
+
   /**
    * PublicKey constructor
    * @param[in] n n of public key in paillier scheme
@@ -30,6 +35,7 @@ class PublicKey {
    * @param[in] bits bit length of public key(default value is 1024)
    * @param[in] enableDJN_ enables DJN scheme(default value is false)
    */
+
   explicit PublicKey(const Ipp32u n, int bits = 1024, bool enableDJN_ = false)
       : PublicKey(BigNumber(n), bits, enableDJN_) {}
 
@@ -56,17 +62,17 @@ class PublicKey {
   /**
    * Get N of public key in paillier scheme
    */
-  BigNumber getN() const { return m_n; }
+  std::shared_ptr<BigNumber> getN() const { return m_n; }
 
   /**
    * Get NSQ of public key in paillier scheme
    */
-  BigNumber getNSQ() const { return m_nsquare; }
+  std::shared_ptr<BigNumber> getNSQ() const { return m_nsquare; }
 
   /**
    * Get G of public key in paillier scheme
    */
-  BigNumber getG() const { return m_g; }
+  std::shared_ptr<BigNumber> getG() const { return m_g; }
 
   /**
    * Get bits of key
@@ -113,13 +119,21 @@ class PublicKey {
     return -1;
   }
 
+  /**
+   * Check whether pub key is initialized
+   */
+  bool isInitialized() { return m_isInitialized; }
+
+  void create(const BigNumber& n, int bits, bool enableDJN_ = false);
+  void create(const BigNumber& n, int bits, const BigNumber& hs, int randbits);
+
   const void* addr = static_cast<const void*>(this);
 
  private:
   friend class cereal::access;
   template <class Archive>
   void save(Archive& ar, const Ipp32u version) const {
-    ar(::cereal::make_nvp("n", m_n));
+    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", m_bits));
     ar(::cereal::make_nvp("enable_DJN", m_enable_DJN));
     ar(::cereal::make_nvp("hs", m_hs));
@@ -132,7 +146,7 @@ class PublicKey {
     bool enable_DJN;
     int bits, randbits;
 
-    ar(::cereal::make_nvp("n", m_n));
+    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", bits));
     ar(::cereal::make_nvp("enable_DJN", enable_DJN));
     ar(::cereal::make_nvp("hs", m_hs));
@@ -144,19 +158,17 @@ class PublicKey {
       create(n, bits);
   }
 
-  BigNumber m_n;
-  BigNumber m_g;
-  BigNumber m_nsquare;
-  BigNumber m_hs;
+  bool m_isInitialized = false;
+  std::shared_ptr<BigNumber> m_n;
+  std::shared_ptr<BigNumber> m_g;
+  std::shared_ptr<BigNumber> m_nsquare;
   int m_bits;
-  int m_randbits;
   int m_dwords;
+  BigNumber m_hs;
+  int m_randbits;
   bool m_enable_DJN;
   std::vector<BigNumber> m_r;
   bool m_testv;
-
-  void create(const BigNumber& n, int bits, bool enableDJN_ = false);
-  void create(const BigNumber& n, int bits, const BigNumber& hs, int randbits);
 
   /**
    * Big number vector multi buffer encryption
