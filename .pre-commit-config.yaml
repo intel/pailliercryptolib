@@ -45,7 +45,7 @@ repos:
           entry: cpplint
           language: system
           files: \.(cxx|cpp|hpp|hxx)$
-          exclude: ipcl/bignum.cpp|module/heqat/heqat/misc/bignum.cpp
+          exclude: ipcl/bignum.cpp|example/test.cpp
           args:
             - --recursive
             - --filter=-runtime/references,-whitespace/comments,-whitespace/indent
@@ -54,7 +54,7 @@ repos:
           entry: cpplint
           language: system
           files: \.(c|cc|h)$
-          exclude: ipcl/include/ipcl/bignum.h|module/heqat/heqat/include/heqat/misc/bignum.h
+          exclude: ipcl/include/ipcl/bignum.h
           args:
             - --recursive
             - --filter=-runtime/references,-whitespace/comments,-whitespace/indent,-readability/casting,-runtime/int,-runtime/printf
