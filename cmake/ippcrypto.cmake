@@ -16,37 +16,11 @@ if(CMAKE_PREFIX_PATH)
   find_package(ippcp ${IPPCRYPTO_VERSION})
 endif()
 
-ExternalProject_Add(
-  ext_ipp-crypto
-  GIT_REPOSITORY ${IPPCRYPTO_GIT_REPO_URL}
-  GIT_TAG ${IPPCRYPTO_GIT_LABEL}
-  PREFIX ${IPPCRYPTO_PREFIX}
-  INSTALL_DIR ${IPPCRYPTO_PREFIX}
-  CMAKE_ARGS ${IPPCRYPTO_CXX_FLAGS}
-             -DCMAKE_INSTALL_PREFIX=${IPPCRYPTO_PREFIX}
-             -DARCH=${IPPCRYPTO_ARCH}
-             -DCMAKE_ASM_NASM_COMPILER=nasm
-             -DCMAKE_BUILD_TYPE=Release
-             -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-             -DCMAKE_INSTALL_LIBDIR=lib
-  UPDATE_COMMAND ""
-  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/patch/ippcrypto_patch.patch
-  INSTALL_COMMAND make DESTDIR=${IPPCRYPTO_DESTDIR} install
-)
-
-set(IPPCRYPTO_INC_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
-set(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib/${IPPCRYPTO_ARCH})
-if(IPCL_SHARED)
-  add_library(libippcrypto INTERFACE)
-  add_dependencies(libippcrypto ext_ipp-crypto)
-
-  ExternalProject_Get_Property(ext_ipp-crypto SOURCE_DIR BINARY_DIR)
-
-  target_link_libraries(libippcrypto INTERFACE
-  ${IPPCRYPTO_LIB_DIR}/libippcp.so
-  ${IPPCRYPTO_LIB_DIR}/libcrypto_mb.so)
-  target_include_directories(libippcrypto SYSTEM INTERFACE ${IPPCRYPTO_INC_DIR})
-
+if(ippcp_FOUND)
+  message(STATUS "IPP-Crypto ${IPPCRYPTO_VERSION} found at ${ippcp_DIR}")
+  get_target_property(IPPCRYPTO_INC_DIR IPPCP::ippcp INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(IPPCRYPTO_IMPORTED_LOCATION IPPCP::ippcp IMPORTED_LOCATION)
+  get_filename_component(IPPCRYPTO_LIB_DIR ${IPPCRYPTO_IMPORTED_LOCATION} DIRECTORY)
   install(
     DIRECTORY ${IPPCRYPTO_LIB_DIR}/
     DESTINATION "${IPCL_INSTALL_LIBDIR}/ippcrypto"
