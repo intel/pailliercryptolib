@@ -14,15 +14,18 @@
  * limitations under the License.
  *******************************************************************************/
 
-#ifndef _BIGNUM_H_
-#define _BIGNUM_H_
-
-#include <ippcp.h>
+//#ifndef _BIGNUM_H_
+//#define _BIGNUM_H_
+#if !defined _BIGNUMBER_H_
+#define _BIGNUMBER_H_
 
 #include <ostream>
 #include <vector>
 
-class BigNumber {
+#include "ipcl/utils/serialize.hpp"
+#include "ippcp.h"
+
+class BigNumber : public ipcl::serializer::serializerBase {
  public:
   BigNumber(Ipp32u value = 0);
   BigNumber(Ipp32s value);
@@ -120,7 +123,30 @@ class BigNumber {
   friend std::ostream& operator<<(std::ostream& os, const BigNumber& a);
   void num2char(std::vector<Ipp8u>& dest) const;
 
+  // Support QAT data format
+  static bool fromBin(BigNumber& bn, const unsigned char* data, int len);
+  static bool toBin(unsigned char* data, int len, const BigNumber& bn);
+  static bool toBin(unsigned char** data, int* len, const BigNumber& bn);
+
  protected:
+  friend class cereal::access;
+  template <class Archive>
+  void save(Archive& ar, const Ipp32u version) const {
+    std::vector<Ipp32u> vec;
+    num2vec(vec);
+    ar(cereal::make_nvp("BigNumber", vec));
+  }
+
+  template <class Archive>
+  void load(Archive& ar, const Ipp32u version) {
+    std::vector<Ipp32u> vec;
+    ar(cereal::make_nvp("BigNumber", vec));
+    create(vec.data(), vec.size(), IppsBigNumPOS);
+  }
+
+  std::string serializedName() const { return "BigNumber"; }
+  static Ipp32u serializedVersion() { return 1; }
+
   bool create(const Ipp32u* pData, int length,
               IppsBigNumSGN sgn = IppsBigNumPOS);
   IppsBigNumState* m_pBN;

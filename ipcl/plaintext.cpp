@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "ipcl/ciphertext.hpp"
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 
@@ -34,7 +34,7 @@ CipherText PlainText::operator*(const CipherText& other) const {
   return other.operator*(*this);
 }
 
-PlainText::operator std::vector<uint32_t>() {
+PlainText::operator std::vector<uint32_t>() const {
   ERROR_CHECK(m_size > 0,
               "PlainText: type conversion to uint32_t vector error");
   std::vector<uint32_t> v;
@@ -43,12 +43,12 @@ PlainText::operator std::vector<uint32_t>() {
   return v;
 }
 
-PlainText::operator BigNumber() {
+PlainText::operator BigNumber() const {
   ERROR_CHECK(m_size > 0, "PlainText: type conversion to BigNumber error");
   return m_texts[0];
 }
 
-PlainText::operator std::vector<BigNumber>() {
+PlainText::operator std::vector<BigNumber>() const {
   ERROR_CHECK(m_size > 0,
               "PlainText: type conversion to BigNumber vector error");
   return m_texts;

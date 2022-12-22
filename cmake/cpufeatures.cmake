@@ -3,7 +3,7 @@
 
 include(ExternalProject)
 
-message(STATUS "configuring cpu_features")
+message(STATUS "Configuring cpu_features")
 set(CPUFEATURES_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext_cpufeatures)
 set(CPUFEATURES_DESTDIR ${CPUFEATURES_PREFIX}/cpufeatures_install)
 set(CPUFEATURES_GIT_REPO_URL https://github.com/google/cpu_features.git)
@@ -25,7 +25,6 @@ ExternalProject_Add(
   INSTALL_COMMAND make DESTDIR=${CPUFEATURES_DESTDIR} install
   )
 
-
 set(CPUFEATURES_INC_DIR ${CPUFEATURES_DESTDIR}/${CMAKE_INSTALL_PREFIX}/include)
 set(CPUFEATURES_LIB_DIR ${CPUFEATURES_DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib)
 
@@ -35,12 +34,23 @@ if(IPCL_SHARED)
 
   target_include_directories(libcpu_features SYSTEM
                             INTERFACE ${CPUFEATURES_INC_DIR})
-  target_link_libraries(libcpu_features
-                        INTERFACE ${CPUFEATURES_LIB_DIR}/libcpu_features.a)
+  # ipcl python build
+  if(IPCL_INTERNAL_PYTHON_BUILD)
+    target_link_libraries(libcpu_features INTERFACE
+      ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cpufeatures/libcpu_features.a)
+
+    add_custom_command(TARGET ext_cpufeatures
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${CPUFEATURES_LIB_DIR} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cpufeatures
+    )
+  else()
+    target_link_libraries(libcpu_features INTERFACE
+      ${CPUFEATURES_LIB_DIR}/libcpu_features.a)
+  endif()
 
   install(
     DIRECTORY ${CPUFEATURES_LIB_DIR}/
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cpufeatures"
+    DESTINATION "${IPCL_INSTALL_LIBDIR}/cpufeatures"
     USE_SOURCE_PERMISSIONS
   )
 else()

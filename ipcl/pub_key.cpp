@@ -3,52 +3,46 @@
 
 #include "ipcl/pub_key.hpp"
 
-#include <crypto_mb/exp.h>
-
 #include <algorithm>
 #include <climits>
 #include <cstring>
 #include <random>
 
+#include "crypto_mb/exp.h"
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/mod_exp.hpp"
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 
-static inline auto randomUniformUnsignedInt() {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-  return dist(rng);
-}
-
 PublicKey::PublicKey(const BigNumber& n, int bits, bool enableDJN_)
-    : m_n(n),
-      m_g(n + 1),
-      m_nsquare(n * n),
+    : m_n(std::make_shared<BigNumber>(n)),
+      m_g(std::make_shared<BigNumber>(*m_n + 1)),
+      m_nsquare(std::make_shared<BigNumber>((*m_n) * (*m_n))),
       m_bits(bits),
-      m_dwords(BITSIZE_DWORD(bits * 2)),
-      m_init_seed(randomUniformUnsignedInt()),
+      m_dwords(BITSIZE_DWORD(m_bits * 2)),
       m_enable_DJN(false),
-      m_testv(false) {
+      m_testv(false),
+      m_hs(0),
+      m_randbits(0) {
   if (enableDJN_) this->enableDJN();  // sets m_enable_DJN
+  m_isInitialized = true;
 }
 
 void PublicKey::enableDJN() {
   BigNumber gcd;
   BigNumber rmod;
   do {
-    int rand_bit = m_n.BitSize();
+    int rand_bit = (*m_n).BitSize();
     BigNumber rand = getRandomBN(rand_bit + 128);
-    rmod = rand % m_n;
-    gcd = rand.gcd(m_n);
+    rmod = rand % (*m_n);
+    gcd = rand.gcd(*m_n);
   } while (gcd.compare(1));
 
   BigNumber rmod_sq = rmod * rmod;
   BigNumber rmod_neg = rmod_sq * -1;
-  BigNumber h = rmod_neg % m_n;
-  m_hs = ipcl::ippModExp(h, m_n, m_nsquare);
+  BigNumber h = rmod_neg % (*m_n);
+  m_hs = modExp(h, *m_n, *m_nsquare);
   m_randbits = m_bits >> 1;  // bits/2
 
   m_enable_DJN = true;
@@ -57,7 +51,7 @@ void PublicKey::enableDJN() {
 std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
   std::vector<BigNumber> r(sz);
   std::vector<BigNumber> base(sz, m_hs);
-  std::vector<BigNumber> sq(sz, m_nsquare);
+  std::vector<BigNumber> sq(sz, *m_nsquare);
 
   if (m_testv) {
     r = m_r;
@@ -66,30 +60,30 @@ std::vector<BigNumber> PublicKey::getDJNObfuscator(std::size_t sz) const {
       r_ = getRandomBN(m_randbits);
     }
   }
-  return ipcl::ippModExp(base, r, sq);
+  return modExp(base, r, sq);
 }
 
 std::vector<BigNumber> PublicKey::getNormalObfuscator(std::size_t sz) const {
   std::vector<BigNumber> r(sz);
-  std::vector<BigNumber> sq(sz, m_nsquare);
-  std::vector<BigNumber> pown(sz, m_n);
+  std::vector<BigNumber> sq(sz, *m_nsquare);
+  std::vector<BigNumber> pown(sz, *m_n);
 
   if (m_testv) {
     r = m_r;
   } else {
     for (int i = 0; i < sz; i++) {
       r[i] = getRandomBN(m_bits);
-      r[i] = r[i] % (m_n - 1) + 1;
+      r[i] = r[i] % (*m_n - 1) + 1;
     }
   }
-  return ipcl::ippModExp(r, pown, sq);
+  return modExp(r, pown, sq);
 }
 
 void PublicKey::applyObfuscator(std::vector<BigNumber>& ciphertext) const {
   std::size_t sz = ciphertext.size();
   std::vector<BigNumber> obfuscator =
       m_enable_DJN ? getDJNObfuscator(sz) : getNormalObfuscator(sz);
-  BigNumber sq = m_nsquare;
+  BigNumber sq = *m_nsquare;
 
   for (std::size_t i = 0; i < sz; ++i)
     ciphertext[i] = sq.ModMul(ciphertext[i], obfuscator[i]);
@@ -109,7 +103,7 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
   std::vector<BigNumber> ct(pt_size);
 
   for (std::size_t i = 0; i < pt_size; i++)
-    ct[i] = (m_n * pt[i] + 1) % m_nsquare;
+    ct[i] = (*m_n * pt[i] + 1) % (*m_nsquare);
 
   if (make_secure) applyObfuscator(ct);
 
@@ -117,12 +111,22 @@ std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
 }
 
 CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
+  ERROR_CHECK(m_isInitialized, "encrypt: Public key is NOT initialized.");
+
   std::size_t pt_size = pt.getSize();
   ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt empty PlainText");
   std::vector<BigNumber> ct_bn_v(pt_size);
 
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
+    setHybridRatio(qat_ratio, false);
+  }
+
   ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
-  return CipherText(this, ct_bn_v);
+  return CipherText(*this, ct_bn_v);
 }
 
 void PublicKey::setDJN(const BigNumber& hs, int randbit) {
@@ -132,4 +136,31 @@ void PublicKey::setDJN(const BigNumber& hs, int randbit) {
   m_randbits = randbit;
   m_enable_DJN = true;
 }
+
+void PublicKey::create(const BigNumber& n, int bits, bool enableDJN_) {
+  m_n = std::make_shared<BigNumber>(n);
+  m_g = std::make_shared<BigNumber>(*m_n + 1);
+  m_nsquare = std::make_shared<BigNumber>((*m_n) * (*m_n));
+  m_bits = bits;
+  m_dwords = BITSIZE_DWORD(m_bits * 2);
+  m_enable_DJN = enableDJN_;
+  if (enableDJN_) {
+    this->enableDJN();
+  } else {
+    m_hs = BigNumber::Zero();
+    m_randbits = 0;
+  }
+  m_testv = false;
+  m_isInitialized = true;
+  std::cout << "create complete" << std::endl;
+}
+
+void PublicKey::create(const BigNumber& n, int bits, const BigNumber& hs,
+                       int randbits) {
+  create(n, bits, false);  // set DJN to false and manually set
+  m_enable_DJN = true;
+  m_hs = hs;
+  m_randbits = randbits;
+}
+
 }  // namespace ipcl

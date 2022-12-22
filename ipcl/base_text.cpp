@@ -3,7 +3,7 @@
 
 #include "ipcl/base_text.hpp"
 
-#include "ipcl/util.hpp"
+#include "ipcl/utils/util.hpp"
 
 namespace ipcl {
 

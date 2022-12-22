@@ -9,19 +9,25 @@ on:
     branches:
       - main
       - development
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "ipcl_v[0-9]+.[0-9]+.[0-9]+"
   push:
     branches:
       - main
       - development
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "ipcl_v[0-9]+.[0-9]+.[0-9]+"
 
   # Manually run this workflow on any specified branch.
   workflow_dispatch:
 
-##############
-# IceLake CI #
-##############
+###################
+# Define env vars #
+###################
+env:
+  IPCL_VER: 2.0.0
+  IPCL_DIR: ${GITHUB_WORKSPACE}/ipcl_install
+  IPCL_HINT_DIR: >
+      -DIPCL_HINT_DIR=${GITHUB_WORKSPACE}/ipcl_install/lib/cmake/ipcl-${IPCL_VER}
+
 jobs:
   format:
     name: Format check
@@ -37,69 +43,140 @@ jobs:
         run: pre-commit run --all-files
 
   build-and-test:
-    name: Build, test and run kernels - shared
+    name: '${{ matrix.build_type }} qat=${{ matrix.enable_qat }} detect_cpu_runtime=${{ matrix.detect_cpu_runtime }} shared=${{ matrix.shared_lib }}'
     needs: [format]
     runs-on: [self-hosted, linux, x64, icx]
-    # Use environment protection (require review)
-    environment: intel_workflow
     defaults:
       run:
         shell: bash
-        working-directory: .
+    strategy:
+      matrix:
+        build_type: [Release, Debug]
+        shared_lib: [ON, OFF]
+        detect_cpu_runtime: [ON, OFF]
+        # qat disabled for ICX - to be added with SPR runner
+        enable_qat: [OFF]
+        include:
+          # run minimum for debug mode
+          - build_type: Debug
+            benchmark_min_time: "--benchmark_min_time=0.001"
+          - build_type: Release
+            benchmark_min_time: ""
     steps:
       - uses: actions/checkout@v2
-      - name: Validate paths
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: '3.16.x'
+      - name: Validate environment
         run: |
+          set -x
+          export CC=clang-10
+          export CXX=clang++-10
+
+          # Validate paths
           whoami
           echo $HOME
           echo $GITHUB_WORKSPACE
           echo "Testing from branch:"
           echo $GITHUB_REF
+          cmake --version
           pwd
 
-      # Build library
-      - name: Build the repository
+      - name: Build library
         run: |
-          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --target all -j
+          # QAT unavailable in ICX - to be added
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type}} \
+            -DIPCL_DETECT_CPU_RUNTIME=${{ matrix.detect_cpu_runtime }} \
+            -DIPCL_ENABLE_QAT=${{ matrix.enable_qat }} \
+            -DCMAKE_INSTALL_PREFIX=./ipcl_install
+          cmake --build build -j$(nproc)
+          cmake --build build --target install
 
-      # Unit tests and examples
-      - name: Run the unit tests
-        run: ./build/test/unittest_ipcl
-
-      - name: Run the benchmarks
-        run: ./build/benchmark/bench_ipcl
-
-  build-and-test-static:
-    name: Build, test and run kernels - static
-    needs: [format]
-    runs-on: [self-hosted, linux, x64, icx]
-    # Use environment protection (require review)
-    environment: intel_workflow
-    defaults:
-      run:
-        shell: bash
-        working-directory: .
-    steps:
-      - uses: actions/checkout@v2
-      - name: Validate paths
+      - name: Run unittest
         run: |
-          whoami
-          echo $HOME
-          echo $GITHUB_WORKSPACE
-          echo "Testing from branch:"
-          echo $GITHUB_REF
-          pwd
+          cmake --build build --target unittest
 
-      # Build library
-      - name: Build the repository
+      - name: Run benchmark
         run: |
-          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_SHARED=OFF
-          cmake --build build --target all -j
+          ./build/benchmark/bench_ipcl \
+            --benchmark_out="${GITHUB_WORKFLOW}_${GITHUB_SHA}" \
+            --benchmark_out_format=csv ${{ matrix.benchmark_min_time }}
 
-      # Unit tests and examples
-      - name: Run the unit tests
-        run: ./build/test/unittest_ipcl
+      - name: Build and run examples
+        run: |
+          cd $GITHUB_WORKSPACE/example
+          cmake -S . -B build ${{ env.IPCL_HINT_DIR }}
+          cmake --build build
+          cmake --build build --target run_all_examples
 
-      - name: Run the benchmarks
-        run: ./build/benchmark/bench_ipcl
+      - name: Archive benchmark results
+        uses: actions/upload-artifact@v2
+        with:
+          name: bench_ipcl_${{ github.sha }}.csv
+          path: ${{ github.workspace }}/${{ github.workflow }}_${{ github.sha }}
+          retention-days: 90
+
+
+  #   name: Build, test and run kernels - shared
+  #   needs: [format]
+  #   runs-on: [self-hosted, linux, x64, icx]
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       working-directory: .
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Validate paths
+  #       run: |
+  #         whoami
+  #         echo $HOME
+  #         echo $GITHUB_WORKSPACE
+  #         echo "Testing from branch:"
+  #         echo $GITHUB_REF
+  #         pwd
+
+  #     # Build library
+  #     - name: Build the repository
+  #       run: |
+  #         cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_ENABLE_QAT=ON
+  #         cmake --build build --target all -j
+
+  #     # Unit tests and examples
+  #     - name: Run the unit tests
+  #       run: ./build/test/unittest_ipcl
+
+  #     - name: Run the benchmarks
+  #       run: ./build/benchmark/bench_ipcl
+
+  # build-and-test-static:
+  #   name: Build, test and run kernels - static
+  #   needs: [format]
+  #   runs-on: [self-hosted, linux, x64, icx]
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       working-directory: .
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Validate paths
+  #       run: |
+  #         whoami
+  #         echo $HOME
+  #         echo $GITHUB_WORKSPACE
+  #         echo "Testing from branch:"
+  #         echo $GITHUB_REF
+  #         pwd
+
+  #     # Build library
+  #     - name: Build the repository
+  #       run: |
+  #         cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=Release -DIPCL_ENABLE_QAT=ON -DIPCL_SHARED=OFF
+  #         cmake --build build --target all -j
+
+  #     # Unit tests and examples
+  #     - name: Run the unit tests
+  #       run: ./build/test/unittest_ipcl
+
+  #     - name: Run the benchmarks
+  #       run: ./build/benchmark/bench_ipcl

@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -505,4 +506,60 @@ void BigNumber::num2char(std::vector<Ipp8u>& dest) const {
   ippsRef_BN(nullptr, &bnBitLen, reinterpret_cast<Ipp32u**>(&bnData), *this);
   int len = (bnBitLen + 7) >> 3;
   dest.assign(bnData, bnData + len);
+}
+
+bool BigNumber::fromBin(BigNumber& bn, const unsigned char* data, int len) {
+  if (len <= 0) return false;
+
+  // Create BigNumber containg input data passed as argument
+  bn = BigNumber(reinterpret_cast<const Ipp32u*>(data), (len / 4));
+  Ipp32u* ref_bn_data_ = NULL;
+  ippsRef_BN(NULL, NULL, &ref_bn_data_, BN(bn));
+
+  // Convert it to little endian format
+  unsigned char* data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
+  for (int i = 0; i < len; i++) data_[i] = data[len - 1 - i];
+
+  return true;
+}
+
+bool BigNumber::toBin(unsigned char* data, int len, const BigNumber& bn) {
+  if (len <= 0) return false;
+
+  // Extract raw vector of data in little endian format
+  int bitSize = 0;
+  Ipp32u* ref_bn_data_ = NULL;
+  ippsRef_BN(NULL, &bitSize, &ref_bn_data_, BN(bn));
+
+  // Revert it to big endian format
+  int bitSizeLen = BITSIZE_WORD(bitSize) * 4;
+  unsigned char* data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
+  for (int i = 0; i < bitSizeLen; i++) data[len - 1 - i] = data_[i];
+
+  return true;
+}
+
+bool BigNumber::toBin(unsigned char** bin, int* len, const BigNumber& bn) {
+  if (NULL == bin) return false;
+  if (NULL == len) return false;
+
+  // Extract raw vector of data in little endian format
+  int bitSize = 0;
+  Ipp32u* ref_bn_data_ = NULL;
+  ippsRef_BN(NULL, &bitSize, &ref_bn_data_, BN(bn));
+
+  // Revert it to big endian format
+  int bitSizeLen = BITSIZE_WORD(bitSize) * 4;
+  *len = bitSizeLen;
+  bin[0] = reinterpret_cast<unsigned char*>(
+      malloc(bitSizeLen * sizeof(unsigned char)));
+  memset(bin[0], 0, *len);
+  if (NULL == bin[0]) return false;
+
+  unsigned char* data_out = bin[0];
+  unsigned char* bn_data_ = reinterpret_cast<unsigned char*>(ref_bn_data_);
+  for (int i = 0; i < bitSizeLen; i++)
+    data_out[bitSizeLen - 1 - i] = bn_data_[i];
+
+  return true;
 }

@@ -3,7 +3,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include <iostream>
 #include <vector>
 
 #include "ipcl/ipcl.hpp"
@@ -16,7 +15,8 @@
       ->Args({256})                 \
       ->Args({512})                 \
       ->Args({1024})                \
-      ->Args({2048})
+      ->Args({2048})                \
+      ->Args({2100})
 
 constexpr bool Enable_DJN = true;
 
@@ -67,12 +67,12 @@ static void BM_Add_CTCT(benchmark::State& state) {
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
-  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
-  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+  ipcl::PublicKey pk(n, n_length, Enable_DJN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
-  pub_key->setRandom(r_bn_v);
-  pub_key->setHS(HS_BN);
+  pk.setRandom(r_bn_v);
+  pk.setHS(HS_BN);
 
   std::vector<BigNumber> exp_bn1_v(dsize), exp_bn2_v(dsize);
   for (int i = 0; i < dsize; i++) {
@@ -83,14 +83,11 @@ static void BM_Add_CTCT(benchmark::State& state) {
   ipcl::PlainText pt1(exp_bn1_v);
   ipcl::PlainText pt2(exp_bn2_v);
 
-  ipcl::CipherText ct1 = pub_key->encrypt(pt1);
-  ipcl::CipherText ct2 = pub_key->encrypt(pt2);
+  ipcl::CipherText ct1 = pk.encrypt(pt1);
+  ipcl::CipherText ct2 = pk.encrypt(pt2);
 
   ipcl::CipherText sum;
   for (auto _ : state) sum = ct1 + ct2;
-
-  delete pub_key;
-  delete priv_key;
 }
 BENCHMARK(BM_Add_CTCT)
     ->Unit(benchmark::kMicrosecond)
@@ -101,12 +98,12 @@ static void BM_Add_CTPT(benchmark::State& state) {
 
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
-  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
-  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+  ipcl::PublicKey pk(n, n_length, Enable_DJN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
-  pub_key->setRandom(r_bn_v);
-  pub_key->setHS(HS_BN);
+  pk.setRandom(r_bn_v);
+  pk.setHS(HS_BN);
 
   std::vector<BigNumber> exp_bn1_v(dsize), exp_bn2_v(dsize);
   for (int i = 0; i < dsize; i++) {
@@ -117,13 +114,10 @@ static void BM_Add_CTPT(benchmark::State& state) {
   ipcl::PlainText pt1(exp_bn1_v);
   ipcl::PlainText pt2(exp_bn2_v);
 
-  ipcl::CipherText ct1 = pub_key->encrypt(pt1);
+  ipcl::CipherText ct1 = pk.encrypt(pt1);
 
   ipcl::CipherText sum;
   for (auto _ : state) sum = ct1 + pt2;
-
-  delete pub_key;
-  delete priv_key;
 }
 BENCHMARK(BM_Add_CTPT)
     ->Unit(benchmark::kMicrosecond)
@@ -133,12 +127,12 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   size_t dsize = state.range(0);
   BigNumber n = P_BN * Q_BN;
   int n_length = n.BitSize();
-  ipcl::PublicKey* pub_key = new ipcl::PublicKey(n, n_length, Enable_DJN);
-  ipcl::PrivateKey* priv_key = new ipcl::PrivateKey(pub_key, P_BN, Q_BN);
+  ipcl::PublicKey pk(n, n_length, Enable_DJN);
+  ipcl::PrivateKey sk(pk, P_BN, Q_BN);
 
   std::vector<BigNumber> r_bn_v(dsize, R_BN);
-  pub_key->setRandom(r_bn_v);
-  pub_key->setHS(HS_BN);
+  pk.setRandom(r_bn_v);
+  pk.setHS(HS_BN);
 
   std::vector<BigNumber> exp_bn1_v(dsize), exp_bn2_v(dsize);
   for (int i = 0; i < dsize; i++) {
@@ -149,13 +143,10 @@ static void BM_Mul_CTPT(benchmark::State& state) {
   ipcl::PlainText pt1(exp_bn1_v);
   ipcl::PlainText pt2(exp_bn2_v);
 
-  ipcl::CipherText ct1 = pub_key->encrypt(pt1);
+  ipcl::CipherText ct1 = pk.encrypt(pt1);
 
   ipcl::CipherText product;
   for (auto _ : state) product = ct1 * pt2;
-
-  delete pub_key;
-  delete priv_key;
 }
 BENCHMARK(BM_Mul_CTPT)
     ->Unit(benchmark::kMicrosecond)

@@ -1,14 +1,22 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IPCL_INCLUDE_IPCL_COMMON_HPP_
-#define IPCL_INCLUDE_IPCL_COMMON_HPP_
+#ifndef IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
+#define IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
 
 #include "ipcl/bignum.h"
 
 namespace ipcl {
 
 constexpr int IPCL_CRYPTO_MB_SIZE = 8;
+constexpr int IPCL_QAT_MODEXP_BATCH_SIZE = 1024;
+
+constexpr int IPCL_WORKLOAD_SIZE_THRESHOLD = 128;
+
+constexpr float IPCL_HYBRID_MODEXP_RATIO_FULL = 1.0;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_ENCRYPT = 0.25;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_DECRYPT = 0.12;
+constexpr float IPCL_HYBRID_MODEXP_RATIO_MULTIPLY = 0.18;
 
 /**
  * Random generator wrapper.Generates a random unsigned Big Number of the
@@ -38,4 +46,4 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx);
 BigNumber getRandomBN(int bits);
 
 }  // namespace ipcl
-#endif  // IPCL_INCLUDE_IPCL_COMMON_HPP_
+#endif  // IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
