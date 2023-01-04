@@ -133,24 +133,28 @@ class PublicKey {
   friend class cereal::access;
   template <class Archive>
   void save(Archive& ar, const Ipp32u version) const {
-    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", m_bits));
     ar(::cereal::make_nvp("enable_DJN", m_enable_DJN));
-    ar(::cereal::make_nvp("hs", m_hs));
     ar(::cereal::make_nvp("randbits", m_randbits));
+    ar(::cereal::make_nvp("n", *m_n));
+    ar(::cereal::make_nvp("hs", m_hs));
   }
 
   template <class Archive>
   void load(Archive& ar, const Ipp32u version) {
-    BigNumber n, hs;
     bool enable_DJN;
     int bits, randbits;
-
-    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", bits));
     ar(::cereal::make_nvp("enable_DJN", enable_DJN));
-    ar(::cereal::make_nvp("hs", m_hs));
     ar(::cereal::make_nvp("randbits", randbits));
+
+    int bn_len = bits / 32;
+    Ipp32u n_data[bn_len];
+    Ipp32u hs_data[bn_len * 2];
+    BigNumber n(n_data, bn_len);
+    BigNumber hs(hs_data, bn_len * 2);
+    ar(::cereal::make_nvp("n", n));
+    ar(::cereal::make_nvp("hs", hs));
 
     if (enable_DJN)
       create(n, bits, hs, randbits);
