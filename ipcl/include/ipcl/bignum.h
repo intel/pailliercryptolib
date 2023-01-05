@@ -134,14 +134,19 @@ class BigNumber : public ipcl::serializer::serializerBase {
   void save(Archive& ar, const Ipp32u version) const {
     std::vector<Ipp32u> vec;
     num2vec(vec);
+    IppsBigNumSGN sign;
+    ippsRef_BN(&sign, nullptr, nullptr, *this);
     ar(cereal::make_nvp("BigNumber", vec));
+    ar(cereal::make_nvp("Sign", sign));
   }
 
   template <class Archive>
   void load(Archive& ar, const Ipp32u version) {
     std::vector<Ipp32u> vec;
+    IppsBigNumSGN sign;
     ar(cereal::make_nvp("BigNumber", vec));
-    create(vec.data(), vec.size(), IppsBigNumPOS);
+    ar(cereal::make_nvp("Sign", sign));
+    create(vec.data(), vec.size(), sign);
   }
 
   std::string serializedName() const { return "BigNumber"; }
