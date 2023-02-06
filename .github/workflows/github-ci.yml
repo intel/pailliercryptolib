@@ -31,7 +31,7 @@ env:
 jobs:
   format:
     name: Format check
-    runs-on: [self-hosted, linux, x64, icx]
+    runs-on: [self-hosted, linux, x64, icx, debian]
     # Use environment protection (require review)
     environment: intel_workflow
     steps:
@@ -45,7 +45,7 @@ jobs:
   build-and-test:
     name: '${{ matrix.build_type }} qat=${{ matrix.enable_qat }} detect_cpu_runtime=${{ matrix.detect_cpu_runtime }} shared=${{ matrix.shared_lib }}'
     needs: [format]
-    runs-on: [self-hosted, linux, x64, icx]
+    runs-on: [self-hosted, linux, x64, icx, debian]
     defaults:
       run:
         shell: bash
