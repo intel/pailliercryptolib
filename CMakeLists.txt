@@ -10,7 +10,13 @@ include(CMakePackageConfigHelpers)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
+
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipcl)
+
+# External dependencies
+include(cmake/ippcrypto.cmake)
+include(cmake/cereal.cmake)
+
 include(ipcl-util)
 
 if(CMAKE_BUILD_TYPE)
@@ -207,10 +213,6 @@ find_package(Threads REQUIRED)
 
 # find package: OpenSSL config
 find_package(OpenSSL REQUIRED)
-
-# External dependencies
-include(cmake/ippcrypto.cmake)
-include(cmake/cereal.cmake)
 
 if(IPCL_DETECT_CPU_RUNTIME)
   include(cmake/cpufeatures.cmake)
