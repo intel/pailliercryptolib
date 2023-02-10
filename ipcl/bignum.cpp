@@ -137,7 +137,7 @@ BigNumber& BigNumber::operator=(const BigNumber& bn) {
     Ipp32u* bnData;
     ippsRef_BN(&bnSgn, &bnBitLen, &bnData, bn);
 
-    delete (Ipp8u*)m_pBN;
+    delete[] (Ipp8u*)m_pBN;
     create(bnData, BITSIZE_WORD(bnBitLen), bnSgn);
   }
   return *this;
