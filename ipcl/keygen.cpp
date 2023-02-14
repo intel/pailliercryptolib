@@ -1,6 +1,9 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+#include <climits>
+#include <iostream>
+#include <random>
 #include <vector>
 
 #include "ipcl/ipcl.hpp"
@@ -9,6 +12,13 @@ namespace ipcl {
 
 constexpr int N_BIT_SIZE_MAX = 2048;
 constexpr int N_BIT_SIZE_MIN = 200;
+
+static void rand32u(std::vector<Ipp32u>& addr) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+  for (auto& x : addr) x = (dist(rng) << 16) + dist(rng);
+}
 
 BigNumber getPrimeBN(int max_bits) {
   int prime_size;
@@ -19,9 +29,15 @@ BigNumber getPrimeBN(int max_bits) {
 #if defined(IPCL_RNG_INSTR_RDSEED) || defined(IPCL_RNG_INSTR_RDRAND)
   Ipp8u* rand_param = NULL;
 #else
+  constexpr int seed_size = 160;
   auto buff = std::vector<Ipp8u>(prime_size);
   auto rand_param = buff.data();
-  ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(rand_param));
+  ippsPRNGInit(seed_size, reinterpret_cast<IppsPRNGState*>(rand_param));
+
+  auto seed = std::vector<Ipp32u>(seed_size);
+  rand32u(seed);
+  BigNumber seed_bn(seed.data(), seed_size, IppsBigNumPOS);
+  ippsPRNGSetSeed(BN(seed_bn), reinterpret_cast<IppsPRNGState*>(rand_param));
 #endif
 
   BigNumber prime_bn(0, max_bits / 8);
@@ -68,6 +84,7 @@ static void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
 static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q, BigNumber& n,
                      BigNumber& ref_dist) {
   BigNumber gcd;
+
   do {
     do {
       p = getPrimeBN(n_length / 2);
