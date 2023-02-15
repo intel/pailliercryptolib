@@ -9,46 +9,31 @@
 namespace ipcl {
 
 IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
-#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
-  if (has_rdseed)
+  if (kRNGenType == RNGenType::RDSEED)
     return ippsTRNGenRDSEED(rand, bits, ctx);
-  else if (has_rdrand)
+  else if (kRNGenType == RNGenType::RDRAND)
     return ippsPRNGenRDRAND(rand, bits, ctx);
-  else
+  else if (kRNGenType == RNGenType::PSEUDO)
     return ippsPRNGen(rand, bits, ctx);
-#else
-#ifdef IPCL_RNG_INSTR_RDSEED
-  return ippsTRNGenRDSEED(rand, bits, ctx);
-#elif defined(IPCL_RNG_INSTR_RDRAND)
-  return ippsPRNGenRDRAND(rand, bits, ctx);
-#else
-  return ippsPRNGen(rand, bits, ctx);
-#endif
-#endif  // IPCL_RUNTIME_IPP_RNG
+  else
+    ERROR_CHECK(false, "ippGenRandom: RNGenType does not exist.");
 }
 
 IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
-#ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
-  if (has_rdseed)
+  if (kRNGenType == RNGenType::RDSEED) {
     return ippsTRNGenRDSEED_BN(rand, bits, ctx);
-  else if (has_rdrand)
+  } else if (kRNGenType == RNGenType::RDRAND) {
     return ippsPRNGenRDRAND_BN(rand, bits, ctx);
-  else
-    return ippsPRNGen_BN(rand, bits, ctx);
-#else
-#ifdef IPCL_RNG_INSTR_RDSEED
-  return ippsTRNGenRDSEED_BN(rand, bits, ctx);
-#elif defined(IPCL_RNG_INSTR_RDRAND)
-  return ippsPRNGenRDRAND_BN(rand, bits, ctx);
-#else
-  int size;
-  ippsPRNGGetSize(&size);
-  auto prng = std::vector<Ipp8u>(size);
-  ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(prng.data()));
-  return ippsPRNGen_BN(rand, bits,
-                       reinterpret_cast<IppsPRNGState*>(prng.data()));
-#endif
-#endif  // IPCL_RUNTIME_IPP_RNG
+  } else if (kRNGenType == RNGenType::PSEUDO) {
+    int size;
+    ippsPRNGGetSize(&size);
+    auto prng = std::vector<Ipp8u>(size);
+    ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(prng.data()));
+    return ippsPRNGen_BN(rand, bits,
+                         reinterpret_cast<IppsPRNGState*>(prng.data()));
+  } else {
+    ERROR_CHECK(false, "ippGenRandomBN: RNGenType does not exist.");
+  }
 }
 
 BigNumber getRandomBN(int bits) {
