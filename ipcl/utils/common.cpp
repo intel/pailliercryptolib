@@ -8,6 +8,13 @@
 
 namespace ipcl {
 
+void rand32u(std::vector<Ipp32u>& addr) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+  for (auto& x : addr) x = (dist(rng) << 16) + dist(rng);
+}
+
 IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
   if (kRNGenType == RNGenType::RDSEED)
     return ippsTRNGenRDSEED(rand, bits, ctx);
@@ -25,10 +32,16 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
   } else if (kRNGenType == RNGenType::RDRAND) {
     return ippsPRNGenRDRAND_BN(rand, bits, ctx);
   } else if (kRNGenType == RNGenType::PSEUDO) {
+    int seed_size = 160;
     int size;
     ippsPRNGGetSize(&size);
     auto prng = std::vector<Ipp8u>(size);
-    ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(prng.data()));
+    ippsPRNGInit(seed_size, reinterpret_cast<IppsPRNGState*>(prng.data()));
+
+    auto seed = std::vector<Ipp32u>(seed_size);
+    rand32u(seed);
+    BigNumber seed_bn(seed.data(), seed_size, IppsBigNumPOS);
+    ippsPRNGSetSeed(BN(seed_bn), reinterpret_cast<IppsPRNGState*>(prng.data()));
     return ippsPRNGen_BN(rand, bits,
                          reinterpret_cast<IppsPRNGState*>(prng.data()));
   } else {

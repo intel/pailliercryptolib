@@ -1,9 +1,6 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-#include <climits>
-#include <iostream>
-#include <random>
 #include <vector>
 
 #include "ipcl/ipcl.hpp"
@@ -12,13 +9,6 @@ namespace ipcl {
 
 constexpr int N_BIT_SIZE_MAX = 2048;
 constexpr int N_BIT_SIZE_MIN = 200;
-
-static void rand32u(std::vector<Ipp32u>& addr) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
-  for (auto& x : addr) x = (dist(rng) << 16) + dist(rng);
-}
 
 BigNumber getPrimeBN(int max_bits) {
   int prime_size;
