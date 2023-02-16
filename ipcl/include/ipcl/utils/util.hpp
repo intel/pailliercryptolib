@@ -43,6 +43,8 @@ inline void vec_size_check(const std::vector<T>& v, const char* file,
 
 #define VEC_SIZE_CHECK(v) vec_size_check(v, __FILE__, __LINE__)
 
+enum class RNGenType { RDSEED = 1, RDRAND = 2, PSEUDO = 3 };
+
 #ifdef IPCL_RUNTIME_DETECT_CPU_FEATURES
 static const bool disable_avx512ifma =
     (std::getenv("IPCL_DISABLE_AVX512IFMA") != nullptr);
@@ -53,10 +55,22 @@ static const bool prefer_ipp_prng =
 static const cpu_features::X86Features features =
     cpu_features::GetX86Info().features;
 static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
-static const bool has_rdseed =
+static const bool use_rdseed =
     features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
-static const bool has_rdrand = features.rdrnd && prefer_rdrand;
+static const bool use_rdrand = features.rdrnd && prefer_rdrand;
 
+static const RNGenType kRNGenType = use_rdseed   ? RNGenType::RDSEED
+                                    : use_rdrand ? RNGenType::RDRAND
+                                                 : RNGenType::PSEUDO;
+
+#else  // compile time detection of cpu feature
+#ifdef IPCL_RNG_INSTR_RDSEED
+static const RNGenType kRNGenType = RNGenType::RDSEED;
+#elif defined(IPCL_RNG_INSTR_RDRAND)
+static const RNGenType kRNGenType = RNGenType::RDRAND;
+#else
+static const RNGenType kRNGenType = RNGenType::PSEUDO;
+#endif
 #endif  // IPCL_RUNTIME_DETECT_CPU_FEATURES
 
 #ifdef IPCL_USE_OMP
