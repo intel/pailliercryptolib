@@ -41,7 +41,12 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
 #elif defined(IPCL_RNG_INSTR_RDRAND)
   return ippsPRNGenRDRAND_BN(rand, bits, ctx);
 #else
-  return ippsPRNGen_BN(rand, bits, ctx);
+  int size;
+  ippsPRNGGetSize(&size);
+  auto prng = std::vector<Ipp8u>(size);
+  ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(prng.data()));
+  return ippsPRNGen_BN(rand, bits,
+                       reinterpret_cast<IppsPRNGState*>(prng.data()));
 #endif
 #endif  // IPCL_RUNTIME_IPP_RNG
 }
