@@ -58,7 +58,6 @@ static const bool has_avx512ifma = features.avx512ifma && !disable_avx512ifma;
 static const bool use_rdseed =
     features.rdseed && !prefer_rdrand && !prefer_ipp_prng;
 static const bool use_rdrand = features.rdrnd && prefer_rdrand;
-
 static const RNGenType kRNGenType = use_rdseed   ? RNGenType::RDSEED
                                     : use_rdrand ? RNGenType::RDRAND
                                                  : RNGenType::PSEUDO;

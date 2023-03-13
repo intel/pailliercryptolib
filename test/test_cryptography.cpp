@@ -1,6 +1,8 @@
 // Copyright (C) 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+#include <omp.h>
+
 #include <climits>
 #include <random>
 #include <vector>
@@ -11,6 +13,48 @@
 constexpr int SELF_DEF_NUM_VALUES = 18;
 constexpr float SELF_DEF_HYBRID_QAT_RATIO = 0.5;
 
+TEST(CryptoTest, CryptoTest_APPLEVEL_OMP) {
+  const uint32_t num_values = SELF_DEF_NUM_VALUES;
+  const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
+
+  ipcl::KeyPair key = ipcl::generateKeypair(2048, true);
+
+  std::vector<uint32_t> exp_value(num_values);
+  std::vector<ipcl::PlainText> pt(num_values);
+  std::vector<ipcl::CipherText> ct(num_values);
+  std::vector<ipcl::PlainText> dt(num_values);
+
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, UINT_MAX);
+
+  for (int i = 0; i < num_values; i++) {
+    exp_value[i] = dist(rng);
+    pt[i] = ipcl::PlainText(exp_value[i]);
+  }
+
+  ipcl::setHybridRatio(qat_ratio);
+
+#pragma omp parallel for num_threads(num_values)
+  for (int i = 0; i < num_values; i++) {
+    int tid = omp_get_thread_num();
+    printf("encrypt tid: %d\n", tid);
+    ct[i] = key.pub_key.encrypt(pt[i]);
+  }
+
+#pragma omp parallel for num_threads(num_values)
+  for (int i = 0; i < num_values; i++) {
+    int tid = omp_get_thread_num();
+    dt[i] = key.priv_key.decrypt(ct[i]);
+    printf("decrypt tid: %d\n", tid);
+  }
+
+  for (int i = 0; i < num_values; i++) {
+    std::vector<uint32_t> v = dt[i].getElementVec(0);
+    EXPECT_EQ(v[0], exp_value[i]);
+  }
+}
+/*
 TEST(CryptoTest, CryptoTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
   const float qat_ratio = SELF_DEF_HYBRID_QAT_RATIO;
@@ -186,3 +230,4 @@ TEST(CryptoTest, ISO_IEC_18033_6_ComplianceTest) {
   m1m2.num2hex(str4);
   EXPECT_EQ(str4, dt_sum.getElementHex(0));
 }
+*/

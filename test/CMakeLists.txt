@@ -16,3 +16,6 @@ target_include_directories(unittest_ipcl PRIVATE
 target_link_libraries(unittest_ipcl PRIVATE
   ipcl -pthread libgtest
 )
+
+find_package(OpenMP REQUIRED)
+target_link_libraries(ipcl PUBLIC OpenMP::OpenMP_CXX)
