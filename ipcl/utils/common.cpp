@@ -16,19 +16,24 @@ void rand32u(std::vector<Ipp32u>& addr) {
 }
 
 IppStatus ippGenRandom(Ipp32u* rand, int bits, void* ctx) {
-  if (kRNGenType == RNGenType::RDSEED)
-    return ippsTRNGenRDSEED(rand, bits, ctx);
-  else if (kRNGenType == RNGenType::RDRAND)
+  if (kRNGenType == RNGenType::RDSEED) {
+    IppStatus stat = ippsTRNGenRDSEED(rand, bits, ctx);
+    if (stat != ippStsNoErr) stat = ippsPRNGenRDRAND(rand, bits, ctx);
+    return stat;
+  } else if (kRNGenType == RNGenType::RDRAND) {
     return ippsPRNGenRDRAND(rand, bits, ctx);
-  else if (kRNGenType == RNGenType::PSEUDO)
+  } else if (kRNGenType == RNGenType::PSEUDO) {
     return ippsPRNGen(rand, bits, ctx);
-  else
+  } else {
     ERROR_CHECK(false, "ippGenRandom: RNGenType does not exist.");
+  }
 }
 
 IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
   if (kRNGenType == RNGenType::RDSEED) {
-    return ippsTRNGenRDSEED_BN(rand, bits, ctx);
+    IppStatus stat = ippsTRNGenRDSEED_BN(rand, bits, ctx);
+    if (stat != ippStsNoErr) stat = ippsPRNGenRDRAND_BN(rand, bits, ctx);
+    return stat;
   } else if (kRNGenType == RNGenType::RDRAND) {
     return ippsPRNGenRDRAND_BN(rand, bits, ctx);
   } else if (kRNGenType == RNGenType::PSEUDO) {
@@ -42,6 +47,7 @@ IppStatus ippGenRandomBN(IppsBigNumState* rand, int bits, void* ctx) {
     rand32u(seed);
     BigNumber seed_bn(seed.data(), seed_size, IppsBigNumPOS);
     ippsPRNGSetSeed(BN(seed_bn), reinterpret_cast<IppsPRNGState*>(prng.data()));
+
     return ippsPRNGen_BN(rand, bits,
                          reinterpret_cast<IppsPRNGState*>(prng.data()));
   } else {

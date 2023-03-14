@@ -10,7 +10,7 @@
 #include "gtest/gtest.h"
 #include "ipcl/ipcl.hpp"
 
-constexpr int SELF_DEF_NUM_VALUES = 18;
+constexpr int SELF_DEF_NUM_VALUES = 200;
 constexpr float SELF_DEF_HYBRID_QAT_RATIO = 0.5;
 
 TEST(CryptoTest, CryptoTest_APPLEVEL_OMP) {
@@ -38,7 +38,7 @@ TEST(CryptoTest, CryptoTest_APPLEVEL_OMP) {
 #pragma omp parallel for num_threads(num_values)
   for (int i = 0; i < num_values; i++) {
     int tid = omp_get_thread_num();
-    printf("encrypt tid: %d\n", tid);
+    // printf("encrypt tid: %d\n", tid);
     ct[i] = key.pub_key.encrypt(pt[i]);
   }
 
@@ -46,7 +46,7 @@ TEST(CryptoTest, CryptoTest_APPLEVEL_OMP) {
   for (int i = 0; i < num_values; i++) {
     int tid = omp_get_thread_num();
     dt[i] = key.priv_key.decrypt(ct[i]);
-    printf("decrypt tid: %d\n", tid);
+    // printf("decrypt tid: %d\n", tid);
   }
 
   for (int i = 0; i < num_values; i++) {
