@@ -22,6 +22,8 @@ constexpr float IPCL_HYBRID_MODEXP_RATIO_ENCRYPT = 0.25;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_DECRYPT = 0.12;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_MULTIPLY = 0.18;
 
+constexpr int IPCL_RDRAND_RETRIES = 3;
+
 /**
  * Generate random number with std mt19937
  * @param[in,out] addr Location used to store the generated random number
