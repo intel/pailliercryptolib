@@ -16,13 +16,18 @@ BigNumber getPrimeBN(int max_bits) {
   auto prime_ctx = std::vector<Ipp8u>(prime_size);
   ippsPrimeInit(max_bits, reinterpret_cast<IppsPrimeState*>(prime_ctx.data()));
 
-#if defined(IPCL_RNG_INSTR_RDSEED) || defined(IPCL_RNG_INSTR_RDRAND)
   Ipp8u* rand_param = NULL;
-#else
+  constexpr int seed_size = 160;
   auto buff = std::vector<Ipp8u>(prime_size);
-  auto rand_param = buff.data();
-  ippsPRNGInit(160, reinterpret_cast<IppsPRNGState*>(rand_param));
-#endif
+  if (kRNGenType == RNGenType::PSEUDO) {
+    rand_param = buff.data();
+    ippsPRNGInit(seed_size, reinterpret_cast<IppsPRNGState*>(rand_param));
+
+    auto seed = std::vector<Ipp32u>(seed_size);
+    rand32u(seed);
+    BigNumber seed_bn(seed.data(), seed_size, IppsBigNumPOS);
+    ippsPRNGSetSeed(BN(seed_bn), reinterpret_cast<IppsPRNGState*>(rand_param));
+  }
 
   BigNumber prime_bn(0, max_bits / 8);
   while (ippStsNoErr !=
@@ -68,6 +73,7 @@ static void getNormalBN(int64_t n_length, BigNumber& p, BigNumber& q,
 static void getDJNBN(int64_t n_length, BigNumber& p, BigNumber& q, BigNumber& n,
                      BigNumber& ref_dist) {
   BigNumber gcd;
+
   do {
     do {
       p = getPrimeBN(n_length / 2);

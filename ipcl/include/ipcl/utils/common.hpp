@@ -4,6 +4,10 @@
 #ifndef IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
 #define IPCL_INCLUDE_IPCL_UTILS_COMMON_HPP_
 
+#include <climits>
+#include <random>
+#include <vector>
+
 #include "ipcl/bignum.h"
 
 namespace ipcl {
@@ -17,6 +21,14 @@ constexpr float IPCL_HYBRID_MODEXP_RATIO_FULL = 1.0;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_ENCRYPT = 0.25;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_DECRYPT = 0.12;
 constexpr float IPCL_HYBRID_MODEXP_RATIO_MULTIPLY = 0.18;
+
+constexpr int IPCL_RDRAND_RETRIES = 3;
+
+/**
+ * Generate random number with std mt19937
+ * @param[in,out] addr Location used to store the generated random number
+ */
+void rand32u(std::vector<Ipp32u>& addr);
 
 /**
  * Random generator wrapper.Generates a random unsigned Big Number of the
