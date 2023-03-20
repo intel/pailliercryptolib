@@ -475,7 +475,7 @@ void BigNumber::num2hex(std::string& s) const {
 
   int len = BITSIZE_WORD(bnBitLen);
 
-  s.append(1, (bnSgn == ippBigNumNEG) ? '-' : ' ');
+  if (bnSgn == ippBigNumNEG) s.append(1, '-');
   s.append(1, '0');
   s.append(1, 'x');
 
