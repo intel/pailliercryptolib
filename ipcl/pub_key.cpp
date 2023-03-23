@@ -152,7 +152,6 @@ void PublicKey::create(const BigNumber& n, int bits, bool enableDJN_) {
   }
   m_testv = false;
   m_isInitialized = true;
-  std::cout << "create complete" << std::endl;
 }
 
 void PublicKey::create(const BigNumber& n, int bits, const BigNumber& hs,
