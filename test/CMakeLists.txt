@@ -6,6 +6,7 @@ set(IPCL_UNITTEST_SRC
   main.cpp
   test_cryptography.cpp
   test_ops.cpp
+  test_serialization.cpp
 )
 
 add_executable(unittest_ipcl ${IPCL_UNITTEST_SRC})
@@ -14,5 +15,5 @@ target_include_directories(unittest_ipcl PRIVATE
   ${IPCL_INC_DIR}
 )
 target_link_libraries(unittest_ipcl PRIVATE
-  ipcl -pthread libgtest
+  ipcl -pthread libgtest IPPCP_ippcp
 )
