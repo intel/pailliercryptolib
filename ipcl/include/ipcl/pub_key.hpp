@@ -148,14 +148,19 @@ class PublicKey {
     ar(::cereal::make_nvp("enable_DJN", enable_DJN));
     ar(::cereal::make_nvp("randbits", randbits));
 
-    std::vector<Ipp32u> n_v, hs_v;
-    ar(::cereal::make_nvp("n", n_v));
-    ar(::cereal::make_nvp("hs", hs_v));
+    int bn_len = bits / 32;
+    std::vector<Ipp32u> n_v(bn_len, 0);
+    std::vector<Ipp32u> hs_v(bn_len * 2, 0);
+    BigNumber n(n_v.data(), bn_len);
+    BigNumber hs(hs_v.data(), bn_len * 2);
+
+    ar(::cereal::make_nvp("n", n));
+    ar(::cereal::make_nvp("hs", hs));
 
     if (enable_DJN)
-      create(n_v.data(), bits, hs_v.data(), randbits);
+      create(n, bits, hs, randbits);
     else
-      create(n_v.data(), bits);
+      create(n, bits);
   }
 
   bool m_isInitialized = false;

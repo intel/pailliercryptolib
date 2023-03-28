@@ -6,6 +6,7 @@ set(IPCL_UNITTEST_SRC
   main.cpp
   test_cryptography.cpp
   test_ops.cpp
+  test_serialization.cpp
 )
 
 add_executable(unittest_ipcl ${IPCL_UNITTEST_SRC})
