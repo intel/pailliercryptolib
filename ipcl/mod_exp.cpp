@@ -64,10 +64,133 @@ bool isHybridOptimal() {
 }
 
 #ifdef IPCL_USE_QAT
-// Multiple input QAT ModExp interface to offload computation to QAT
-static std::vector<BigNumber> heQatBnModExp(
+// [Multi-Thread supported] QAT ModExp interface to offload computation to QAT
+static std::vector<BigNumber> heQatBnModExp_MT(
     const std::vector<BigNumber>& base, const std::vector<BigNumber>& exponent,
     const std::vector<BigNumber>& modulus, unsigned int batch_size) {
+  int nbits = modulus.front().BitSize();
+  int length = BITSIZE_WORD(nbits) * 4;
+  nbits = 8 * length;
+
+  unsigned int worksize = base.size();
+  unsigned int nslices = (worksize + batch_size - 1) / batch_size;
+  unsigned int residue = worksize % batch_size;
+
+  batch_size = (nslices > 0) ? batch_size : worksize;
+
+  HE_QAT_STATUS status = HE_QAT_STATUS_FAIL;
+
+  unsigned char* bn_base_data_[batch_size];
+  unsigned char* bn_exponent_data_[batch_size];
+  unsigned char* bn_modulus_data_[batch_size];
+  unsigned char* bn_remainder_data_[batch_size];
+
+  // Pre-allocate memory for data
+  for (int i = 0; i < batch_size; i++) {
+    bn_base_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+    bn_exponent_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+
+    bn_modulus_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+    bn_remainder_data_[i] = reinterpret_cast<unsigned char*>(
+        malloc(length * sizeof(unsigned char)));
+
+    ERROR_CHECK(
+        bn_base_data_[i] != nullptr && bn_exponent_data_[i] != nullptr &&
+            bn_modulus_data_[i] != nullptr && bn_remainder_data_[i] != nullptr,
+        "qatMultiBuffExp: alloc memory for error");
+  }  // End preparing input containers
+
+  // Container to hold total number of outputs to be returned
+  std::vector<BigNumber> remainder(worksize, 0);
+
+  // N batch process
+  for (unsigned int j = 0; j < nslices; j++) {
+    // Secure one of the distributed outstanding buffers
+    unsigned int buffer_id = 0;
+    status = acquire_bnModExp_buffer(&buffer_id);
+    if (HE_QAT_STATUS_SUCCESS != status) {
+      printf("Error: acquire_bnModExp_buffer()\n");
+      exit(1);
+    }
+
+    int parallel_quantity =
+        ((j == nslices - 1) && (residue > 0)) ? residue : batch_size;
+
+    for (unsigned int i = 0; i < parallel_quantity; i++) {
+      memset(bn_base_data_[i], 0, length);
+      memset(bn_exponent_data_[i], 0, length);
+      memset(bn_modulus_data_[i], 0, length);
+      memset(bn_remainder_data_[i], 0, length);
+
+      bool ret = false;
+      ret =
+          BigNumber::toBin(bn_base_data_[i], length, base[j * batch_size + i]);
+      if (!ret) {
+        printf("bn_base_data_: failed at bigNumberToBin()\n");
+        exit(1);
+      }
+      ret = BigNumber::toBin(bn_exponent_data_[i], length,
+                             exponent[j * batch_size + i]);
+      if (!ret) {
+        printf("bn_exponent_data_: failed at bigNumberToBin()\n");
+        exit(1);
+      }
+
+      ret = BigNumber::toBin(bn_modulus_data_[i], length,
+                             modulus[j * batch_size + i]);
+      if (!ret) {
+        printf("bn_modulus_data_: failed at bigNumberToBin()\n");
+        exit(1);
+      }
+
+      status =
+          HE_QAT_bnModExp_MT(buffer_id, bn_remainder_data_[i], bn_base_data_[i],
+                             bn_exponent_data_[i], bn_modulus_data_[i], nbits);
+
+      if (HE_QAT_STATUS_SUCCESS != status) {
+        HE_QAT_PRINT_ERR("\nQAT bnModExp with BigNumber failed\n");
+      }
+    }
+
+    release_bnModExp_buffer(buffer_id, parallel_quantity);
+
+    for (unsigned int i = 0; i < parallel_quantity; i++) {
+      unsigned char* bn_remainder_ = bn_remainder_data_[i];
+      bool ret = BigNumber::fromBin(remainder[j * batch_size + i],
+                                    bn_remainder_, length);
+      if (!ret) {
+        printf("residue bn_remainder_data_: failed at BigNumber::fromBin()\n");
+        exit(1);
+      }
+    }
+  }
+
+  // Free memory
+  for (unsigned int i = 0; i < batch_size; i++) {
+    free(bn_base_data_[i]);
+    bn_base_data_[i] = NULL;
+    free(bn_exponent_data_[i]);
+    bn_exponent_data_[i] = NULL;
+    free(bn_modulus_data_[i]);
+    bn_modulus_data_[i] = NULL;
+    free(bn_remainder_data_[i]);
+    bn_remainder_data_[i] = NULL;
+  }
+
+  return remainder;
+}
+
+// QAT ModExp interface to offload computation to QAT
+[[deprecated(
+    "This funcion does NOT support multi-thread, use heQatBnModExp_MT "
+    "instead.")]]  // NOLINT
+static std::vector<BigNumber>
+heQatBnModExp(const std::vector<BigNumber>& base,
+              const std::vector<BigNumber>& exponent,
+              const std::vector<BigNumber>& modulus, unsigned int batch_size) {
   static unsigned int counter = 0;
   int nbits = modulus.front().BitSize();
   int length = BITSIZE_WORD(nbits) * 4;
@@ -465,7 +588,7 @@ std::vector<BigNumber> qatModExp(const std::vector<BigNumber>& base,
                                  const std::vector<BigNumber>& exp,
                                  const std::vector<BigNumber>& mod) {
 #ifdef IPCL_USE_QAT
-  return heQatBnModExp(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
+  return heQatBnModExp_MT(base, exp, mod, IPCL_QAT_MODEXP_BATCH_SIZE);
 #else
   ERROR_CHECK(false, "qatModExp: Need to turn on IPCL_ENABLE_QAT");
 #endif  // IPCL_USE_QAT
