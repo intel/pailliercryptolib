@@ -17,3 +17,7 @@ target_include_directories(unittest_ipcl PRIVATE
 target_link_libraries(unittest_ipcl PRIVATE
   ipcl -pthread libgtest
 )
+
+if(IPCL_SHARED)
+  target_link_libraries(unittest_ipcl PRIVATE IPPCP::ippcp)
+endif()
