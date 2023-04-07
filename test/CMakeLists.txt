@@ -21,3 +21,6 @@ target_link_libraries(unittest_ipcl PRIVATE
 if(IPCL_SHARED)
   target_link_libraries(unittest_ipcl PRIVATE IPPCP::ippcp)
 endif()
+
+find_package(OpenMP REQUIRED)
+target_link_libraries(ipcl PUBLIC OpenMP::OpenMP_CXX)
