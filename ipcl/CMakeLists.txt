@@ -57,7 +57,10 @@ install(DIRECTORY ${CEREAL_INC_DIR}/
 )
 
 # IPP-Crypto (third party dep): include and install definition
-add_dependencies(ipcl ext_ipp-crypto)
+if(NOT ippcp_FOUND)
+  add_dependencies(ipcl ext_ipp-crypto)
+endif()
+
 target_include_directories(ipcl
     PUBLIC $<BUILD_INTERFACE:${IPPCRYPTO_INC_DIR}>
     PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ipcl/ippcrypto>
