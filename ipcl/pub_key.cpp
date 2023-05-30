@@ -99,11 +99,10 @@ void PublicKey::setHS(const BigNumber& hs) { m_hs = hs; }
 std::vector<BigNumber> PublicKey::raw_encrypt(const std::vector<BigNumber>& pt,
                                               bool make_secure) const {
   std::size_t pt_size = pt.size();
-
+  BigNumber nsq = *m_nsquare;
   std::vector<BigNumber> ct(pt_size);
 
-  for (std::size_t i = 0; i < pt_size; i++)
-    ct[i] = (*m_n * pt[i] + 1) % (*m_nsquare);
+  for (std::size_t i = 0; i < pt_size; i++) ct[i] = (*m_n * pt[i] + 1) % nsq;
 
   if (make_secure) applyObfuscator(ct);
 
