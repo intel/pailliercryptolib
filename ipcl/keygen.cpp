@@ -19,14 +19,13 @@ BigNumber getPrimeBN(int max_bits) {
   Ipp8u* rand_param = NULL;
   constexpr int seed_size = 160;
   auto buff = std::vector<Ipp8u>(prime_size);
+
   if (kRNGenType == RNGenType::PSEUDO) {
     rand_param = buff.data();
     ippsPRNGInit(seed_size, reinterpret_cast<IppsPRNGState*>(rand_param));
 
-    auto seed = std::vector<Ipp32u>(seed_size);
-    rand32u(seed);
-    BigNumber seed_bn(seed.data(), seed_size, IppsBigNumPOS);
-    ippsPRNGSetSeed(BN(seed_bn), reinterpret_cast<IppsPRNGState*>(rand_param));
+    BigNumber seed = getRandomBN(seed_size);
+    ippsPRNGSetSeed(seed, reinterpret_cast<IppsPRNGState*>(rand_param));
   }
 
   BigNumber prime_bn(0, max_bits / 8);
