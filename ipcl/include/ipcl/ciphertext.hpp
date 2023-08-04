@@ -65,6 +65,13 @@ class CipherText : public BaseText {
                                  const std::vector<BigNumber>& b) const;
 
   std::shared_ptr<PublicKey> m_pk;  ///< Public key used to encrypt big number
+
+  // Serialization and desirealization
+  friend class ::cereal::access;
+  template <class Archive>
+  void serialize(Archive& ar, const Ipp32u version) {
+    ar(::cereal::base_class<BaseText>(this), ::cereal::make_nvp("pk", *m_pk));
+  }
 };
 
 }  // namespace ipcl
