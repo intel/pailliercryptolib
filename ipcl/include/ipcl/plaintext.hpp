@@ -87,6 +87,14 @@ class PlainText : public BaseText {
    * @param[in] shift rotate length
    */
   PlainText rotate(int shift) const;
+
+ private:
+  // Serialization
+  friend class ::cereal::access;
+  template <class Archive>
+  void serialize(Archive& ar, const Ipp32u version) {
+    ar(::cereal::base_class<BaseText>(this));
+  }
 };
 
 }  // namespace ipcl

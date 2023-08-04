@@ -103,6 +103,15 @@ class BaseText {
  protected:
   std::vector<BigNumber> m_texts;  ///< Container used to store BigNumber
   std::size_t m_size;              ///< Container size
+
+ private:
+  // Serialization and desirealization
+  friend class ::cereal::access;
+  template <class Archive>
+  void serialize(Archive& ar, const Ipp32u version) {
+    ar(::cereal::make_nvp("size", m_size));
+    ar(::cereal::make_nvp("texts", m_texts));
+  }
 };
 
 }  // namespace ipcl
