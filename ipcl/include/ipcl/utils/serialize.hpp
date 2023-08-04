@@ -38,7 +38,7 @@ template <typename T>
 bool serializeToFile(const std::string& fn, const T& obj) {
   std::ofstream ofs(fn, std::ios::out | std::ios::binary);
   if (ofs.is_open()) {
-    serializer::serialize(obj, ofs);
+    serializer::serialize(ofs, obj);
     ofs.close();
     return true;
   }
@@ -49,7 +49,7 @@ template <typename T>
 bool deserializeFromFile(const std::string& fn, T& obj) {
   std::ifstream ifs(fn, std::ios::in | std::ios::binary);
   if (ifs.is_open()) {
-    serializer::deserialize(obj, ifs);
+    serializer::deserialize(ifs, obj);
     ifs.close();
     return true;
   }
