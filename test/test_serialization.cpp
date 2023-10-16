@@ -30,6 +30,26 @@ TEST(SerialTest, PublicKeyTest) {
   EXPECT_EQ(pt.getElement(0), dt.getElement(0));
 }
 
+TEST(SerialTest, PrivateKeyTest) {
+  const int key_bits = 2048;
+  ipcl::KeyPair key = ipcl::generateKeypair(key_bits);
+  ipcl::PublicKey pk = key.pub_key;
+  ipcl::PrivateKey exp_sk = key.priv_key;
+  std::vector<Ipp32u> vec(key_bits / 32, 0);
+  BigNumber bn(vec.data(), key_bits / 32);
+  ipcl::PrivateKey ret_sk;
+
+  std::ostringstream os;
+  ipcl::serializer::serialize(os, exp_sk);
+  std::istringstream is(os.str());
+  ipcl::serializer::deserialize(is, ret_sk);
+
+  ipcl::PlainText pt(123);
+  ipcl::CipherText ct = pk.encrypt(pt);
+  ipcl::PlainText dt = ret_sk.decrypt(ct);
+  EXPECT_EQ(pt.getElement(0), dt.getElement(0));
+}
+
 TEST(SerialTest, PlaintextTest) {
   const uint32_t num_values = SELF_DEF_NUM_VALUES;
 
