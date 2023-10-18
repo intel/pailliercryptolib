@@ -86,7 +86,6 @@ jobs:
       - name: Build library
         run: |
           # QAT unavailable in ICX - to be added
-          source /opt/intel/oneapi/setvars.sh
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type}} \
             -DIPCL_DETECT_CPU_RUNTIME=${{ matrix.detect_cpu_runtime }} \
             -DIPCL_ENABLE_QAT=${{ matrix.enable_qat }} \
@@ -96,19 +95,16 @@ jobs:
 
       - name: Run unittest
         run: |
-          source /opt/intel/oneapi/setvars.sh
           cmake --build build --target unittest
 
       - name: Run benchmark
         run: |
-          source /opt/intel/oneapi/setvars.sh
           ./build/benchmark/bench_ipcl \
             --benchmark_out="${GITHUB_WORKFLOW}_${GITHUB_SHA}" \
             --benchmark_out_format=csv ${{ matrix.benchmark_min_time }}
 
       - name: Build and run examples
         run: |
-          source /opt/intel/oneapi/setvars.sh
           cd $GITHUB_WORKSPACE/example
           cmake -S . -B build ${{ env.IPCL_HINT_DIR }}
           cmake --build build
