@@ -13,7 +13,7 @@ if(CMAKE_PREFIX_PATH)
   else()
     set(IPPCP_SHARED OFF)
   endif()
-  find_package(ippcp ${IPPCRYPTO_VERSION})
+  find_package(ippcp EXACT ${IPPCRYPTO_VERSION})
 endif()
 
 if(ippcp_FOUND)
