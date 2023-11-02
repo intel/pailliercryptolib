@@ -6,21 +6,9 @@
 #include <cstring>
 
 #include "crypto_mb/exp.h"
-#include "ipcl/mod_exp.hpp"
 #include "ipcl/utils/util.hpp"
 
 namespace ipcl {
-/**
- * Compute lcm for p and q
- * @param[in] p p - 1 of private key
- * @param[in] q q - 1 of private key
- * @return the lcm result of type BigNumber
- */
-static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
-  BigNumber gcd(p);
-  ippsGcd_BN(BN(p), BN(q), BN(gcd));
-  return p * q / gcd;
-}
 
 PrivateKey::PrivateKey(const PublicKey& pk, const BigNumber& p,
                        const BigNumber& q)

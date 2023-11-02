@@ -9,9 +9,22 @@
 #include <vector>
 
 #include "ipcl/ciphertext.hpp"
+#include "ipcl/mod_exp.hpp"
 #include "ipcl/plaintext.hpp"
 
 namespace ipcl {
+
+/**
+ * Compute lcm for p and q
+ * @param[in] p p - 1 of private key
+ * @param[in] q q - 1 of private key
+ * @return the lcm result of type BigNumber
+ */
+static inline BigNumber lcm(const BigNumber& p, const BigNumber& q) {
+  BigNumber gcd(p);
+  ippsGcd_BN(BN(p), BN(q), BN(gcd));
+  return p * q / gcd;
+}
 
 class PrivateKey {
  public:
@@ -77,6 +90,48 @@ class PrivateKey {
   bool isInitialized() { return m_isInitialized; }
 
  private:
+  friend class cereal::access;
+  template <class Archive>
+  void save(Archive& ar, const Ipp32u version) const {
+    ar(::cereal::make_nvp("bits", m_p->BitSize()));
+    ar(::cereal::make_nvp("p", *m_p));
+    ar(::cereal::make_nvp("q", *m_q));
+  }
+
+  template <class Archive>
+  void load(Archive& ar, const Ipp32u version) {
+    int bits;
+    ar(::cereal::make_nvp("bits", bits));
+
+    int bn_len = bits / 32;
+    std::vector<Ipp32u> p_v(bn_len, 0);
+    std::vector<Ipp32u> q_v(bn_len, 0);
+    BigNumber p(p_v.data(), bn_len);
+    BigNumber q(q_v.data(), bn_len);
+
+    ar(::cereal::make_nvp("p", p));
+    ar(::cereal::make_nvp("q", q));
+
+    m_n = std::make_shared<BigNumber>(p * q);
+    m_nsquare = std::make_shared<BigNumber>((*m_n) * (*m_n));
+    m_g = std::make_shared<BigNumber>((*m_n) + 1);
+    m_enable_crt = true;
+    m_p = (q < p) ? std::make_shared<BigNumber>(q)
+                  : std::make_shared<BigNumber>(p);
+    m_q = (q < p) ? std::make_shared<BigNumber>(p)
+                  : std::make_shared<BigNumber>(q);
+    m_pminusone = *m_p - 1;
+    m_qminusone = *m_q - 1;
+    m_psquare = (*m_p) * (*m_p);
+    m_qsquare = (*m_q) * (*m_q);
+    m_pinverse = (*m_q).InverseMul(*m_p);
+    m_hp = computeHfun(*m_p, m_psquare);
+    m_hq = computeHfun(*m_q, m_qsquare);
+    m_lambda = lcm(m_pminusone, m_qminusone);
+    m_x = (*m_n).InverseMul((modExp(*m_g, m_lambda, *m_nsquare) - 1) / (*m_n));
+    m_isInitialized = true;
+  }
+
   bool m_isInitialized = false;
   bool m_enable_crt = false;
 
