@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "ipcl/mod_exp.hpp"
 #include "ipcl/ciphertext.hpp"
+#include "ipcl/mod_exp.hpp"
 #include "ipcl/plaintext.hpp"
 
 namespace ipcl {
