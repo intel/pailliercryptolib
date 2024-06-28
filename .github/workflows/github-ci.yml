@@ -27,7 +27,10 @@ env:
   IPCL_DIR: ${GITHUB_WORKSPACE}/ipcl_install
   IPCL_HINT_DIR: >
       -DIPCL_HINT_DIR=${GITHUB_WORKSPACE}/ipcl_install/lib/cmake/ipcl-${IPCL_VER}
-
+      
+permissions:
+  contents: read
+  
 jobs:
   format:
     name: Format check
